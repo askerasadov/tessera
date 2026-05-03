@@ -1,0 +1,231 @@
+# MRZ Error Taxonomy
+
+This feature document defines the structure of errors, validation failures, and warnings produced by the MRZ-related features of the SDK. It establishes the three-tier model that all MRZ features adhere to, the contracts each type honors, and a representative set of examples for each category. The full list of types emerges through implementation and testing rather than being specified completely up front.
+
+This document focuses on the SDK's design choices: how failures are categorized, what context each type carries, and the rules that govern adding new types. It is a foundational document — most other MRZ feature documents reference it.
+
+**Status:** Living
+**Available since:** 0.1.0
+**Platform availability:** Target-agnostic. The error taxonomy is pure logic and runs on every target the project supports.
+
+---
+
+## Purpose
+
+A consistent, well-typed error model is the foundation of trustworthy SDK integration. Consumers should always know what went wrong, why, and what context describes it. They should never see generic "something went wrong" messages, never have to parse string descriptions to understand a failure, and never be surprised by a category of failure they did not anticipate.
+
+The error taxonomy is designed around the project's principles:
+
+- Failures are typed and specific, never collapsed into generic categories (Principle 7 — Fail loudly, fail informatively)
+- The SDK never refuses to return data because of validation issues; failures and warnings accompany data rather than replacing it (Principle 1 — Reader, not oracle)
+- Every typed failure carries enough context to be actionable (Principle 7)
+- Adding new types is a non-breaking change when done correctly (Principle 9 — Forward-compatible API)
+- The categorization protects consumers from coupling their handling logic to internal implementation details (Principle 5 — Transparency: the categorization itself is part of the public contract)
+
+---
+
+## Three-Tier Model
+
+Failures fall into one of three categories. The category determines where the failure appears in result types and how consumers are expected to react.
+
+### Errors
+
+**Definition:** An operation could not complete. No usable result was produced.
+
+**Where they appear:** As variants of result types (e.g., `ParseResult.Failure`). Errors are part of the result, not part of the metadata.
+
+**Consumer expectation:** Try a different input, retry the operation, or surface the failure to the user. The data is not available.
+
+**Examples:**
+- Input is structurally too broken to construct a document at all (wrong line count, characters outside the MRZ alphabet, fundamental field misalignment)
+- Generation cannot produce a valid MRZ from the given input (e.g., document number exceeds the field width with no valid fallback)
+
+### Validation Failures
+
+**Definition:** Data was extracted, but it does not conform to the relevant specification.
+
+**Where they appear:** Inside `ResultMetadata.validationFailures`, alongside the extracted data. The result is `ParseResult.Success` or `ParseResult.PartialSuccess` — never `Failure`.
+
+**Consumer expectation:** Read the data, examine the failures, decide whether to accept the data based on the consumer's own policy. Some consumers reject any check digit failure; some accept warnings as long as data is structurally usable. The SDK does not pre-decide.
+
+**Examples:**
+- A check digit in the MRZ does not match the value computed from the surrounding field
+- A country code in the MRZ does not exist in any recognized lookup table
+- A date in the MRZ is structurally well-formed but does not parse to a real calendar date (e.g., February 30)
+- A document type code is not recognized
+
+### Warnings
+
+**Definition:** Data is structurally valid and conforms to the specification, but is anomalous in a way the consumer might want to know about.
+
+**Where they appear:** Inside `ResultMetadata.warnings`, alongside the extracted data.
+
+**Consumer expectation:** Optional. The data is usable as-is; the warning is informational. Consumers may surface it for human review, log it for analytics, or ignore it entirely.
+
+**Examples:**
+- The document's expiry date is in the past
+- The document's expiry date is more than 10 years in the future (unusual for most document types)
+- A name field shows truncation (per ICAO Doc 9303 truncation indicator)
+- The MRZ as read from a chip and the MRZ as read from camera differ in some fields (only relevant when both reading paths produced data; not applicable when chip and camera reading are not yet available)
+
+---
+
+## Why This Categorization Matters
+
+The three-tier model has direct consequences for how consumers write code:
+
+- An error means *handle this case explicitly because you do not have data to work with*
+- A validation failure means *examine and decide based on your policy*
+- A warning means *optionally surface this; the data is usable*
+
+A poorly categorized SDK collapses these into one stream, forcing consumers to handle every possibility identically. This either leads to overly cautious consumers (rejecting usable data because of a mild warning) or overly permissive consumers (accepting broken data because they could not distinguish severity).
+
+The model is also stable across SDK evolution: when a new typed warning is added in a future release, consumers built against earlier versions continue to work — they receive a richer warning list, but their handling code is unchanged.
+
+---
+
+## Sealed Hierarchies
+
+Each category is rooted in a sealed type. Adding a new type is an additive change, but the sealed hierarchy ensures consumers can match exhaustively when they want to.
+
+The illustrative shape:
+
+```
+sealed class MrzError {
+    abstract val description: String
+    // ... specific variants below
+}
+
+sealed class MrzValidationError {
+    abstract val description: String
+    // ... specific variants below
+}
+
+sealed class MrzWarning {
+    abstract val description: String
+    // ... specific variants below
+}
+```
+
+Note that the `description` field is documented as English-only and intended for diagnostic purposes (logs, debugging output, internal dashboards). It is not localized. Consumers building user-facing experiences map error types to their own messages using stable identifiers, not the description string.
+
+The error class itself is the stable identifier. The type name (`MrzCheckDigitMismatch`, etc.) is part of the public API surface and follows the project's naming conventions (see `conventions.md`).
+
+---
+
+## Required Context
+
+Every typed failure carries enough context to be actionable. Specific context fields vary by type, but the rule is: **a consumer reading the failure should be able to answer "what failed, where, what was expected, what was observed."**
+
+For example, a `MrzCheckDigitMismatch` carries:
+- Which field's check digit failed (a `MrzField` enum: `DOCUMENT_NUMBER`, `DATE_OF_BIRTH`, `DATE_OF_EXPIRY`, `OPTIONAL_DATA`, `COMPOSITE`)
+- The expected check digit (the value computed from the surrounding field)
+- The observed check digit (the character that appeared in the MRZ at the check digit position)
+- The position in the original MRZ string (for diagnostic purposes)
+
+Generic catch-all errors with only a description string are not used. If a failure cannot be characterized with structured context, it is a sign that the type itself is too broad and should be split.
+
+---
+
+## Naming Conventions
+
+Type names follow the patterns established in `conventions.md`. Specifically:
+
+- Error types describe the specific failure: `MrzInvalidLength`, `MrzCharacterSetViolation`, `MrzGenerationFieldOverflow`
+- Validation error types describe the specific spec violation: `MrzCheckDigitMismatch`, `MrzUnknownCountryCode`, `MrzDateNotInCalendar`
+- Warning types describe the specific anomaly: `MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`, `MrzNameTruncated`
+
+Names that would be rejected:
+
+- `MrzGeneralError` — too vague
+- `MrzException` — not informative
+- `InvalidData` — does not say what is invalid
+
+Each new type is named at the level of specificity that lets a consumer write meaningful handling code without further inspection.
+
+---
+
+## Representative Examples
+
+The following examples illustrate the kinds of types each category contains. This is not the full list — additional types are added as implementation and testing surface real failure modes.
+
+### Errors (operations that could not complete)
+
+- `MrzInvalidLength` — input has the wrong number of lines or wrong line length for any supported format
+- `MrzCharacterSetViolation` — input contains characters outside the MRZ alphabet (anything other than `A-Z`, `0-9`, `<`)
+- `MrzFormatNotDetected` — input has plausible structure but does not match any of the supported formats
+- `MrzGenerationFieldOverflow` — input data does not fit within the field widths of the requested format
+- `MrzGenerationMissingRequiredField` — input data lacks fields required by the requested format
+
+### Validation Failures (data extracted but does not conform)
+
+- `MrzCheckDigitMismatch` — a check digit does not match the computed value, with field identifier and observed/expected values
+- `MrzUnknownCountryCode` — issuing state or nationality code is not in the recognized lookup tables
+- `MrzUnknownDocumentTypeCode` — document type code is not in the recognized lookup tables
+- `MrzDateNotInCalendar` — date is structurally well-formed but does not represent a real calendar date
+- `MrzInvalidSexValue` — sex field contains a character other than `M`, `F`, `<`, or `X`
+
+### Warnings (data is valid but anomalous)
+
+- `MrzExpiryDatePast` — document's expiry date has passed
+- `MrzExpiryDateImplausiblyFar` — document's expiry date is more than 10 years in the future
+- `MrzNameTruncated` — name field shows the truncation indicator per ICAO Doc 9303
+- `MrzPersonalNumberCheckDigitFiller` — the personal number check digit is the filler character `<`, which some issuing states use even when the personal number is populated
+
+---
+
+## Adding New Types
+
+New error, validation failure, or warning types are added through normal feature development. The rules:
+
+- A new type may be added in any MINOR or PATCH release; this is a non-breaking change
+- Removing an existing type or changing its semantic meaning is a breaking change requiring a MAJOR version bump and following the deprecation cycle (see `versioning.md`)
+- Renaming a type is breaking; in practice, a rename is implemented as adding the new type and deprecating the old one
+- Splitting a generic type into more specific subtypes is non-breaking when the original type is preserved as a parent in the sealed hierarchy
+
+This means the taxonomy grows safely over time. A consumer's exhaustive matching logic continues to compile across releases — it may produce compile-time warnings about unhandled cases, but never errors.
+
+---
+
+## Where the Taxonomy Lives in Code
+
+The error types are defined in the `domain` module (per `architecture.md`), which is the foundation module depended on by all other MRZ-related modules. This placement allows any module that produces or consumes MRZ data to reference the same error types without circular dependencies.
+
+The `mrz-core` module produces the parsing, generation, and validation errors. Future platform I/O modules (`mrz-camera-*`, `emrtd-nfc-*`) may produce their own platform-specific errors, defined in their own modules but conforming to the same three-tier categorization.
+
+---
+
+## Discovery Through Implementation and Testing
+
+The full list of error, validation failure, and warning types is not specified up front. The taxonomy structure is fixed; the catalog grows as real input surfaces real failure modes.
+
+The discovery process:
+
+- During implementation, edge cases that need typed responses become candidates for new types
+- During testing, especially with synthetic test fixtures generated by the project's own MRZ generator, edge cases can be deliberately constructed to probe the parser; failures lead to typed handling
+- ICAO Doc 9303 itself serves as a source of edge cases (truncation rules, optional data field semantics, date encoding rules) that inform what kinds of failures can occur
+
+This approach is consistent with Principle 4 (Honest about what we know): we document the structure we are confident about, and we discover the catalog rather than guessing it.
+
+---
+
+## Related Principles
+
+- **Principle 1 (Reader, not oracle)** — validation failures and warnings accompany data rather than replacing it; the SDK does not refuse to return data because of validation issues
+- **Principle 4 (Honest about what we know)** — the catalog is discovered, not pre-specified; we document the structure and grow the list as we learn
+- **Principle 5 (Transparency)** — the three-tier categorization is part of the public contract, not an implementation detail; consumers can rely on it
+- **Principle 7 (Fail loudly, fail informatively)** — every type is specific, every type carries actionable context, no generic catch-alls
+- **Principle 9 (Forward-compatible API)** — sealed hierarchies designed to grow through addition; deprecation cycle for any breaking change
+
+---
+
+## Related Documents
+
+- `principles.md` — the foundational principles this document references
+- `mrz-data-model.md` — the data model that error and validation results accompany
+- `mrz-parsing.md` — the feature that produces parsing errors and validation failures
+- `mrz-generation.md` — the feature that produces generation errors
+- `mrz-validation.md` — the feature that produces validation failures and warnings
+- `conventions.md` — naming conventions for type names
+- `versioning.md` — rules for adding, deprecating, and removing types
+- `testing.md` — the testing discipline through which the catalog of error types is discovered

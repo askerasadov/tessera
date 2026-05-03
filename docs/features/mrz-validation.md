@@ -1,0 +1,211 @@
+# MRZ Validation
+
+This feature document describes the SDK's MRZ validation capability: checking whether MRZ data — either as a raw string or as an already-parsed `MrzDocument` — conforms to ICAO Doc 9303. Validation is invoked implicitly by the parser and the generator, and is also exposed as a standalone operation for consumers who need to validate previously-extracted data without re-parsing.
+
+This document focuses on the SDK-specific design choices: the layered validation model, the public API, and the relationship between standalone validation and the validation that happens inside parsing and generation. The byte-level format specifications and the check digit algorithm itself live in ICAO Doc 9303.
+
+**Status:** Living
+**Available since:** 0.1.0
+**Platform availability:** Target-agnostic. Validation is pure logic and runs on every target the project supports.
+
+---
+
+## Purpose
+
+Validation answers the question "does this MRZ conform to the specification?" — separated into specific, layered checks so that the answer is precise rather than a single boolean.
+
+Validation matters because consumers make trust decisions based on extracted data. Knowing that a check digit failed is different from knowing that an expiry date is in the past is different from knowing that the input has the wrong number of lines. The SDK preserves these distinctions so consumers can decide what each kind of failure means for their use case (Principle 1 — Reader, not oracle; Principle 5 — Transparency).
+
+---
+
+## Single Source of Truth
+
+The validation logic lives in one place: the validation package within `mrz-core`. The parser invokes it during parsing. The generator invokes the parts relevant to input validation. The standalone validation feature exposes the full set as a public API. All three call paths reference the same validators.
+
+This means a check digit failure detected during parsing and a check digit failure detected by standalone validation use the same code, produce the same typed error, and report the same context. Adding or modifying a validator updates all three subsystems consistently. This is consistent with Principle 3 (Modular) and Principle 9 (Forward-compatible API).
+
+---
+
+## Layered Validation Model
+
+Validation is organized in three layers. Each layer depends on the layer beneath it; failures in lower layers may prevent higher layers from running meaningfully.
+
+### Layer 1 — Structural
+
+The most basic checks. They establish that the input could plausibly be an MRZ at all.
+
+- Line count is correct for the format
+- Line length is correct for the format
+- All characters are in the MRZ alphabet (A-Z, 0-9, `<`)
+- Field positions align with the format's specification
+
+If structural validation fails, the input cannot reliably be split into fields, so further validation does not run. The structural failures are returned; deeper layers report no results because they could not execute.
+
+### Layer 2 — Check Digit
+
+Once structure is valid, the parser can extract field values. Check digit validation verifies that the digits encoded in the MRZ match the values computed from the surrounding fields per the algorithm defined in ICAO Doc 9303 Part 3 Appendix A.
+
+- Per-field check digits — for the document number, date of birth, date of expiry, and optional data fields where defined
+- Composite check digit — for formats that define one (computed across multiple fields)
+
+Check digit failures are returned as typed validation failures with full context (which field failed, the expected value, the observed value).
+
+### Layer 3 — Semantic
+
+Once fields are extracted, semantic validation examines their contents.
+
+- Dates parse to real calendar dates (e.g., not February 30)
+- Dates fall within plausible ranges (with rules per field — see below)
+- Country codes are recognized in the lookup tables
+- Document type codes are recognized in the lookup tables
+- Sex values are within the allowed set
+- Other format-specific constraints
+
+Semantic checks may produce either validation failures or warnings, depending on the check. A date that is structurally well-formed but in the past for an expiry date is a warning, not a failure — the data is still valid; the consumer may or may not care.
+
+---
+
+## Public API Shape
+
+The validation API accepts either raw MRZ strings or already-parsed `MrzDocument` instances. Both forms are supported because consumers come from different starting points.
+
+The illustrative shape:
+
+```
+object MrzValidator {
+    // Validate a raw MRZ string
+    fun validate(input: String): ValidationResult
+    fun validate(input: List<String>): ValidationResult
+
+    // Validate a raw MRZ string with an explicit format
+    fun validate(input: String, format: MrzFormat): ValidationResult
+    fun validate(input: List<String>, format: MrzFormat): ValidationResult
+
+    // Validate an already-parsed document
+    fun validate(document: MrzDocument): ValidationResult
+}
+```
+
+When validating raw strings, the validator runs all three layers (structural, check digit, semantic). When validating an already-parsed `MrzDocument`, the structural layer is implicitly already passed (the document exists), so only check digit and semantic layers run.
+
+The actual class names, method names, and parameter shapes are decided at implementation time. The shape above is illustrative.
+
+---
+
+## Result Type
+
+Validation returns a `ValidationResult` (defined in `mrz-data-model.md`) containing:
+
+- `errors` — typed validation errors that indicate non-conformance
+- `warnings` — typed warnings that indicate anomalies but not non-conformance
+- `passedChecks` — the validators that ran and passed (exposed for transparency; consumers can confirm what was actually verified, not just what failed)
+
+Validation always returns the complete result. Consumers filter according to their own needs. The validator does not omit warnings to "save effort," does not skip checks based on what previous checks found (except where logically required by layering), and does not collapse multiple findings into a single summary value (Principle 5 — Transparency).
+
+There is no `isValid` boolean on the result. Validity depends on what the consumer cares about. A consumer who treats only errors as disqualifying derives that from `errors.isEmpty()`. A consumer who treats both errors and warnings as disqualifying derives that from `errors.isEmpty() && warnings.isEmpty()`. The SDK does not pre-decide.
+
+---
+
+## Behavioral Commitments
+
+The validator commits to the following behaviors. These are part of the public contract.
+
+### Always Returns Complete Results
+
+Every validator that can be run is run, regardless of what previous validators found. The only exceptions are layering dependencies: if structural validation fails, check digit validation cannot run because field positions are not known. In such cases, the structural failures are returned and the unrun layers report no results (with explicit indication that they did not execute).
+
+### Deterministic Within a Time Frame
+
+Validation is deterministic given the same input and same execution time. Some semantic checks depend on the current date (for example, "is this expiry date in the past" — a warning). These are explicitly time-dependent; the validator documents which checks are time-dependent and the consumer can elect to pass an explicit reference time for fully deterministic behavior.
+
+### Safe to Call Concurrently
+
+The validator is stateless. Multiple invocations can run concurrently in any threading or async model the target language supports.
+
+### Same Validators, Same Results
+
+A check digit failure detected by the parser and a check digit failure detected by standalone validation produce the same typed error with the same context. This consistency is a structural commitment of the single-source-of-truth design.
+
+### No Refusal Based on Validation Result
+
+Validation never refuses to return a result. There is always a `ValidationResult` to inspect. If validation could not run at all (an internal error, not a validation failure), that is signaled through a generic SDK-level error, not the validation result.
+
+---
+
+## Date Range Conventions
+
+Several validators check whether dates fall within plausible ranges. The conventions used:
+
+- **Date of birth** — must be in the past relative to the reference time, and not unreasonably so (the validator uses an upper bound of 130 years to define "unreasonable")
+- **Date of expiry** — checked against the reference time; an expiry in the past produces a warning (`MrzExpiryDatePast`); an expiry far in the future produces a different warning (`MrzExpiryDateImplausiblyFar`, with the threshold documented in the warning)
+- **Issuance dates** (where applicable) — must be in the past, and the gap to expiry must be plausible
+
+These thresholds are configurable through the validator's options, with the documented defaults applied when no configuration is provided. Consumers who need stricter or looser conventions can override.
+
+---
+
+## What Validation Does Not Do
+
+Validation is bounded. The validator does not:
+
+- Verify that an issuing state actually issues documents in the format presented
+- Verify that a document number exists in any external registry
+- Verify that the holder's name matches some external record
+- Make trust decisions on behalf of the consumer
+- Apply business rules specific to a particular use case
+
+These concerns are outside the scope of MRZ validation. The validator answers "does this MRZ conform to the specification?" — not "is this a real, valid, trustworthy document?" The latter requires external verification (backend lookups, cryptographic chip verification, etc.) that is the consumer's responsibility (Principle 1 — Reader, not oracle).
+
+---
+
+## Relationship to Other Features
+
+- **Data model** (`mrz-data-model.md`) — the validator accepts and produces values defined there
+- **Error taxonomy** (`mrz-error-taxonomy.md`) — the validation failures and warnings the validator produces are defined there
+- **Parsing** (`mrz-parsing.md`) — the parser invokes validation internally; results appear in the parser's metadata
+- **Generation** (`mrz-generation.md`) — the generator invokes input validation before producing output
+- **Lookup tables** (`lookup-tables.md`) — the validator references these for code recognition checks
+- **Conventions** (`conventions.md`) — naming and API patterns referenced in this document
+
+---
+
+## Edge Cases Worth Calling Out
+
+A few cases that deserve explicit mention:
+
+### Date Comparison Without an Explicit Reference Time
+
+When the consumer does not specify a reference time, the validator uses the current system time. This is convenient but introduces non-determinism for time-dependent checks. For consumers requiring deterministic results (test environments, replay scenarios, audit pipelines), passing an explicit reference time produces fully deterministic output.
+
+### Recognition vs Conformance
+
+A country code or document type code that is not in the SDK's lookup tables is not necessarily non-conformant — ICAO updates these lists periodically, and a code may be valid but newer than the SDK's tables. The validator distinguishes between "well-formed but unrecognized" (a warning) and "structurally invalid" (a failure). Consumers who require strict recognition can treat the warning as disqualifying; consumers who are more lenient can ignore it.
+
+### Cross-Field Consistency
+
+ICAO Doc 9303 includes a composite check digit that covers multiple fields jointly. A composite check digit failure may indicate corruption in one of several places. The validator reports the failure but does not attempt to identify which specific field is the cause; that diagnosis is left to per-field check digit results.
+
+### Validating Already-Parsed Documents
+
+When validating an `MrzDocument` (rather than a string), the structural layer has implicitly been passed — the document exists, so its structure was acceptable when it was parsed. Standalone validation of a document focuses on check digit verification (against the raw string preserved in the document) and semantic checks. This is the natural pattern for round-trip flows or stored-and-revalidated scenarios.
+
+---
+
+## Related Principles
+
+- **Principle 1 (Reader, not oracle)** — validation does not make trust decisions; it reports findings, the consumer decides
+- **Principle 5 (Transparency)** — every validator that runs is reported, with full context; no summarization, no hidden filtering
+- **Principle 7 (Fail loudly, fail informatively)** — typed failures and warnings, never generic; full context for each finding
+- **Principle 9 (Forward-compatible API)** — the validation result type is designed to extend through addition of new error and warning types
+
+---
+
+## Related Documents
+
+- `principles.md` — the foundational principles this document references
+- `mrz-data-model.md` — `ValidationResult` and the types it contains
+- `mrz-error-taxonomy.md` — validation errors and warnings
+- `mrz-parsing.md` — implicit validation during parsing
+- `mrz-generation.md` — implicit validation during generation
+- `lookup-tables.md` — code recognition checks
+- `conventions.md` — naming and API patterns

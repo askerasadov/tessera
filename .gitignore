@@ -1,0 +1,74 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+
+# IDE files
+.idea/
+*.iml
+*.iws
+.vscode/
+*.swp
+*.swo
+
+# JetBrains-specific runtime files (keep shared run configurations if added later)
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/shelf/
+.idea/dictionaries/
+.idea/httpRequests/
+.idea/dataSources/
+
+# Build outputs
+build/
+out/
+target/
+.gradle/
+*.class
+
+# iOS / Xcode build outputs
+DerivedData/
+*.xcuserdata/
+*.xcworkspace/xcuserdata/
+Pods/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+xcuserdata/
+xcshareddata/
+
+# Kotlin / KMP-specific
+local.properties
+.kotlin/
+kotlin-js-store/
+
+# Gradle wrapper bytecode (the wrapper jar IS committed; these are build artifacts)
+.gradle/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Session handoff files (working notes from individual Claude Code sessions, not project history)
+SESSION-HANDOFF-*.md
+
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output/
+
+# Dependency directories (if any per-module tools introduce them)
+node_modules/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
