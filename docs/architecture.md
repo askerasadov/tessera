@@ -43,7 +43,7 @@ Pure logic for the Machine Readable Zone: parsing, generation, validation, trans
 Pure logic for electronic document data: parsing of data groups (DG1, DG2, DG11, DG12, etc.), structural parsing of the Security Object (SOD), Logical Data Structure (LDS) layout, ASN.1 utilities, and the key derivation logic for chip access protocols (BAC and PACE). This module does not perform NFC I/O — it operates on raw bytes provided by the I/O layer.
 
 **`domain`**
-Shared types and vocabulary used across modules: document type enumerations, country and nationality codes, error taxonomy base classes, and common data structures. This module depends on nothing else and is depended on by everything. Its API surface is deliberately small.
+Shared types and vocabulary used across modules: format enumerations (`MrzFormat`), categorical enumerations (`Sex`, `DocumentCategory`, `CountryCodeCategory`), shared field identifiers (`MrzField`), error taxonomy sealed roots (`MrzError`, `MrzValidationError`, `MrzWarning`), and common data structures with no runtime data dependency. Value classes whose contract requires consulting a lookup table (notably `CountryCode` and `DocumentType`) live with their tables in `mrz-core`, not here — see ADR-012. This module depends on nothing else and is depended on by everything. Its API surface is deliberately small.
 
 ### Platform I/O Modules
 
