@@ -18,45 +18,45 @@ This checklist is read by AI assistants (notably Claude Code) and by the human a
 
 ## Repository Setup
 
-- [ ] **Git platform chosen.** GitHub, GitLab, Codeberg, or another platform has been selected. The remote is configured and the project is connected to it. (Default expectation: GitHub. See `docs/open-questions.md` for the open decision.)
+- [x] **Git platform chosen.** GitHub is the chosen hosting platform. Remote not yet configured; first push deferred to a separate explicit step. See `docs/open-questions.md` (resolved entry).
 - [x] **`LICENSE` file at project root.** Apache 2.0 license text with copyright attribution to "Asker Asadov (Lightine)" exists at project root.
 - [x] **`.gitignore` configured.** A `.gitignore` exists at project root, derived from the planning material in `.claude/gitignore-planning.md`. Excludes IDE files, build outputs, OS-specific files, local environment files, and `SESSION-HANDOFF-*.md` working notes.
-- [ ] **No private content in the repository.** A grep for organizational names, the author's location, personal information, and any private context confirms zero matches across all files. Use the rules in `.claude/gitignore-planning.md`.
+- [x] **No private content in the repository.** Verified clean by case-sensitive grep at the moment of the initial scaffolding commit. The recurring scan command lives in the AI memory system (private) for re-use before each commit.
 
 ---
 
 ## Build Configuration
 
-- [ ] **Gradle build files exist.** `build.gradle.kts` and `settings.gradle.kts` are present and correctly configured for Kotlin Multiplatform.
-- [ ] **Module structure scaffolded.** The modules listed in `docs/architecture.md` (`mrz-core`, `emrtd-core`, `domain`, `telemetry`, `logging`, plus platform I/O and UI modules as appropriate) exist as Gradle modules. They do not need to contain implementation yet, but their build configuration must be in place.
-- [ ] **Initial dependencies declared.** Kotlin standard library, KMP plugins, and any libraries identified during design (e.g., test frameworks) are declared in build files.
-- [ ] **Target platforms configured.** Android (API level 26+) and iOS (15.0+) targets are configured per ADR-001 and ADR-002.
+- [x] **Gradle build files exist.** `build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`, `gradle/libs.versions.toml`, and `gradle/gradle-daemon-jvm.properties` are present. Wrapper pinned to Gradle 8.14; daemon JVM pinned to JDK 17. Foojay resolver applied for project-level toolchain auto-provisioning.
+- [x] **Module structure scaffolded.** The five core logic and cross-cutting modules (`domain`, `mrz-core`, `emrtd-core`, `telemetry`, `logging`) exist as Gradle modules with `build.gradle.kts`. Platform I/O and UI modules are deliberately deferred to their corresponding releases per `docs/open-questions.md`; the empty-shell cost is not justified before the first implementation work in each.
+- [x] **Initial dependencies declared.** Kotlin Multiplatform plugin, Spotless, ktlint, kotlin.test, and Kotest property module are declared via the version catalog. Inter-module dependencies (`mrz-core`/`emrtd-core` → `domain`, `logging`) are wired per the architecture graph.
+- [ ] **Target platforms configured.** Only the JVM target is configured on the five scaffolded modules. Android (API 26+) and iOS (15.0+) targets are deferred — Android until 0.2.0 work begins, iOS until Xcode is installed. Both deferrals are tracked in `docs/open-questions.md` (Principle 2: don't add infrastructure before it earns its keep).
 
 ---
 
 ## Tooling
 
-- [ ] **IDE configured.** IntelliJ IDEA (or chosen alternative) opens the project successfully. KMP plugin is installed and recognized.
-- [ ] **Code style tooling chosen.** A formatter (e.g., ktfmt, ktlint) and linter have been chosen and configured. The project compiles with the chosen style applied.
-- [ ] **Test framework chosen.** A test framework (e.g., kotlin.test, JUnit 5) has been chosen and is configured for `commonMain` test sources.
-- [ ] **Property-based testing library chosen.** A property-based testing library (e.g., Kotest property module) has been chosen if property-based tests are in scope from the start. (See `docs/testing.md`.)
+- [ ] **IDE configured.** Pending user action. IntelliJ IDEA with the KMP plugin is the documented choice; opening the project for the first time is a manual step the user performs when they next pick up implementation work.
+- [x] **Code style tooling chosen.** Spotless (root-level) with a ktlint backend, configured against `.editorconfig` and the Kotlin official style. `./gradlew spotlessCheck` runs as part of `./gradlew build`. See `docs/conventions.md` Code Style section.
+- [x] **Test framework chosen.** `kotlin.test` is wired into every module's `commonTest` source set.
+- [x] **Property-based testing library chosen.** Kotest property module (`io.kotest:kotest-property`) is wired into every module's `commonTest` source set, ready for the round-trip property tests committed to in `docs/testing.md`.
 
 ---
 
 ## Documentation Alignment
 
-- [ ] **`docs/conventions.md` updated.** The "Code Style" section now reflects the actual chosen tooling, replacing the placeholder language about deferred decisions.
-- [ ] **`docs/open-questions.md` updated.** Items resolved by the items above (project name, root namespace, git platform, code style, distribution preparation) are marked Resolved with reference to where they were decided.
-- [ ] **No stale forward references.** A grep for `when written`, `will be written`, `to be written`, `to be created` returns no matches in the documentation (excluding example text in `.claude/known-pitfalls.md` and similar meta-references).
-- [ ] **Cross-reference check tooling configured.** A simple script or pre-commit hook checks that every `.md` cross-reference in the documentation resolves to an existing file. Catches broken links as docs evolve. The script can be a one-liner: `grep -roh "\`[a-z][a-z0-9-]*\.md\`" --include="*.md" | sort -u`, with a corresponding existence check.
+- [x] **`docs/conventions.md` updated.** Code Style section now describes Spotless + ktlint + `.editorconfig` + Kotlin official style.
+- [x] **`docs/open-questions.md` updated.** "Code style tooling" and "Git platform choice" marked Resolved. Three new deferrals added (iOS target, Android target, platform I/O and UI module scaffolding) with explicit triggers for resolution.
+- [x] **No stale forward references.** Verified at the moment of the initial scaffolding commit. The four matches that remain are legitimate meta-references in `.claude/known-pitfalls.md` and `.claude/pre-implementation-checklist.md`, plus prose in `docs/architecture.md:195` ("only the I/O bridge needs to be written") that is future-tense narrative, not a stale doc forward-reference.
+- [x] **Cross-reference check tooling configured.** `scripts/check-cross-references.sh` is committed and executable. Run from project root. Pre-commit hook is a future improvement, not blocking.
 
 ---
 
 ## Verification
 
-- [ ] **`gradlew build` succeeds.** Or whatever the equivalent build command is for the chosen tooling. The empty project builds without errors.
-- [ ] **A trivial test runs.** A "hello world" style test in `commonMain` test sources passes. This confirms the test infrastructure is functional before real test writing begins.
-- [ ] **Cross-references verified.** All `.md` cross-references in the documentation resolve to existing files.
+- [x] **`gradlew build` succeeds.** Confirmed — `./gradlew clean build` reports BUILD SUCCESSFUL. Note: Gradle 8.14 emits a deprecation warning about Gradle 9.0 compatibility from the Kotlin Multiplatform plugin; this is upstream and non-blocking.
+- [x] **A trivial test runs.** `mrz-core/src/commonTest/kotlin/io/lightine/tessera/mrz/TestInfrastructureSmokeTest.kt` runs and passes (`./gradlew :mrz-core:jvmTest`).
+- [x] **Cross-references verified.** `bash scripts/check-cross-references.sh` reports "All cross-references resolve."
 
 ---
 
