@@ -1,5 +1,9 @@
 # Pre-Implementation Checklist
 
+**Status:** Historical record from the moment the gate was passed (2026-05-04). Specific files and line counts referenced may have been removed or changed in subsequent slices (notably the `TestInfrastructureSmokeTest` placeholder, replaced by real tests once the first implementation slice landed). The checklist is preserved as a snapshot of what was true when implementation began, not as a live document. For current implementation status, consult `CHANGELOG.md` and the latest session handoff.
+
+---
+
 This document lists the minimum set of things that should be true before implementation work begins on this project. It is a checklist, not a process — the items are concrete and verifiable, and the checklist passes when every item is satisfied.
 
 The purpose: to prevent implementation from starting in an unstable state. Once code is being written, fixing missing prerequisites becomes more disruptive than satisfying them upfront.

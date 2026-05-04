@@ -49,6 +49,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - [`docs/decisions/0012-recognition-types-live-with-tables.md`](docs/decisions/0012-recognition-types-live-with-tables.md): ADR resolving where recognition-bearing value classes live (with their lookup tables in `mrz-core`, not `domain`)
   - "Error Sub-Categorization by Operation" section added to [`docs/features/mrz-error-taxonomy.md`](docs/features/mrz-error-taxonomy.md) documenting `MrzParseError` / `MrzGenerationError` intermediate sealed roots
   - "Document type code table completeness" entry in [`docs/open-questions.md`](docs/open-questions.md) tracking the deliberate starter-set incompleteness
+  - [`.claude/git-workflow.md`](.claude/git-workflow.md): full operational detail of the GitHub Flow + PR workflow (branch naming, per-PR steps, `gh` CLI usage, private-content scan timing, branch lifecycle); CLAUDE.md gets a short rules block pointing to it
+  - Three new entries in [`.claude/known-pitfalls.md`](.claude/known-pitfalls.md): worktree branch names leaking into PRs, treating doc tensions as interpretive, and tagging a release before reality matches the claim
+  - Historical-record header on [`.claude/pre-implementation-checklist.md`](.claude/pre-implementation-checklist.md) clarifying the doc is a snapshot of the gate state, not a live tracker
 
 ### Changed
 

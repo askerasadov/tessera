@@ -133,6 +133,57 @@ Each of these *feels* helpful. Each of them violates Principle 1 (Reader, not or
 
 ---
 
+## Auto-Generated Worktree Branch Names Leaking Into PRs
+
+**The pitfall:** Pushing a branch named `claude/confident-albattani-6f0935` (or similar Claude Code default) to GitHub. The first PR opened on the project hit this — the branch name on the PR list told reviewers nothing about what the PR contained.
+
+**Why it happens:** Claude Code creates worktrees with auto-generated names (`claude/<docker-style-adjective-name>-<hex>`). The branch checked out in the worktree inherits that name. If nobody renames it before pushing, the random name is what GitHub displays.
+
+**What to do instead:** Rename the branch as the first or second step of any session that will result in a PR. From inside the worktree:
+
+```sh
+git branch -m claude/<auto-name> feature/<descriptive-name>
+```
+
+The worktree directory path is unchanged; only the branch reference moves. Aim for the branch name to convey what the PR is about: `feature/validator`, `docs/align-illustrative-shapes`, `fix/check-digit-overflow`.
+
+The branch lifecycle is documented in `.claude/git-workflow.md`.
+
+---
+
+## Treating Doc Tensions As Interpretive Rather Than Real
+
+**The pitfall:** When two documentation files commit to slightly different shapes for the same thing (e.g., one doc names a type `MrzParseError` while another implies `MrzError` is the only sealed root), it's tempting to "interpret" one in light of the other and silently work around the gap.
+
+**Why it happens:** Both docs are written carefully. Both seem authoritative. Picking one to "win" feels presumptuous. So the implementation tries to satisfy both via creative interpretation — which usually means satisfying neither.
+
+**What's wrong with it:** The next reader hits the same tension and re-derives the same workaround, possibly differently. The docs stay misaligned. Implementation drifts from explicit commitments. Per Principle 4 (Honest about what we know): if two docs disagree, that disagreement is information that needs resolving, not papering over.
+
+**What to do instead:** When you notice a doc tension during implementation, surface it explicitly. Lay out the readings, propose a resolution (which doc to update, or whether to introduce intermediate types that satisfy both), and either get the user's call or make the call yourself with reasoning recorded. Real examples that have happened on this project:
+
+- `architecture.md` "country and nationality codes" in `domain` vs. `mrz-data-model.md` `CountryCode` consuming a lookup table in `mrz-core` → resolved by ADR-012 introducing the rule that recognition-bearing value classes live with their tables.
+- `mrz-data-model.md` `MrzParseError` vs `mrz-error-taxonomy.md` flat `MrzError` → resolved by introducing `MrzParseError` and `MrzGenerationError` intermediate sealed types under `MrzError`, plus updating the taxonomy doc with a "Sub-Categorization by Operation" section.
+
+Each resolution required a written decision. Each became a small commit alongside the implementation slice that surfaced it. Do not silently work around tensions; resolve them.
+
+---
+
+## Tagging A Release Before Reality Matches The Claim
+
+**The pitfall:** Tagging `0.1.0` (or any release) when the documentation describes things that are not yet implemented. Feature docs claim `Available since: 0.1.0` based on the project's roadmap, but the *roadmap* is aspirational until shipped.
+
+**Why it happens:** Once enough work has accumulated, it feels natural to tag a release as a milestone. The docs already say "Available since 0.1.0," so tagging seems like just confirming what's true.
+
+**What's wrong with it:** Pre-1.0, the project follows ADR-007 (strict backward compatibility from 0.x onward). Tagging `0.1.0` creates real consumer commitments — anything claimed `Available since 0.1.0` becomes part of the API consumers may depend on. If features are claimed but not implemented, the release ships with a documentation lie that's hard to fix later (renaming or repurposing claimed-but-empty surfaces is a breaking change).
+
+For Tessera specifically: `scope.md` defines `0.1.0` as "Pure parsing, generation, and validation for all ICAO Doc 9303 MRZ formats. Includes lookup tables, transliteration profiles, error taxonomy, and pluggable telemetry." That's a substantial scope. Tagging `0.1.0` before generation, validation, transliteration, country code tables, and the other format parsers exist would lock in claims that aren't backed by implementation.
+
+**What to do instead:** Before any release tag, audit the scope-vs-implementation gap. Either (a) implement everything claimed for the release, or (b) re-scope the release downward and update the affected docs. The project's Code/Doc Alignment Recap process (see `RECAP-CODE-DOC-ALIGNMENT-*.md` working notes) is the right tool for this; run it before tagging.
+
+Pre-release work (before `0.1.0` is tagged) is the safe zone for breaking changes and re-scoping. After the tag, it's much costlier.
+
+---
+
 ## Maintaining This Document
 
 This document grows when new pitfalls are observed during ongoing work. The bar for adding an entry: *has this mistake actually been made on this project, or is it close enough that it could be?* If yes, document it concretely with the specific pattern. If no, do not add speculative pitfalls — `reading-risks.md` and the principles already cover those.
