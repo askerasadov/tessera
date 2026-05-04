@@ -109,4 +109,25 @@ class MrzDocumentTest {
             )
         assertEquals(specimenTd3, other)
     }
+
+    @Test
+    fun sealed_hierarchy_supports_exhaustive_when_matching_across_known_variants() {
+        val td1: MrzDocument =
+            TD1(
+                rawLines = listOf("", "", ""),
+                commonFields = specimenCommonFields,
+                optionalData1 = "",
+                optionalData2 = "",
+            )
+        val td3: MrzDocument = specimenTd3
+
+        val labels =
+            listOf(td1, td3).map { doc ->
+                when (doc) {
+                    is TD1 -> "TD1"
+                    is TD3 -> "TD3"
+                }
+            }
+        assertEquals(listOf("TD1", "TD3"), labels)
+    }
 }
