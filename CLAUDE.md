@@ -49,6 +49,7 @@ If you are looking for...
 | What goes in the public repo and what doesn't | [`.claude/gitignore-planning.md`](.claude/gitignore-planning.md) |
 | Session handoff template | [`.claude/session-handoff-template.md`](.claude/session-handoff-template.md) |
 | Pre-implementation gate checklist | [`.claude/pre-implementation-checklist.md`](.claude/pre-implementation-checklist.md) |
+| Git and GitHub workflow (branch naming, PR flow, gh CLI usage) | [`.claude/git-workflow.md`](.claude/git-workflow.md) |
 
 ---
 
@@ -91,8 +92,19 @@ The operational ruleset. Each rule is concrete and triggers on a specific situat
 - **Tests alongside implementation, not after.** Write the test as you build the feature, not as a follow-up.
 - **Tests for every new error type.** When adding a new error to the taxonomy, add a test that produces it.
 - **When tests reveal an error condition that has no type yet, add it to [`docs/features/mrz-error-taxonomy.md`](docs/features/mrz-error-taxonomy.md) and write a test that produces it.** The error taxonomy grows through discovery.
-- **Update `CHANGELOG.md` for every release.** Keep a Changelog format.
+- **Update `CHANGELOG.md` for every non-trivial PR.** Keep a Changelog format. Entries go under `[Unreleased]`, grouped Added / Changed / Deprecated / Removed / Fixed / Security. Trivial PRs (single-character typo fixes etc.) can skip with a one-line explanation in the PR description. Detail in [`.claude/git-workflow.md`](.claude/git-workflow.md).
 - **Read the relevant ADR before changing established ground.**
+
+### Git and GitHub Workflow
+
+The project uses **GitHub Flow**: `main` is the trunk; feature branches off `main`; PR for every merge. Detail in [`.claude/git-workflow.md`](.claude/git-workflow.md).
+
+- **Branch off `origin/main`** for every PR. Name `feature/...`, `fix/...`, `docs/...`, or `chore/...` per the contents.
+- **Rename auto-generated worktree branches** before pushing. `claude/<random>` is meaningless to reviewers.
+- **Run the private-content scan before every push** to a public-or-soon-to-be-public remote. Grep terms are in memory `feedback_private_content_scan.md`.
+- **Use the PR template** at `.github/pull_request_template.md`. Fill Documentation Impact, Tests, Open Questions, Changelog, and Verification sections.
+- **`gh` CLI is set up and authed** in this environment. Push and create PRs directly from the session.
+- **Delete merged branches locally** with `git branch -d <name>` after merge. Remote branches auto-delete via repo settings.
 
 ### Documentation Sync (When You Change X, Update Y)
 
