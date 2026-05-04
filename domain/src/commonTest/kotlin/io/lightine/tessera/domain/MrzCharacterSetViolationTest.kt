@@ -36,6 +36,12 @@ class MrzCharacterSetViolationTest {
     }
 
     @Test
+    fun is_an_mrz_parse_error_subtype() {
+        val violation: MrzError = MrzCharacterSetViolation('!', 0)
+        assertTrue(violation is MrzParseError)
+    }
+
+    @Test
     fun two_violations_with_same_character_and_position_are_equal() {
         assertEquals(
             MrzCharacterSetViolation('a', 5),
