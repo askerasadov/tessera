@@ -3,7 +3,7 @@ package io.lightine.tessera.mrz
 import io.lightine.tessera.domain.Sex
 
 public data class CommonFields(
-    val documentType: String,
+    val documentType: DocumentType,
     val issuingState: String,
     val primaryIdentifier: String,
     val secondaryIdentifier: String,

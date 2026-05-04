@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 class MrzDocumentTest {
     private val specimenCommonFields =
         CommonFields(
-            documentType = "P",
+            documentType = DocumentType("P"),
             issuingState = "UTO",
             primaryIdentifier = "ERIKSSON",
             secondaryIdentifier = "ANNA MARIA",
@@ -43,7 +43,7 @@ class MrzDocumentTest {
 
     @Test
     fun td3_specimen_constructs_and_exposes_common_fields_verbatim() {
-        assertEquals("P", specimenTd3.commonFields.documentType)
+        assertEquals("P", specimenTd3.commonFields.documentType.rawCode)
         assertEquals("UTO", specimenTd3.commonFields.issuingState)
         assertEquals("ERIKSSON", specimenTd3.commonFields.primaryIdentifier)
         assertEquals("ANNA MARIA", specimenTd3.commonFields.secondaryIdentifier)

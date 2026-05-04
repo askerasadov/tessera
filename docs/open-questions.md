@@ -186,6 +186,16 @@ Some document types are in scope but their specific format details require docum
 
 **Resolution:** Implement each as documentation becomes available.
 
+### Document type code table completeness
+
+The `DocumentTypeCodeTable` in `mrz-core` ships with a deliberate starter set of well-known codes (`P`, `V`, `I`, `PP`, `PD`, `PS`) — not the complete enumeration committed to in `docs/features/lookup-tables.md` ("Initial Document Type Code Coverage"). The complete list comes from ICAO Doc 9303 Part 3 Section 4, which the project does not currently have at hand.
+
+The architectural pattern (recognition-bearing value class living next to its lookup table per ADR-012) is in place; the data is intentionally partial. The starter set is documented as such in `DocumentTypeCodeTable.kt` (file-level comment), and the table is structured so that adding entries is a non-breaking change (per `lookup-tables.md` "Updating the Tables"). A test (`DocumentTypeCodeTableTest.by_category_residence_permit_returns_empty_list_in_starter_set`) locks the current coverage so any expansion surfaces explicitly.
+
+**Source:** First implementation slice for `DocumentType` (2026-05-04 session); aligns with `lookup-tables.md` coverage commitment.
+
+**Resolution:** Populate the table from current ICAO Doc 9303 Part 3 Section 4 when an authoritative copy of the publication is available. Update tests to match the full set. Remove this entry once the table matches the spec.
+
 ### Driver's license format choice (mDoc vs proprietary)
 
 When driver's license NFC reading is added in a future release, the choice between standard mDoc-compliant licenses (ISO 18013-5) and proprietary national formats depends on which markets the project prioritizes.
