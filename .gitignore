@@ -60,6 +60,9 @@ logs/
 # Session handoff files (working notes from individual Claude Code sessions, not project history)
 SESSION-HANDOFF-*.md
 
+# Code/doc alignment recap files (snapshot audits, not project history)
+RECAP-*.md
+
 # Coverage reports
 coverage/
 *.lcov
