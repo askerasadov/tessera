@@ -78,7 +78,7 @@ object CountryCodeTable {
 object DocumentTypeCodeTable {
     fun lookup(code: String): DocumentTypeCodeEntry?
     fun all(): List<DocumentTypeCodeEntry>
-    fun byCategory(category: DocumentTypeCategory): List<DocumentTypeCodeEntry>
+    fun byCategory(category: DocumentCategory): List<DocumentTypeCodeEntry>
 }
 ```
 

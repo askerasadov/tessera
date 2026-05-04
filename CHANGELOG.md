@@ -53,6 +53,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - `docs/architecture.md` `domain` module description tightened to enumerate what's actually in the module and point to ADR-012 for value-class placement (was ambiguous about whether `CountryCode` and `DocumentType` lived in `domain` or `mrz-core`)
+- Documentation alignment with shipped code (illustrative shapes only):
+  - `docs/features/lookup-tables.md` — `byCategory` parameter type renamed `DocumentTypeCategory` → `DocumentCategory` to match the shipped enum in `domain`
+  - `docs/features/mrz-data-model.md`, `docs/features/mrz-generation.md` — sealed-class variant references rewritten from nested `MrzDocument.TD3` form to top-level `TD3` form, matching the shipped data classes
+  - `docs/features/mrz-data-model.md`, `docs/features/mrz-validation.md` — `ValidationResult` field renamed `errors` → `validationFailures` so the same conceptual list has the same name across `ResultMetadata` and `ValidationResult`
 
 ### Removed
 
