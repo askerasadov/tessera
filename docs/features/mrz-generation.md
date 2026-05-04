@@ -78,11 +78,11 @@ object MrzGenerator {
     // ... analogous methods for TD2, MRV-A, MRV-B
 
     // Per-format methods accepting the data model directly
-    fun generate(document: MrzDocument.TD1): GenerationResult
-    fun generate(document: MrzDocument.TD2): GenerationResult
-    fun generate(document: MrzDocument.TD3): GenerationResult
-    fun generate(document: MrzDocument.MrvA): GenerationResult
-    fun generate(document: MrzDocument.MrvB): GenerationResult
+    fun generate(document: TD1): GenerationResult
+    fun generate(document: TD2): GenerationResult
+    fun generate(document: TD3): GenerationResult
+    fun generate(document: MrvA): GenerationResult
+    fun generate(document: MrvB): GenerationResult
 }
 ```
 
@@ -164,7 +164,7 @@ The generator commits to round-trip equality at the raw-field level: parsing a g
 
 Specifically:
 
-- A generator call with a `MrzDocument.TD3` input produces an MRZ that, when parsed, yields a `MrzDocument.TD3` with raw fields equal to the original
+- A generator call with a `TD3` input produces an MRZ that, when parsed, yields a `TD3` with raw fields equal to the original
 - A generator call with primitive inputs produces an MRZ that, when parsed, yields a `MrzDocument` with the same raw fields as the inputs
 
 The "raw fields" qualifier matters. Computed fields (like `MrzDate.computedYear`) are derived from raw fields and the current time; they are deterministic given the same time, but not part of the round-trip contract because they may change with passing time. The contract is on raw values: if you put `25` as the year, the round-tripped MRZ produces `25` as the raw year.

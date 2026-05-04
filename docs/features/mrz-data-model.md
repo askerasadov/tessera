@@ -34,13 +34,13 @@ sealed class MrzDocument {
     abstract val rawLines: List<String>
     abstract val format: MrzFormat
     abstract val commonFields: CommonFields
-
-    data class TD1(...) : MrzDocument()
-    data class TD2(...) : MrzDocument()
-    data class TD3(...) : MrzDocument()
-    data class MrvA(...) : MrzDocument()
-    data class MrvB(...) : MrzDocument()
 }
+
+data class TD1(...) : MrzDocument()
+data class TD2(...) : MrzDocument()
+data class TD3(...) : MrzDocument()
+data class MrvA(...) : MrzDocument()
+data class MrvB(...) : MrzDocument()
 ```
 
 The sealed hierarchy ensures that consumers using exhaustive matching (`when` in Kotlin, `switch` in Swift) cover every variant the SDK supports. Adding a new variant is a non-breaking change when done correctly (per Principle 9 — exhaustive matching produces compile-time warnings, not errors, with proper API design).
@@ -222,7 +222,7 @@ Validation, when called explicitly on already-parsed data, returns:
 
 ```
 data class ValidationResult(
-    val errors: List<MrzValidationError>,
+    val validationFailures: List<MrzValidationError>,
     val warnings: List<MrzWarning>,
     val passedChecks: List<ValidationCheckId>
 )

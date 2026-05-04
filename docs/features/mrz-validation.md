@@ -96,13 +96,13 @@ The actual class names, method names, and parameter shapes are decided at implem
 
 Validation returns a `ValidationResult` (defined in `mrz-data-model.md`) containing:
 
-- `errors` — typed validation errors that indicate non-conformance
+- `validationFailures` — typed validation errors that indicate non-conformance
 - `warnings` — typed warnings that indicate anomalies but not non-conformance
 - `passedChecks` — the validators that ran and passed (exposed for transparency; consumers can confirm what was actually verified, not just what failed)
 
 Validation always returns the complete result. Consumers filter according to their own needs. The validator does not omit warnings to "save effort," does not skip checks based on what previous checks found (except where logically required by layering), and does not collapse multiple findings into a single summary value (Principle 5 — Transparency).
 
-There is no `isValid` boolean on the result. Validity depends on what the consumer cares about. A consumer who treats only errors as disqualifying derives that from `errors.isEmpty()`. A consumer who treats both errors and warnings as disqualifying derives that from `errors.isEmpty() && warnings.isEmpty()`. The SDK does not pre-decide.
+There is no `isValid` boolean on the result. Validity depends on what the consumer cares about. A consumer who treats only failures as disqualifying derives that from `validationFailures.isEmpty()`. A consumer who treats both failures and warnings as disqualifying derives that from `validationFailures.isEmpty() && warnings.isEmpty()`. The SDK does not pre-decide.
 
 ---
 
