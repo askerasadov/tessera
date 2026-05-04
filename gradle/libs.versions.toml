@@ -3,9 +3,11 @@ kotlin = "2.1.0"
 spotless = "6.25.0"
 ktlint = "1.3.1"
 kotest = "5.9.1"
+kotlinx-datetime = "0.6.1"
 
 [libraries]
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

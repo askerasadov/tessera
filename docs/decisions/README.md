@@ -23,6 +23,7 @@ The format is documented in `conventions.md`. ADRs are *fixed* once accepted: if
 | [009](0009-transliteration-profiles.md) | Per-state transliteration profiles, never inferred | Accepted |
 | [010](0010-apache-2-license.md) | Apache 2.0 license at public release | Accepted |
 | [011](0011-open-source-at-public-release.md) | Open source at public release | Accepted |
+| [012](0012-recognition-types-live-with-tables.md) | Recognition-bearing value classes live with their lookup tables | Accepted |
 
 ---
 

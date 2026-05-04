@@ -11,6 +11,7 @@ kotlin {
         commonMain {
             dependencies {
                 api(project(":domain"))
+                api(libs.kotlinx.datetime)
                 implementation(project(":logging"))
             }
         }

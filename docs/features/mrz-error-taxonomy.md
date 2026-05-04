@@ -111,6 +111,21 @@ Note that the `description` field is documented as English-only and intended for
 
 The error class itself is the stable identifier. The type name (`MrzCheckDigitMismatch`, etc.) is part of the public API surface and follows the project's naming conventions (see `conventions.md`).
 
+### Error Sub-Categorization by Operation
+
+Within the Errors tier, types are sub-categorized by the operation that produces them. Two intermediate sealed classes refine `MrzError`:
+
+```
+sealed class MrzParseError : MrzError()
+sealed class MrzGenerationError : MrzError()
+```
+
+Concrete error types extend the appropriate sub-root: `MrzInvalidLength`, `MrzCharacterSetViolation`, and `MrzFormatNotDetected` extend `MrzParseError`; `MrzGenerationFieldOverflow` and `MrzGenerationMissingRequiredField` extend `MrzGenerationError`.
+
+This sub-categorization makes result types typesafe per operation: `ParseResult.Failure.error: MrzParseError` and `GenerationResult.Failure.error: MrzGenerationError`. A consumer handling parse failures cannot accidentally receive a generation error and vice versa.
+
+Future operations (validation, transliteration, etc.) may introduce their own intermediate sealed roots if they produce errors with operation-specific patterns. Today only the parsing and generation sub-roots exist; validation failures and warnings have their own top-level sealed hierarchies (`MrzValidationError`, `MrzWarning`) and do not currently sub-categorize.
+
 ---
 
 ## Required Context
