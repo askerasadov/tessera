@@ -58,10 +58,14 @@ kotlin-js-store/
 logs/
 
 # Session handoff files (working notes from individual Claude Code sessions, not project history)
-SESSION-HANDOFF-*.md
+# Anchored to project root with a leading slash; on case-insensitive filesystems (macOS APFS,
+# Windows NTFS) an unanchored pattern would also match `.claude/session-handoff-template.md`
+# and silently exclude the committed template.
+/SESSION-HANDOFF-*.md
 
-# Code/doc alignment recap files (snapshot audits, not project history)
-RECAP-*.md
+# Code/doc alignment recap files (snapshot audits, not project history). Same rationale as above
+# for the leading slash.
+/RECAP-*.md
 
 # Coverage reports
 coverage/
