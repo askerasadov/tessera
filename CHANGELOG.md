@@ -43,6 +43,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `mrz-core` module: result types
   - `ParseResult` sealed class with `Success`, `PartialSuccess`, `Failure` variants
   - `ResultMetadata` aggregate (`readMethod`, `warnings`, `validationFailures`)
+- `domain` module: validator-related taxonomy
+  - `MrzField` enum (`DOCUMENT_NUMBER`, `DATE_OF_BIRTH`, `DATE_OF_EXPIRY`, `OPTIONAL_DATA`, `COMPOSITE`)
+  - `MrzCheckDigitMismatch` validation error carrying `field`, `expected`, `observed`, `position`
+  - `MrzInvalidSexValue` validation error carrying `observed`, `position`
+- `mrz-core` module: validator (first slice)
+  - `io.lightine.tessera.mrz.validation` subpackage (parallel to `checkdigit/`)
+  - `ValidationResult(validationFailures, warnings)` aggregate (`passedChecks` deferred)
+  - `MrzValidator.validate(document: MrzDocument): ValidationResult` — Layer 2 (per-field + composite check digits) and Layer 3 (sex value range) for TD3; TD1 returns an empty `ValidationResult` pending the TD1 parser slice
+  - Parser wiring: `MrzParser.parseTD3` invokes `MrzValidator.validate(...)` after slicing fields and returns `ParseResult.PartialSuccess` (with failures populated in `ResultMetadata.validationFailures`) when any failure surfaces, otherwise `ParseResult.Success`
 - Build infrastructure
   - `kotlinx-datetime 0.6.1` declared as `api` dependency in `mrz-core` (transitively exposes `LocalDate`)
 - Documentation
@@ -60,6 +69,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - `docs/features/lookup-tables.md` — `byCategory` parameter type renamed `DocumentTypeCategory` → `DocumentCategory` to match the shipped enum in `domain`
   - `docs/features/mrz-data-model.md`, `docs/features/mrz-generation.md` — sealed-class variant references rewritten from nested `MrzDocument.TD3` form to top-level `TD3` form, matching the shipped data classes
   - `docs/features/mrz-data-model.md`, `docs/features/mrz-validation.md` — `ValidationResult` field renamed `errors` → `validationFailures` so the same conceptual list has the same name across `ResultMetadata` and `ValidationResult`
+- `CommonFields` gains `rawSex: Char` so the verbatim sex character is preserved on the model even when `Sex.UNSPECIFIED` is the mapped value (Principles 1 + 5). The validator reads `rawSex` to decide `MrzInvalidSexValue`.
+- `docs/features/mrz-validation.md`: new "Status of Implementation" section enumerates which capabilities ship in this snapshot vs. which are documented but deferred. Each deferral cross-references an entry in `docs/open-questions.md`.
+- `docs/open-questions.md`: new entries for the validator deferrals (string-input overloads, `passedChecks` shape, `MrzUnknownCountryCode`, `MrzUnknownDocumentTypeCode`, `MrzDateNotInCalendar`, expiry warnings, TD1 validator path) and the canonical sex-value set per ICAO Doc 9303 primary source.
 
 ### Removed
 
@@ -70,15 +82,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 These are documented commitments that are explicitly *not* in this `[Unreleased]` snapshot. Each is tracked in [`docs/open-questions.md`](docs/open-questions.md) or in handoff watch items.
 
-- Validator (`MrzValidator`, `ValidationResult`, `MrzCheckDigitMismatch`, `MrzUnknownCountryCode`, etc.)
+- Validator standalone string-input overloads (`MrzValidator.validate(input: String / List<String> / String, format)`); current slice ships `validate(MrzDocument)` only
+- `ValidationResult.passedChecks` transparency surface (current `ValidationResult` exposes `validationFailures` + `warnings` only)
+- Other validator semantic checks (`MrzUnknownCountryCode`, `MrzUnknownDocumentTypeCode`, `MrzDateNotInCalendar`)
+- TD1 validator path (validator currently returns an empty `ValidationResult` for TD1 inputs; lands with the TD1 parser slice)
 - Generator (`MrzGenerator` and inverse round-trip property)
 - Transliteration system (`TransliterationProfile`, `TransliterationProfileRegistry`)
 - Auto-detect parser entry point (`MrzParser.parse(input)`)
 - Other format parsers (TD1, TD2, MRV-A, MRV-B parser methods)
 - Name field parsing (`primaryIdentifier` / `secondaryIdentifier` / `nameTruncated` extraction from raw name field)
 - `CountryCode` value class + `CountryCodeTable`
-- `MrzField` enum (lands with `MrzCheckDigitMismatch`)
-- `MrzInvalidSexValue` validation error (parser currently silently defaults invalid sex chars to `UNSPECIFIED`)
 - Warnings: `MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`, `MrzNameTruncated`, `MrzPersonalNumberCheckDigitFiller`
 - Document type code table population beyond the starter set
 - `ResultMetadata.timing: TimingInfo?` field (no timing instrumentation yet)

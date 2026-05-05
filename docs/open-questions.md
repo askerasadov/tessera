@@ -44,6 +44,62 @@ The validator uses specific thresholds for date plausibility checks (130 years f
 
 **Resolution:** Confirm or adjust thresholds during implementation; document the chosen values in `mrz-validation.md`.
 
+### Validator string-input and explicit-format overloads
+
+`mrz-validation.md` documents `MrzValidator.validate(input: String)`, `validate(input: List<String>)`, and the corresponding overloads with an explicit `MrzFormat`. The first validator slice ships only `validate(document: MrzDocument)`. The string-input path is the standalone validation surface for consumers who want to validate previously-extracted data without re-parsing; it is not blocking the parser-internal validation path.
+
+**Source:** First validator implementation slice; aligns with `mrz-validation.md` "Status of Implementation".
+
+**Resolution:** Add string-input overloads in a follow-up slice. They should reuse the same per-format validators that `validate(document)` dispatches to, so a check digit failure detected by the standalone string path produces the same typed error as one detected by the parser-internal path.
+
+### `ValidationResult.passedChecks` shape
+
+`mrz-validation.md` describes `passedChecks` as a transparency surface — "the validators that ran and passed (exposed for transparency; consumers can confirm what was actually verified, not just what failed)." The first validator slice ships `ValidationResult` with `validationFailures` and `warnings` only. Committing to a shape for `passedChecks` (typed enum/sealed list, plain string list, or richer record) before the validator catalog is broader would be a guess about consumer needs (Principle 2).
+
+**Source:** First validator implementation slice; aligns with `mrz-validation.md` "Status of Implementation".
+
+**Resolution:** Decide the shape when more semantic checks land and the catalog is broader. Add `passedChecks` to `ValidationResult` with a default value to keep the addition non-breaking (Principle 9).
+
+### Country code recognition validation (`MrzUnknownCountryCode`)
+
+`mrz-error-taxonomy.md` lists `MrzUnknownCountryCode` as a representative validation failure: the issuing state or nationality code is not in the recognized lookup tables. The first validator slice does not produce this failure because the SDK does not yet have a `CountryCode` value class or `CountryCodeTable`.
+
+**Source:** First validator implementation slice; aligns with `lookup-tables.md` ("Initial Country Code Coverage").
+
+**Resolution:** Add the country-code recognition check together with the `CountryCode` value class + `CountryCodeTable` slice. Same ADR-012 pattern as `DocumentType`.
+
+### Document type code recognition validation (`MrzUnknownDocumentTypeCode`)
+
+`mrz-error-taxonomy.md` lists `MrzUnknownDocumentTypeCode` as a representative validation failure. The `DocumentType` value class and `DocumentTypeCodeTable` already exist (with a starter set), so the recognition signal is available via `DocumentType.isRecognized`. The first validator slice does not produce this failure to keep the slice focused on closing the check-digit translation-owed loop.
+
+**Source:** First validator implementation slice.
+
+**Resolution:** Add the document-type recognition check in a focused follow-up slice. Decide whether a starter-set unrecognized code should be a failure or a warning given the deliberate incompleteness of the table (`docs/open-questions.md` "Document type code table completeness").
+
+### Date-in-calendar validation (`MrzDateNotInCalendar`)
+
+`mrz-error-taxonomy.md` lists `MrzDateNotInCalendar` as a representative validation failure: a date is structurally well-formed (six digits) but does not represent a real calendar date (e.g., February 30). The current parser already tolerates this — `MrzDate.parseBirth` and `parseExpiry` return `MrzDateInferenceMethod.RAW_ONLY` when the components do not form a valid date — but the validator does not surface a failure for it.
+
+**Source:** First validator implementation slice; aligns with `mrz-validation.md` "Layer 3 — Semantic" and `mrz-error-taxonomy.md`.
+
+**Resolution:** Add the date-in-calendar check in a follow-up slice. The signal is already on `MrzDate` (raw components are non-null but `computedDate` is null with `inferenceMethod == RAW_ONLY`); the check is detecting that combination and emitting `MrzDateNotInCalendar`.
+
+### Expiry-date warnings (`MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`)
+
+`mrz-error-taxonomy.md` lists `MrzExpiryDatePast` and `MrzExpiryDateImplausiblyFar` as representative warnings. The first validator slice produces no warnings (`ValidationResult.warnings` is always empty for now); these are the natural first warning slice.
+
+**Source:** First validator implementation slice; aligns with `mrz-validation.md` "Date Range Conventions" and `mrz-error-taxonomy.md`.
+
+**Resolution:** Add expiry-date warnings in a follow-up slice. Both warnings are time-dependent (depend on the validator's reference time); the threshold for "implausibly far" is documented in `mrz-validation.md` as 10 years and is configurable.
+
+### TD1 validator path
+
+The first validator slice handles only TD3. For TD1 inputs, `MrzValidator.validate(...)` returns an empty `ValidationResult` (no failures, no warnings) because TD1 has no parser yet, so there is no integration test path that would exercise a TD1 validator end-to-end. Implementing TD1's composite check digit formula without a TD1 parser to drive it would produce code that compiles and runs but is not meaningfully tested against real parsed input.
+
+**Source:** First validator implementation slice; aligns with the TD1 data-class-only state (PR #1 slice 8).
+
+**Resolution:** Land the TD1 validator path together with the TD1 parser slice, so the two are tested as one end-to-end flow.
+
 ---
 
 ## Deferred to a Future Release
@@ -185,6 +241,14 @@ Some document types are in scope but their specific format details require docum
 **Source:** `scope.md` ("Specific Document Implementations")
 
 **Resolution:** Implement each as documentation becomes available.
+
+### Sex value canonical set per ICAO Doc 9303
+
+`mrz-error-taxonomy.md` lists the valid sex characters as `M`, `F`, `<`, or `X`. The first validator slice uses this set as the allowed characters for `MrzInvalidSexValue`. ICAO Doc 9303 Part 4 §4.1 historically lists `M`, `F`, `<`; later guidance is reported to permit `X` for non-binary documents, and some issuing states use it. The project does not currently have an authoritative copy of the relevant ICAO publication at hand to confirm which set is canonical.
+
+**Source:** First validator implementation slice; aligns with `mrz-error-taxonomy.md` representative-examples list.
+
+**Resolution:** Confirm the canonical valid set against ICAO Doc 9303 primary source. If `X` is canonical, no code change is needed (the validator already permits it). If `X` is not canonical, narrow the validator's set, update `mrz-error-taxonomy.md`, and add a test for the change.
 
 ### Document type code table completeness
 

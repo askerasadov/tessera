@@ -18,6 +18,32 @@ Validation matters because consumers make trust decisions based on extracted dat
 
 ---
 
+## Status of Implementation
+
+The validator ships incrementally. The design described in the rest of this document is the target shape; the table below records what is currently implemented versus what is documented but deferred. Each deferred item has a corresponding entry in `docs/open-questions.md`.
+
+| Capability | Status |
+|---|---|
+| `MrzValidator.validate(document: MrzDocument): ValidationResult` | Implemented |
+| `MrzValidator.validate(input: String / List<String>)` overloads | Deferred |
+| `MrzValidator.validate(input, format: MrzFormat)` overloads | Deferred |
+| Layer 1 — Structural (line count, line length, alphabet) | Implemented inside `MrzParser` (returns `ParseResult.Failure` for these). The standalone `MrzValidator` does not currently re-run structural checks because today it only accepts `MrzDocument`, which has already cleared structural validation. |
+| Layer 2 — Per-field check digits (document number, dob, expiry, optional data) for TD3 | Implemented |
+| Layer 2 — Composite check digit for TD3 | Implemented |
+| Layer 2 — Check digits for TD1 | Deferred (TD1 has no parser yet; validator currently returns an empty `ValidationResult` for TD1 inputs) |
+| Layer 3 — Sex value range check (`MrzInvalidSexValue`) | Implemented |
+| Layer 3 — Country code recognition (`MrzUnknownCountryCode`) | Deferred (depends on `CountryCode` value class + `CountryCodeTable`) |
+| Layer 3 — Document type code recognition (`MrzUnknownDocumentTypeCode`) | Deferred |
+| Layer 3 — Date in calendar (`MrzDateNotInCalendar`) | Deferred |
+| Expiry-date warnings (`MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`) | Deferred |
+| `ValidationResult.passedChecks` (transparency surface for what was verified) | Deferred (current `ValidationResult` exposes `validationFailures` and `warnings` only; the shape of `passedChecks` is itself an open question) |
+
+The validator's wiring into the parser is in place: `MrzParser.parseTD3` invokes `MrzValidator.validate(...)` on the constructed document and returns `ParseResult.PartialSuccess` with the failures populated in `ResultMetadata.validationFailures` whenever any failure surfaces, otherwise `ParseResult.Success`.
+
+The set of valid sex characters used by Layer 3 is currently `{M, F, <, X}`. Confirming the canonical set against ICAO Doc 9303 primary source is tracked in `docs/open-questions.md`.
+
+---
+
 ## Single Source of Truth
 
 The validation logic lives in one place: the validation package within `mrz-core`. The parser invokes it during parsing. The generator invokes the parts relevant to input validation. The standalone validation feature exposes the full set as a public API. All three call paths reference the same validators.
