@@ -18,7 +18,7 @@ Tessera is a vendor-neutral SDK for reading, validating, and generating identity
 
 If you are starting a new session:
 
-1. Look for the most recent `SESSION-HANDOFF-YYYY-MM-DD.md` at the project root. If one exists, read it before engaging with the user's request.
+1. Look for the most recent `SESSION-HANDOFF-YYYY-MM-DD-<slug>.md` at the project root (sort by date; tie-break by mtime if a date has multiple slugs). If one exists, read it before engaging with the user's request. Older handoffs may use the legacy form `SESSION-HANDOFF-YYYY-MM-DD.md` without a slug; treat them the same.
 2. If no handoff exists, briefly skim [`docs/principles.md`](docs/principles.md) to refresh the foundational stance (10 min).
 3. Check [`docs/open-questions.md`](docs/open-questions.md) for what is currently in flight.
 4. Engage with the user's request.
@@ -72,7 +72,7 @@ The operational ruleset. Each rule is concrete and triggers on a specific situat
 
 ### Session Discipline
 
-- **At the end of a substantive working session**, write a session handoff file at the project root named `SESSION-HANDOFF-YYYY-MM-DD.md`, using the template in [`.claude/session-handoff-template.md`](.claude/session-handoff-template.md). A "substantive" session means: more than a small fix, decisions made that affect future work, or work stopped mid-task.
+- **At the end of a substantive working session**, write a session handoff file at the project root named `SESSION-HANDOFF-YYYY-MM-DD-<slug>.md`, where `<slug>` is a short kebab-case summary of what shipped (match the feature branch's slug when there is one — e.g., `validator`, `expiry-warnings`, `explicit-api`). Use the template in [`.claude/session-handoff-template.md`](.claude/session-handoff-template.md). A "substantive" session means: more than a small fix, decisions made that affect future work, or work stopped mid-task. The slug is mandatory: it makes the directory listing self-documenting and prevents collisions when two sessions ship on the same day.
 - **At the start of a session**, look for the most recent handoff file and read it first.
 - **Use `/clear` between distinct tasks** to reset context.
 - **Use `#` to capture recurring instructions** so they persist across sessions.
