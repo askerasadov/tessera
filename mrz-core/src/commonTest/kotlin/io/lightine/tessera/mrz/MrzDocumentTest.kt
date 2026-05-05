@@ -18,6 +18,7 @@ class MrzDocumentTest {
             nationality = "UTO",
             dateOfBirth = MrzDate(rawYear = "69", rawMonth = "08", rawDay = "06"),
             sex = Sex.FEMALE,
+            rawSex = 'F',
             dateOfExpiry = MrzDate(rawYear = "94", rawMonth = "06", rawDay = "23"),
             checkDigits =
                 MrzCheckDigits(

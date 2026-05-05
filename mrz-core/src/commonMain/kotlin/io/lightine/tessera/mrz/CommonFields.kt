@@ -13,6 +13,7 @@ public data class CommonFields(
     val nationality: String,
     val dateOfBirth: MrzDate,
     val sex: Sex,
+    val rawSex: Char,
     val dateOfExpiry: MrzDate,
     val checkDigits: MrzCheckDigits,
 )

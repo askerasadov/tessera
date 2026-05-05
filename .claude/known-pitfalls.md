@@ -184,6 +184,35 @@ Pre-release work (before `0.1.0` is tagged) is the safe zone for breaking change
 
 ---
 
+## `field` As A Constructor Parameter Name In A Class With A Custom Getter
+
+**The pitfall:** Naming a constructor parameter `field` in a Kotlin class that defines a property with a custom getter using string interpolation. The getter looks like:
+
+```kotlin
+public data class MrzCheckDigitMismatch(
+    val field: MrzField,
+    // ...
+) : MrzValidationError() {
+    override val description: String
+        get() = "Check digit for $field at position $position"  // ← compiles?
+}
+```
+
+Compiles to: `e: ... Property must be initialized.` — pointing at the `description` property declaration, not at the getter.
+
+**Why it happens:** `field` is a soft keyword in Kotlin: inside a property's getter or setter, it refers to the property's backing field. When the getter contains `$field` in a string interpolation, the parser binds `$field` to the backing-field reference of the *enclosing property* (`description`), not to the constructor parameter named `field`. `description` has a custom getter and no backing field, so the compiler concludes the backing field is unused and the property has no initializer — hence "Property must be initialized."
+
+The error is misleading: the property is fine; the getter is the problem; the parameter name is the trigger.
+
+**What to do instead (in order of preference):**
+
+1. **Rename the parameter.** Most explicit, no future surprises. The semantic name is "the MRZ field whose check digit failed" — `field: MrzField` is the natural shape, but if it triggers this, options like keeping the parameter name `field` and qualifying with `${this.field}` in the interpolation work. Either is a reasonable resolution.
+2. **If renaming is undesirable** (e.g., the parameter name `field` is part of an established API): qualify with `${this.field}` in any interpolation inside a custom getter. This avoids the soft-keyword binding without renaming the parameter.
+
+The MrzCheckDigitMismatch type currently uses the qualifying approach: `${this.field}` in the description getter. Keep this rule in mind for any future error/data class with a parameter that could shadow the `field` soft keyword.
+
+---
+
 ## Maintaining This Document
 
 This document grows when new pitfalls are observed during ongoing work. The bar for adding an entry: *has this mistake actually been made on this project, or is it close enough that it could be?* If yes, document it concretely with the specific pattern. If no, do not add speculative pitfalls — `reading-risks.md` and the principles already cover those.

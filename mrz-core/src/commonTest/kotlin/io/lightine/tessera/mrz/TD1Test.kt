@@ -19,6 +19,7 @@ class TD1Test {
             nationality = "UTO",
             dateOfBirth = MrzDate(rawYear = "69", rawMonth = "08", rawDay = "06"),
             sex = Sex.FEMALE,
+            rawSex = 'F',
             dateOfExpiry = MrzDate(rawYear = "30", rawMonth = "08", rawDay = "06"),
             checkDigits =
                 MrzCheckDigits(
