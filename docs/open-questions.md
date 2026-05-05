@@ -90,7 +90,15 @@ The validator uses specific thresholds for date plausibility checks (130 years f
 
 **Source:** First validator implementation slice; aligns with `mrz-validation.md` "Date Range Conventions" and `mrz-error-taxonomy.md`.
 
-**Resolution:** Add expiry-date warnings in a follow-up slice. Both warnings are time-dependent (depend on the validator's reference time); the threshold for "implausibly far" is documented in `mrz-validation.md` as 10 years and is configurable.
+**Resolution:** Resolved — both warnings are implemented for TD3 in `MrzValidator`. `MrzValidator.validate(...)` now accepts an explicit `referenceTime` (defaulting to `Clock.System.now()`); `MrzParser.parseTD3` threads its own `referenceTime` through. `MrzExpiryDateImplausiblyFar` carries `thresholdYears` (defaulting to 10) on the warning itself. Configurability of the threshold is its own deferred question — see "Validator options (configurable thresholds)" below.
+
+### Validator options (configurable thresholds)
+
+`mrz-validation.md` "Date Range Conventions" commits to thresholds being "configurable through the validator's options, with the documented defaults applied when no configuration is provided." The first warning slice ships the implausibly-far threshold as a private constant in `MrzValidator` (10 years, matching `mrz-error-taxonomy.md`). Building a `ValidationOptions`-style surface now would be a guess about which other thresholds eventually need configuring (Principle 11 — internal first, promote when justified).
+
+**Source:** First warning implementation slice; aligns with `mrz-validation.md` "Date Range Conventions".
+
+**Resolution:** When a second configurable threshold lands (likely the date-of-birth `MAX_PLAUSIBLE_AGE_YEARS` cap, or expiry-window thresholds revisited under real-world data), introduce a `ValidationOptions` value class with named, defaulted properties and a single `MrzValidator.validate(document, referenceTime, options)` overload. Keep the defaults exactly matching the current private constants so the addition is non-breaking (Principle 9).
 
 ### TD1 validator path
 

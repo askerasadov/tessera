@@ -2,6 +2,7 @@ package io.lightine.tessera.mrz
 
 import io.lightine.tessera.domain.MrzCharacterSetViolation
 import io.lightine.tessera.domain.MrzCheckDigitMismatch
+import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzFormat
 import io.lightine.tessera.domain.MrzInvalidLength
@@ -9,6 +10,7 @@ import io.lightine.tessera.domain.MrzInvalidSexValue
 import io.lightine.tessera.domain.ReadMethod
 import io.lightine.tessera.domain.Sex
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -228,6 +230,26 @@ class MrzParserTest {
         assertEquals('F', female.commonFields.rawSex)
         assertEquals('M', male.commonFields.rawSex)
         assertEquals('<', filler.commonFields.rawSex)
+    }
+
+    @Test
+    fun returns_success_with_expiry_past_warning_when_reference_time_is_after_expiry() {
+        // Specimen expires 1994-06-23. Reference 1995-01-01 is inside the parser's [-10y, +50y]
+        // window so the expiry parses to a real LocalDate; the validator then sees the date as
+        // before the reference and emits MrzExpiryDatePast. Warnings do not downgrade Success
+        // to PartialSuccess — only validationFailures do — so the result must remain Success.
+        val ref1995 = Instant.parse("1995-01-01T00:00:00Z")
+        val result = MrzParser.parseTD3(specimenLines, referenceTime = ref1995)
+        val success = assertIs<ParseResult.Success>(result)
+        assertTrue(success.metadata.validationFailures.isEmpty())
+
+        val past =
+            success.metadata.warnings
+                .filterIsInstance<MrzExpiryDatePast>()
+                .firstOrNull()
+        assertTrue(past != null, "Expected MrzExpiryDatePast in warnings; got ${success.metadata.warnings}")
+        assertEquals(LocalDate(1994, 6, 23), past.expiryDate)
+        assertEquals(LocalDate(1995, 1, 1), past.referenceDate)
     }
 
     // --- Error paths ---

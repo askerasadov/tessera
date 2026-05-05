@@ -38,7 +38,7 @@ public object MrzParser {
         }
 
         val td3 = sliceTd3Fields(input, referenceTime)
-        val validation = MrzValidator.validate(td3)
+        val validation = MrzValidator.validate(td3, referenceTime)
         val metadata =
             ResultMetadata(
                 readMethod = ReadMethod.BACKEND_STRING_INPUT,

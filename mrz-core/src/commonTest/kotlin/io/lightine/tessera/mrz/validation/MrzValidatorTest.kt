@@ -1,6 +1,8 @@
 package io.lightine.tessera.mrz.validation
 
 import io.lightine.tessera.domain.MrzCheckDigitMismatch
+import io.lightine.tessera.domain.MrzExpiryDateImplausiblyFar
+import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzFormat
 import io.lightine.tessera.domain.MrzInvalidSexValue
@@ -9,8 +11,11 @@ import io.lightine.tessera.mrz.CommonFields
 import io.lightine.tessera.mrz.DocumentType
 import io.lightine.tessera.mrz.MrzCheckDigits
 import io.lightine.tessera.mrz.MrzDate
+import io.lightine.tessera.mrz.MrzDateInferenceMethod
 import io.lightine.tessera.mrz.TD1
 import io.lightine.tessera.mrz.TD3
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -261,6 +266,121 @@ class MrzValidatorTest {
             )
         assertEquals('Q', invalid.observed)
         assertEquals(64, invalid.position)
+    }
+
+    // --- Expiry warnings ---
+
+    private fun computedExpiry(date: LocalDate): MrzDate {
+        val rawYear = (date.year % 100).toString().padStart(2, '0')
+        val rawMonth = date.monthNumber.toString().padStart(2, '0')
+        val rawDay = date.dayOfMonth.toString().padStart(2, '0')
+        return MrzDate(
+            rawYear = rawYear,
+            rawMonth = rawMonth,
+            rawDay = rawDay,
+            computedYear = date.year,
+            computedDate = date,
+            inferenceMethod = MrzDateInferenceMethod.SLIDING_WINDOW_EXPIRY,
+        )
+    }
+
+    private fun specimenWithExpiry(
+        expiryDate: LocalDate,
+        checkDigits: MrzCheckDigits = specimenCommonFields().checkDigits,
+    ): TD3 {
+        val baseFields = specimenCommonFields(checkDigits = checkDigits)
+        return specimenTd3(commonFields = baseFields.copy(dateOfExpiry = computedExpiry(expiryDate)))
+    }
+
+    @Test
+    fun expiry_in_past_emits_MrzExpiryDatePast_warning_with_dates() {
+        val expiry = LocalDate(2020, 6, 23)
+        val referenceTime = Instant.parse("2026-05-04T12:00:00Z")
+        val td3 = specimenWithExpiry(expiry)
+
+        val result = MrzValidator.validate(td3, referenceTime = referenceTime)
+
+        val warning = assertIs<MrzExpiryDatePast>(result.warnings.first { it is MrzExpiryDatePast })
+        assertEquals(expiry, warning.expiryDate)
+        assertEquals(LocalDate(2026, 5, 4), warning.referenceDate)
+        assertTrue(
+            result.warnings.none { it is MrzExpiryDateImplausiblyFar },
+            "Past-expiry case must not also emit implausibly-far warning",
+        )
+    }
+
+    @Test
+    fun expiry_equal_to_reference_date_emits_no_warning() {
+        val sameDay = LocalDate(2026, 5, 4)
+        val referenceTime = Instant.parse("2026-05-04T12:00:00Z")
+        val td3 = specimenWithExpiry(sameDay)
+
+        val result = MrzValidator.validate(td3, referenceTime = referenceTime)
+
+        assertTrue(
+            result.warnings.none { it is MrzExpiryDatePast || it is MrzExpiryDateImplausiblyFar },
+            "Expiry equal to reference date is neither past nor implausibly far; got ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun expiry_within_ten_years_after_reference_emits_no_warning() {
+        val expiry = LocalDate(2031, 6, 23)
+        val referenceTime = Instant.parse("2026-05-04T12:00:00Z")
+        val td3 = specimenWithExpiry(expiry)
+
+        val result = MrzValidator.validate(td3, referenceTime = referenceTime)
+
+        assertTrue(
+            result.warnings.none { it is MrzExpiryDatePast || it is MrzExpiryDateImplausiblyFar },
+            "Expiry within ten years after reference must not warn; got ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun expiry_exactly_ten_years_after_reference_emits_no_warning() {
+        val expiry = LocalDate(2036, 5, 4)
+        val referenceTime = Instant.parse("2026-05-04T12:00:00Z")
+        val td3 = specimenWithExpiry(expiry)
+
+        val result = MrzValidator.validate(td3, referenceTime = referenceTime)
+
+        assertTrue(
+            result.warnings.none { it is MrzExpiryDateImplausiblyFar },
+            "Expiry exactly ten years after reference is on the boundary, not over it; got ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun expiry_more_than_ten_years_after_reference_emits_implausibly_far_warning_with_threshold() {
+        val expiry = LocalDate(2040, 1, 1)
+        val referenceTime = Instant.parse("2026-05-04T12:00:00Z")
+        val td3 = specimenWithExpiry(expiry)
+
+        val result = MrzValidator.validate(td3, referenceTime = referenceTime)
+
+        val warning =
+            assertIs<MrzExpiryDateImplausiblyFar>(
+                result.warnings.first { it is MrzExpiryDateImplausiblyFar },
+            )
+        assertEquals(expiry, warning.expiryDate)
+        assertEquals(LocalDate(2026, 5, 4), warning.referenceDate)
+        assertEquals(10, warning.thresholdYears)
+        assertTrue(
+            result.warnings.none { it is MrzExpiryDatePast },
+            "Far-future case must not also emit past warning",
+        )
+    }
+
+    @Test
+    fun expiry_with_uncomputed_date_emits_no_warning_pending_date_in_calendar_check() {
+        // Specimen as-shipped: rawYear/rawMonth/rawDay only, computedDate = null.
+        val td3 = specimenTd3()
+        val result = MrzValidator.validate(td3, referenceTime = Instant.parse("2050-01-01T00:00:00Z"))
+        assertTrue(
+            result.warnings.none { it is MrzExpiryDatePast || it is MrzExpiryDateImplausiblyFar },
+            "When computedDate is null the validator has no date to compare; got ${result.warnings}",
+        )
     }
 
     // --- TD1 (deferred path) ---
