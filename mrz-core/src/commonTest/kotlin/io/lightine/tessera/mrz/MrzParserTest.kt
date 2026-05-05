@@ -2,6 +2,7 @@ package io.lightine.tessera.mrz
 
 import io.lightine.tessera.domain.MrzCharacterSetViolation
 import io.lightine.tessera.domain.MrzCheckDigitMismatch
+import io.lightine.tessera.domain.MrzDateNotInCalendar
 import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzFormat
@@ -209,6 +210,50 @@ class MrzParserTest {
         assertTrue(invalid != null, "Expected MrzInvalidSexValue; got ${partial.metadata.validationFailures}")
         assertEquals('Q', invalid.observed)
         assertEquals(64, invalid.position)
+    }
+
+    @Test
+    fun returns_partial_success_with_MrzDateNotInCalendar_when_birth_date_is_calendar_invalid() {
+        // Birth date "900230" — Feb 30 doesn't exist in any year. Birth-date and composite check
+        // digits also mismatch; this test asserts the date-in-calendar failure narrowly.
+        val line2 = "L898902C<3UTO9002301F9406236ZE184226B<<<<<14"
+        val result = MrzParser.parseTD3(listOf(specimenLine1, line2), referenceTime = ref2026)
+        val partial = assertIs<ParseResult.PartialSuccess>(result)
+
+        val failure =
+            partial.metadata.validationFailures
+                .filterIsInstance<MrzDateNotInCalendar>()
+                .firstOrNull { it.field == MrzField.DATE_OF_BIRTH }
+        assertTrue(
+            failure != null,
+            "Expected MrzDateNotInCalendar for DATE_OF_BIRTH; got ${partial.metadata.validationFailures}",
+        )
+        assertEquals("90", failure.rawYear)
+        assertEquals("02", failure.rawMonth)
+        assertEquals("30", failure.rawDay)
+        assertEquals(57, failure.position)
+    }
+
+    @Test
+    fun returns_partial_success_with_MrzDateNotInCalendar_when_expiry_date_is_calendar_invalid() {
+        // Expiry "301301" — month 13 doesn't exist. The expiry and composite check digits will
+        // also mismatch; this test asserts the date-in-calendar failure narrowly.
+        val line2 = "L898902C<3UTO6908061F3013016ZE184226B<<<<<14"
+        val result = MrzParser.parseTD3(listOf(specimenLine1, line2), referenceTime = ref2026)
+        val partial = assertIs<ParseResult.PartialSuccess>(result)
+
+        val failure =
+            partial.metadata.validationFailures
+                .filterIsInstance<MrzDateNotInCalendar>()
+                .firstOrNull { it.field == MrzField.DATE_OF_EXPIRY }
+        assertTrue(
+            failure != null,
+            "Expected MrzDateNotInCalendar for DATE_OF_EXPIRY; got ${partial.metadata.validationFailures}",
+        )
+        assertEquals("30", failure.rawYear)
+        assertEquals("13", failure.rawMonth)
+        assertEquals("01", failure.rawDay)
+        assertEquals(65, failure.position)
     }
 
     @Test

@@ -13,6 +13,7 @@ public data class MrzDate(
     val computedYear: Int? = null,
     val computedDate: LocalDate? = null,
     val inferenceMethod: MrzDateInferenceMethod = MrzDateInferenceMethod.RAW_ONLY,
+    val componentsFormCalendarDate: Boolean? = null,
 ) {
     public companion object {
         private const val MAX_PLAUSIBLE_AGE_YEARS = 130
@@ -25,12 +26,15 @@ public data class MrzDate(
             rawDay: String,
             referenceTime: Instant = Clock.System.now(),
         ): MrzDate {
-            val parsed = parseRawComponents(rawYear, rawMonth, rawDay) ?: return rawOnly(rawYear, rawMonth, rawDay)
+            val parsed =
+                parseRawComponents(rawYear, rawMonth, rawDay)
+                    ?: return rawOnly(rawYear, rawMonth, rawDay, componentsFormCalendarDate = null)
+            val componentsFormCalendar = anyCenturyFormsCalendarDate(parsed)
             val refDate = referenceTime.toLocalDateTime(TimeZone.UTC).date
             val pickedYear =
                 pickBirthYear(parsed, centuryBase = 2000, ref = refDate)
                     ?: pickBirthYear(parsed, centuryBase = 1900, ref = refDate)
-                    ?: return rawOnly(rawYear, rawMonth, rawDay)
+                    ?: return rawOnly(rawYear, rawMonth, rawDay, componentsFormCalendarDate = componentsFormCalendar)
             return MrzDate(
                 rawYear = rawYear,
                 rawMonth = rawMonth,
@@ -38,6 +42,7 @@ public data class MrzDate(
                 computedYear = pickedYear,
                 computedDate = LocalDate(pickedYear, parsed.month, parsed.day),
                 inferenceMethod = MrzDateInferenceMethod.SLIDING_WINDOW_BIRTH,
+                componentsFormCalendarDate = true,
             )
         }
 
@@ -47,12 +52,15 @@ public data class MrzDate(
             rawDay: String,
             referenceTime: Instant = Clock.System.now(),
         ): MrzDate {
-            val parsed = parseRawComponents(rawYear, rawMonth, rawDay) ?: return rawOnly(rawYear, rawMonth, rawDay)
+            val parsed =
+                parseRawComponents(rawYear, rawMonth, rawDay)
+                    ?: return rawOnly(rawYear, rawMonth, rawDay, componentsFormCalendarDate = null)
+            val componentsFormCalendar = anyCenturyFormsCalendarDate(parsed)
             val refDate = referenceTime.toLocalDateTime(TimeZone.UTC).date
             val pickedYear =
                 pickExpiryYear(parsed, centuryBase = 2000, ref = refDate)
                     ?: pickExpiryYear(parsed, centuryBase = 1900, ref = refDate)
-                    ?: return rawOnly(rawYear, rawMonth, rawDay)
+                    ?: return rawOnly(rawYear, rawMonth, rawDay, componentsFormCalendarDate = componentsFormCalendar)
             return MrzDate(
                 rawYear = rawYear,
                 rawMonth = rawMonth,
@@ -60,6 +68,7 @@ public data class MrzDate(
                 computedYear = pickedYear,
                 computedDate = LocalDate(pickedYear, parsed.month, parsed.day),
                 inferenceMethod = MrzDateInferenceMethod.SLIDING_WINDOW_EXPIRY,
+                componentsFormCalendarDate = true,
             )
         }
 
@@ -67,6 +76,7 @@ public data class MrzDate(
             rawYear: String,
             rawMonth: String,
             rawDay: String,
+            componentsFormCalendarDate: Boolean?,
         ): MrzDate =
             MrzDate(
                 rawYear = rawYear,
@@ -75,6 +85,7 @@ public data class MrzDate(
                 computedYear = null,
                 computedDate = null,
                 inferenceMethod = MrzDateInferenceMethod.RAW_ONLY,
+                componentsFormCalendarDate = componentsFormCalendarDate,
             )
 
         private data class ParsedComponents(
@@ -94,6 +105,10 @@ public data class MrzDate(
             val d = rawDay.toIntOrNull() ?: return null
             return ParsedComponents(y, m, d)
         }
+
+        private fun anyCenturyFormsCalendarDate(parsed: ParsedComponents): Boolean =
+            tryConstructDate(2000 + parsed.twoDigitYear, parsed.month, parsed.day) != null ||
+                tryConstructDate(1900 + parsed.twoDigitYear, parsed.month, parsed.day) != null
 
         private fun pickBirthYear(
             parsed: ParsedComponents,

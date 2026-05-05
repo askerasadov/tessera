@@ -15,6 +15,7 @@ class MrzDateInferenceTest {
         assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
         assertNull(date.computedYear)
         assertNull(date.computedDate)
+        assertNull(date.componentsFormCalendarDate)
     }
 
     // --- parseBirth ---
@@ -148,5 +149,72 @@ class MrzDateInferenceTest {
     fun parse_expiry_returns_raw_only_for_invalid_calendar_date() {
         val date = MrzDate.parseExpiry(rawYear = "30", rawMonth = "13", rawDay = "01", referenceTime = ref2026)
         assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
+    }
+
+    // --- componentsFormCalendarDate signal ---
+
+    @Test
+    fun parse_birth_sets_componentsFormCalendarDate_true_on_successful_inference() {
+        val date = MrzDate.parseBirth(rawYear = "80", rawMonth = "06", rawDay = "15", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.SLIDING_WINDOW_BIRTH, date.inferenceMethod)
+        assertEquals(true, date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_expiry_sets_componentsFormCalendarDate_true_on_successful_inference() {
+        val date = MrzDate.parseExpiry(rawYear = "30", rawMonth = "06", rawDay = "01", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.SLIDING_WINDOW_EXPIRY, date.inferenceMethod)
+        assertEquals(true, date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_birth_sets_componentsFormCalendarDate_null_for_non_numeric_components() {
+        val date = MrzDate.parseBirth(rawYear = "ab", rawMonth = "08", rawDay = "06", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
+        assertNull(date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_birth_sets_componentsFormCalendarDate_false_for_february_thirty() {
+        val date = MrzDate.parseBirth(rawYear = "90", rawMonth = "02", rawDay = "30", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
+        assertEquals(false, date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_birth_sets_componentsFormCalendarDate_false_for_month_thirteen() {
+        val date = MrzDate.parseBirth(rawYear = "90", rawMonth = "13", rawDay = "01", referenceTime = ref2026)
+        assertEquals(false, date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_birth_sets_componentsFormCalendarDate_false_for_feb_29_in_two_non_leap_centuries() {
+        // YY=01 → 2001 (non-leap) and 1901 (non-leap); Feb 29 is invalid for both
+        val date = MrzDate.parseBirth(rawYear = "01", rawMonth = "02", rawDay = "29", referenceTime = ref2026)
+        assertEquals(false, date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_expiry_sets_componentsFormCalendarDate_false_for_invalid_calendar_date() {
+        val date = MrzDate.parseExpiry(rawYear = "30", rawMonth = "13", rawDay = "01", referenceTime = ref2026)
+        assertEquals(false, date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_expiry_sets_componentsFormCalendarDate_true_when_calendar_valid_but_outside_inference_window() {
+        // YY=80 with ref=2026: 2080 is beyond +50 future, 1980 is beyond -10 past — windowing rejects both,
+        // but Aug 15 is a perfectly real calendar day in any year. Signal must reflect "in calendar."
+        val date = MrzDate.parseExpiry(rawYear = "80", rawMonth = "08", rawDay = "15", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
+        assertNull(date.computedDate)
+        assertEquals(true, date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_birth_sets_componentsFormCalendarDate_true_for_feb_29_when_one_century_is_a_leap_year() {
+        // YY=00 → 2000 (leap, Gregorian rule) and 1900 (non-leap, century rule). Feb 29, 2000 is valid;
+        // pickBirthYear picks 2000. Inference succeeds and the calendar flag is true.
+        val date = MrzDate.parseBirth(rawYear = "00", rawMonth = "02", rawDay = "29", referenceTime = ref2026)
+        assertEquals(true, date.componentsFormCalendarDate)
     }
 }

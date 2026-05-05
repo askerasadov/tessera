@@ -1,12 +1,14 @@
 package io.lightine.tessera.mrz.validation
 
 import io.lightine.tessera.domain.MrzCheckDigitMismatch
+import io.lightine.tessera.domain.MrzDateNotInCalendar
 import io.lightine.tessera.domain.MrzExpiryDateImplausiblyFar
 import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzInvalidSexValue
 import io.lightine.tessera.domain.MrzValidationError
 import io.lightine.tessera.domain.MrzWarning
+import io.lightine.tessera.mrz.MrzDate
 import io.lightine.tessera.mrz.MrzDocument
 import io.lightine.tessera.mrz.TD1
 import io.lightine.tessera.mrz.TD3
@@ -84,6 +86,19 @@ public object MrzValidator {
             failures += MrzInvalidSexValue(observed = rawSex, position = line2GlobalOffset + 20)
         }
 
+        addDateNotInCalendarFailureIfApplicable(
+            into = failures,
+            date = document.commonFields.dateOfBirth,
+            field = MrzField.DATE_OF_BIRTH,
+            position = line2GlobalOffset + 13,
+        )
+        addDateNotInCalendarFailureIfApplicable(
+            into = failures,
+            date = document.commonFields.dateOfExpiry,
+            field = MrzField.DATE_OF_EXPIRY,
+            position = line2GlobalOffset + 21,
+        )
+
         val warnings = mutableListOf<MrzWarning>()
         addExpiryWarningsIfApplicable(
             into = warnings,
@@ -92,6 +107,24 @@ public object MrzValidator {
         )
 
         return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
+    }
+
+    private fun addDateNotInCalendarFailureIfApplicable(
+        into: MutableList<MrzValidationError>,
+        date: MrzDate,
+        field: MrzField,
+        position: Int,
+    ) {
+        if (date.componentsFormCalendarDate == false) {
+            into +=
+                MrzDateNotInCalendar(
+                    field = field,
+                    rawYear = date.rawYear,
+                    rawMonth = date.rawMonth,
+                    rawDay = date.rawDay,
+                    position = position,
+                )
+        }
     }
 
     private fun addCheckDigitFailureIfMismatch(
