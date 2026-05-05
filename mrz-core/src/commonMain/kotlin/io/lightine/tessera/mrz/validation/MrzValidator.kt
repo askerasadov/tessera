@@ -1,24 +1,41 @@
 package io.lightine.tessera.mrz.validation
 
 import io.lightine.tessera.domain.MrzCheckDigitMismatch
+import io.lightine.tessera.domain.MrzExpiryDateImplausiblyFar
+import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzInvalidSexValue
 import io.lightine.tessera.domain.MrzValidationError
+import io.lightine.tessera.domain.MrzWarning
 import io.lightine.tessera.mrz.MrzDocument
 import io.lightine.tessera.mrz.TD1
 import io.lightine.tessera.mrz.TD3
 import io.lightine.tessera.mrz.checkdigit.computeCheckDigit
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 
 public object MrzValidator {
     private val VALID_SEX_CHARACTERS = setOf('M', 'F', '<', 'X')
+    private const val EXPIRY_IMPLAUSIBLY_FAR_THRESHOLD_YEARS = 10
 
-    public fun validate(document: MrzDocument): ValidationResult =
+    public fun validate(
+        document: MrzDocument,
+        referenceTime: Instant = Clock.System.now(),
+    ): ValidationResult =
         when (document) {
-            is TD3 -> validateTD3(document)
+            is TD3 -> validateTD3(document, referenceTime)
             is TD1 -> ValidationResult(validationFailures = emptyList(), warnings = emptyList())
         }
 
-    private fun validateTD3(document: TD3): ValidationResult {
+    private fun validateTD3(
+        document: TD3,
+        referenceTime: Instant,
+    ): ValidationResult {
         val line2 = document.rawLines[1]
         val line2GlobalOffset = TD3_LINE_LENGTH
 
@@ -67,7 +84,14 @@ public object MrzValidator {
             failures += MrzInvalidSexValue(observed = rawSex, position = line2GlobalOffset + 20)
         }
 
-        return ValidationResult(validationFailures = failures.toList(), warnings = emptyList())
+        val warnings = mutableListOf<MrzWarning>()
+        addExpiryWarningsIfApplicable(
+            into = warnings,
+            expiryComputedDate = document.commonFields.dateOfExpiry.computedDate,
+            referenceTime = referenceTime,
+        )
+
+        return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
     }
 
     private fun addCheckDigitFailureIfMismatch(
@@ -80,6 +104,28 @@ public object MrzValidator {
         val expected = computeCheckDigit(input)
         if (expected != observed) {
             into += MrzCheckDigitMismatch(field = field, expected = expected, observed = observed, position = position)
+        }
+    }
+
+    private fun addExpiryWarningsIfApplicable(
+        into: MutableList<MrzWarning>,
+        expiryComputedDate: LocalDate?,
+        referenceTime: Instant,
+    ) {
+        if (expiryComputedDate == null) return
+        val referenceDate = referenceTime.toLocalDateTime(TimeZone.UTC).date
+        if (expiryComputedDate < referenceDate) {
+            into += MrzExpiryDatePast(expiryDate = expiryComputedDate, referenceDate = referenceDate)
+            return
+        }
+        val implausiblyFarThreshold = referenceDate.plus(EXPIRY_IMPLAUSIBLY_FAR_THRESHOLD_YEARS, DateTimeUnit.YEAR)
+        if (expiryComputedDate > implausiblyFarThreshold) {
+            into +=
+                MrzExpiryDateImplausiblyFar(
+                    expiryDate = expiryComputedDate,
+                    referenceDate = referenceDate,
+                    thresholdYears = EXPIRY_IMPLAUSIBLY_FAR_THRESHOLD_YEARS,
+                )
         }
     }
 
