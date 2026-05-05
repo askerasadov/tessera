@@ -154,6 +154,7 @@ The class exposes:
 - **`computedYear`** — `Int` representing the four-digit year as computed by the SDK's heuristic
 - **`computedDate`** — a platform-appropriate date type (e.g., `LocalDate` on JVM/KMP) representing the full computed date
 - **`inferenceMethod`** — an enum value describing which heuristic produced the computed year
+- **`componentsFormCalendarDate`** — a `Boolean?` signal that disambiguates the `RAW_ONLY` cases. `null` when the raw components did not parse as 2-digit numerics (so the calendar question does not apply). `true` when the components form a real calendar date for at least one candidate year (covers both successful inference and dates that are calendar-valid but outside the SDK's inference window). `false` when the components parsed as numerics but no candidate year forms a real calendar date (e.g., February 30, month 13). The validator uses this signal to emit `MrzDateNotInCalendar` only for the `false` case.
 
 The supported inference methods include:
 

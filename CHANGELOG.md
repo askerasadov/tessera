@@ -60,6 +60,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - TD3 expiry warnings emitted when `commonFields.dateOfExpiry.computedDate` is non-null: past relative to `referenceTime` → `MrzExpiryDatePast`; more than 10 years after `referenceTime` → `MrzExpiryDateImplausiblyFar`. The 10-year threshold is a private constant for now; configurability is tracked in [`docs/open-questions.md`](docs/open-questions.md) "Validator options (configurable thresholds)"
   - `MrzParser.parseTD3` threads its own `referenceTime` through to `MrzValidator.validate(...)`, fixing a latent inconsistency where the validator previously fell back to `Clock.System.now()` while the parser computed the expiry's `computedDate` against the caller's `referenceTime`
   - Warnings populate `ResultMetadata.warnings` independently of the Success/PartialSuccess decision — a result with warnings but no failures is `Success`
+- `domain` module: date-in-calendar validation taxonomy
+  - `MrzDateNotInCalendar` validation error carrying `field: MrzField`, `rawYear`, `rawMonth`, `rawDay`, and `position`
+- `mrz-core` module: date-in-calendar validation (TD3, both birth and expiry)
+  - `MrzDate.componentsFormCalendarDate: Boolean?` tri-state signal added with a default of `null`; populated by `parseBirth` and `parseExpiry`. `null` when raw components did not parse as 2-digit numerics, `true` when components form a real `LocalDate` for at least one candidate century (covers successful inference and out-of-window calendar-valid dates), `false` when no candidate year forms a calendar date. The default keeps existing `MrzDate(...)` constructor call sites compiling unchanged (Principle 9). One nuance: like any `data class` property addition, `equals`/`hashCode`/`copy`/`componentN()` now include the new field — code that manually constructs an `MrzDate` with all other fields populated and compares it to a parser-produced instance will find them unequal where they would have been equal before (manual default = `null`, parser-set = `true`). No call site in the project's own code hits this path; flagged here for completeness
+  - `MrzValidator.validateTD3` emits `MrzDateNotInCalendar` for `dateOfBirth` (position offset 13 on line 2) and `dateOfExpiry` (position offset 21) when `componentsFormCalendarDate == false`. Calendar-valid dates that the parser rejects via the inference window (e.g., expiry > 50 years out) do not produce this failure — the date IS in the calendar, just outside the heuristic
 - Build infrastructure
   - `kotlinx-datetime 0.6.1` declared as `api` dependency in `mrz-core` (transitively exposes `LocalDate`)
   - `kotlinx-datetime 0.6.1` declared as `api` dependency in `domain` (first date-bearing types in `domain` — the expiry warnings — carry `LocalDate`)
@@ -83,6 +88,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `docs/open-questions.md`: new entries for the validator deferrals (string-input overloads, `passedChecks` shape, `MrzUnknownCountryCode`, `MrzUnknownDocumentTypeCode`, `MrzDateNotInCalendar`, expiry warnings, TD1 validator path) and the canonical sex-value set per ICAO Doc 9303 primary source.
 - `docs/features/mrz-validation.md`: status row for expiry warnings flipped from Deferred → Implemented; new prose paragraph documenting the layered limitation that `MrzExpiryDateImplausiblyFar` can fire only within the (ref+10y, ref+50y] window because `MrzDate.parseExpiry` rejects expiries beyond +50y as `RAW_ONLY`.
 - `docs/open-questions.md`: "Expiry-date warnings" entry marked Resolved; new entry "Validator options (configurable thresholds)" tracking the deferral of a `ValidationOptions`-style configuration surface.
+- `docs/features/mrz-validation.md`: status row for date-in-calendar flipped from Deferred → Implemented; new prose paragraph documenting that the dispatch is signal-driven from `MrzDate.componentsFormCalendarDate` so non-numeric components (Layer-1 territory) and calendar-valid out-of-window dates do not produce the failure.
+- `docs/features/mrz-data-model.md`: `MrzDate` field listing extended with `componentsFormCalendarDate`, including the semantics of each tri-state value.
+- `docs/open-questions.md`: "Date-in-calendar validation (`MrzDateNotInCalendar`)" entry marked Resolved with cross-references to the data-model and validation feature docs.
 
 ### Removed
 
@@ -95,7 +103,7 @@ These are documented commitments that are explicitly *not* in this `[Unreleased]
 
 - Validator standalone string-input overloads (`MrzValidator.validate(input: String / List<String> / String, format)`); current slice ships `validate(MrzDocument)` only
 - `ValidationResult.passedChecks` transparency surface (current `ValidationResult` exposes `validationFailures` + `warnings` only)
-- Other validator semantic checks (`MrzUnknownCountryCode`, `MrzUnknownDocumentTypeCode`, `MrzDateNotInCalendar`)
+- Other validator semantic checks (`MrzUnknownCountryCode`, `MrzUnknownDocumentTypeCode`)
 - TD1 validator path (validator currently returns an empty `ValidationResult` for TD1 inputs; lands with the TD1 parser slice)
 - Validator options surface (`ValidationOptions`-style configurable thresholds); current slice ships `MrzExpiryDateImplausiblyFar`'s 10-year threshold as a private constant
 - Generator (`MrzGenerator` and inverse round-trip property)

@@ -1,6 +1,7 @@
 package io.lightine.tessera.mrz.validation
 
 import io.lightine.tessera.domain.MrzCheckDigitMismatch
+import io.lightine.tessera.domain.MrzDateNotInCalendar
 import io.lightine.tessera.domain.MrzExpiryDateImplausiblyFar
 import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
@@ -380,6 +381,167 @@ class MrzValidatorTest {
         assertTrue(
             result.warnings.none { it is MrzExpiryDatePast || it is MrzExpiryDateImplausiblyFar },
             "When computedDate is null the validator has no date to compare; got ${result.warnings}",
+        )
+    }
+
+    // --- Date in calendar ---
+
+    @Test
+    fun reports_MrzDateNotInCalendar_for_birth_date_when_componentsFormCalendarDate_is_false() {
+        val baseFields = specimenCommonFields()
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    baseFields.copy(
+                        dateOfBirth =
+                            MrzDate(
+                                rawYear = "90",
+                                rawMonth = "02",
+                                rawDay = "30",
+                                componentsFormCalendarDate = false,
+                            ),
+                    ),
+            )
+
+        val result = MrzValidator.validate(td3)
+
+        val failure =
+            assertIs<MrzDateNotInCalendar>(
+                result.validationFailures.first { it is MrzDateNotInCalendar },
+            )
+        assertEquals(MrzField.DATE_OF_BIRTH, failure.field)
+        assertEquals("90", failure.rawYear)
+        assertEquals("02", failure.rawMonth)
+        assertEquals("30", failure.rawDay)
+        assertEquals(57, failure.position)
+    }
+
+    @Test
+    fun reports_MrzDateNotInCalendar_for_expiry_date_when_componentsFormCalendarDate_is_false() {
+        val baseFields = specimenCommonFields()
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    baseFields.copy(
+                        dateOfExpiry =
+                            MrzDate(
+                                rawYear = "30",
+                                rawMonth = "13",
+                                rawDay = "01",
+                                componentsFormCalendarDate = false,
+                            ),
+                    ),
+            )
+
+        val result = MrzValidator.validate(td3)
+
+        val failure =
+            assertIs<MrzDateNotInCalendar>(
+                result.validationFailures.first { it is MrzDateNotInCalendar },
+            )
+        assertEquals(MrzField.DATE_OF_EXPIRY, failure.field)
+        assertEquals("30", failure.rawYear)
+        assertEquals("13", failure.rawMonth)
+        assertEquals("01", failure.rawDay)
+        assertEquals(65, failure.position)
+    }
+
+    @Test
+    fun reports_MrzDateNotInCalendar_for_both_dates_independently_when_both_components_invalid() {
+        val baseFields = specimenCommonFields()
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    baseFields.copy(
+                        dateOfBirth =
+                            MrzDate(
+                                rawYear = "90",
+                                rawMonth = "02",
+                                rawDay = "30",
+                                componentsFormCalendarDate = false,
+                            ),
+                        dateOfExpiry =
+                            MrzDate(
+                                rawYear = "30",
+                                rawMonth = "13",
+                                rawDay = "01",
+                                componentsFormCalendarDate = false,
+                            ),
+                    ),
+            )
+
+        val result = MrzValidator.validate(td3)
+
+        val notInCalendarFields =
+            result.validationFailures
+                .filterIsInstance<MrzDateNotInCalendar>()
+                .map { it.field }
+                .toSet()
+        assertEquals(setOf(MrzField.DATE_OF_BIRTH, MrzField.DATE_OF_EXPIRY), notInCalendarFields)
+    }
+
+    @Test
+    fun does_not_report_MrzDateNotInCalendar_when_componentsFormCalendarDate_is_true_but_no_computed_date() {
+        // Calendar-valid but outside the parser's inference window: the date IS in the calendar,
+        // so MrzDateNotInCalendar must not fire even though computedDate is null.
+        val baseFields = specimenCommonFields()
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    baseFields.copy(
+                        dateOfExpiry =
+                            MrzDate(
+                                rawYear = "80",
+                                rawMonth = "08",
+                                rawDay = "15",
+                                componentsFormCalendarDate = true,
+                            ),
+                    ),
+            )
+
+        val result = MrzValidator.validate(td3)
+
+        assertTrue(
+            result.validationFailures.none { it is MrzDateNotInCalendar },
+            "Calendar-valid but out-of-window dates must not produce MrzDateNotInCalendar; got ${result.validationFailures}",
+        )
+    }
+
+    @Test
+    fun does_not_report_MrzDateNotInCalendar_when_componentsFormCalendarDate_is_null() {
+        // Null = "components didn't parse as ints"; that is Layer-1 territory, not date-in-calendar.
+        val baseFields = specimenCommonFields()
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    baseFields.copy(
+                        dateOfBirth =
+                            MrzDate(
+                                rawYear = "ab",
+                                rawMonth = "08",
+                                rawDay = "06",
+                                componentsFormCalendarDate = null,
+                            ),
+                    ),
+            )
+
+        val result = MrzValidator.validate(td3)
+
+        assertTrue(
+            result.validationFailures.none { it is MrzDateNotInCalendar },
+            "Non-numeric components are not MrzDateNotInCalendar; got ${result.validationFailures}",
+        )
+    }
+
+    @Test
+    fun does_not_report_MrzDateNotInCalendar_for_specimen_with_default_signal() {
+        // Specimen as-shipped uses the default componentsFormCalendarDate = null, since the test
+        // fixture builds MrzDate via primary constructor without invoking parseBirth/parseExpiry.
+        // No MrzDateNotInCalendar should fire — the fixture is "we don't know," not "no calendar."
+        val result = MrzValidator.validate(specimenTd3())
+        assertTrue(
+            result.validationFailures.none { it is MrzDateNotInCalendar },
+            "Default null signal must not trigger MrzDateNotInCalendar; got ${result.validationFailures}",
         )
     }
 
