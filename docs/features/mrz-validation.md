@@ -35,12 +35,14 @@ The validator ships incrementally. The design described in the rest of this docu
 | Layer 3 — Country code recognition (`MrzUnknownCountryCode`) | Deferred (depends on `CountryCode` value class + `CountryCodeTable`) |
 | Layer 3 — Document type code recognition (`MrzUnknownDocumentTypeCode`) | Deferred |
 | Layer 3 — Date in calendar (`MrzDateNotInCalendar`) | Deferred |
-| Expiry-date warnings (`MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`) | Deferred |
+| Expiry-date warnings (`MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`) | Implemented (TD3; `MrzExpiryDateImplausiblyFar` threshold defaults to 10 years and is non-configurable for now — see `docs/open-questions.md` "Validator options (configurable thresholds)") |
 | `ValidationResult.passedChecks` (transparency surface for what was verified) | Deferred (current `ValidationResult` exposes `validationFailures` and `warnings` only; the shape of `passedChecks` is itself an open question) |
 
-The validator's wiring into the parser is in place: `MrzParser.parseTD3` invokes `MrzValidator.validate(...)` on the constructed document and returns `ParseResult.PartialSuccess` with the failures populated in `ResultMetadata.validationFailures` whenever any failure surfaces, otherwise `ParseResult.Success`.
+The validator's wiring into the parser is in place: `MrzParser.parseTD3` invokes `MrzValidator.validate(...)` on the constructed document, threading the same `referenceTime` through, and returns `ParseResult.PartialSuccess` with the failures populated in `ResultMetadata.validationFailures` whenever any failure surfaces, otherwise `ParseResult.Success`. Warnings are populated in `ResultMetadata.warnings` independently of the Success/PartialSuccess decision — a result with warnings but no failures is `Success`.
 
 The set of valid sex characters used by Layer 3 is currently `{M, F, <, X}`. Confirming the canonical set against ICAO Doc 9303 primary source is tracked in `docs/open-questions.md`.
+
+Expiry warnings depend on the validator's reference time and are emitted only when `MrzDate.computedDate` is non-null (i.e., the parser was able to resolve a real calendar date for the expiry). Because `MrzDate.parseExpiry` currently rejects expiries more than 50 years past the reference time as `RAW_ONLY`, `MrzExpiryDateImplausiblyFar` can fire in practice only within the (reference + 10 years, reference + 50 years] window; expiries beyond that are not computed and therefore cannot produce the warning. This is a layered limitation, not a design choice, and is noted here so it does not surprise consumers.
 
 ---
 

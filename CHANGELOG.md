@@ -52,8 +52,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - `ValidationResult(validationFailures, warnings)` aggregate (`passedChecks` deferred)
   - `MrzValidator.validate(document: MrzDocument): ValidationResult` — Layer 2 (per-field + composite check digits) and Layer 3 (sex value range) for TD3; TD1 returns an empty `ValidationResult` pending the TD1 parser slice
   - Parser wiring: `MrzParser.parseTD3` invokes `MrzValidator.validate(...)` after slicing fields and returns `ParseResult.PartialSuccess` (with failures populated in `ResultMetadata.validationFailures`) when any failure surfaces, otherwise `ParseResult.Success`
+- `domain` module: expiry-date warning taxonomy
+  - `MrzExpiryDatePast` warning carrying `expiryDate: LocalDate` and `referenceDate: LocalDate`
+  - `MrzExpiryDateImplausiblyFar` warning carrying `expiryDate: LocalDate`, `referenceDate: LocalDate`, and `thresholdYears: Int`
+- `mrz-core` module: expiry-date warnings (first warning slice)
+  - `MrzValidator.validate(document, referenceTime: Instant = Clock.System.now())` overload — `referenceTime` parameter added with a default; non-breaking
+  - TD3 expiry warnings emitted when `commonFields.dateOfExpiry.computedDate` is non-null: past relative to `referenceTime` → `MrzExpiryDatePast`; more than 10 years after `referenceTime` → `MrzExpiryDateImplausiblyFar`. The 10-year threshold is a private constant for now; configurability is tracked in [`docs/open-questions.md`](docs/open-questions.md) "Validator options (configurable thresholds)"
+  - `MrzParser.parseTD3` threads its own `referenceTime` through to `MrzValidator.validate(...)`, fixing a latent inconsistency where the validator previously fell back to `Clock.System.now()` while the parser computed the expiry's `computedDate` against the caller's `referenceTime`
+  - Warnings populate `ResultMetadata.warnings` independently of the Success/PartialSuccess decision — a result with warnings but no failures is `Success`
 - Build infrastructure
   - `kotlinx-datetime 0.6.1` declared as `api` dependency in `mrz-core` (transitively exposes `LocalDate`)
+  - `kotlinx-datetime 0.6.1` declared as `api` dependency in `domain` (first date-bearing types in `domain` — the expiry warnings — carry `LocalDate`)
 - Documentation
   - [`docs/decisions/0012-recognition-types-live-with-tables.md`](docs/decisions/0012-recognition-types-live-with-tables.md): ADR resolving where recognition-bearing value classes live (with their lookup tables in `mrz-core`, not `domain`)
   - "Error Sub-Categorization by Operation" section added to [`docs/features/mrz-error-taxonomy.md`](docs/features/mrz-error-taxonomy.md) documenting `MrzParseError` / `MrzGenerationError` intermediate sealed roots
@@ -72,6 +81,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `CommonFields` gains `rawSex: Char` so the verbatim sex character is preserved on the model even when `Sex.UNSPECIFIED` is the mapped value (Principles 1 + 5). The validator reads `rawSex` to decide `MrzInvalidSexValue`.
 - `docs/features/mrz-validation.md`: new "Status of Implementation" section enumerates which capabilities ship in this snapshot vs. which are documented but deferred. Each deferral cross-references an entry in `docs/open-questions.md`.
 - `docs/open-questions.md`: new entries for the validator deferrals (string-input overloads, `passedChecks` shape, `MrzUnknownCountryCode`, `MrzUnknownDocumentTypeCode`, `MrzDateNotInCalendar`, expiry warnings, TD1 validator path) and the canonical sex-value set per ICAO Doc 9303 primary source.
+- `docs/features/mrz-validation.md`: status row for expiry warnings flipped from Deferred → Implemented; new prose paragraph documenting the layered limitation that `MrzExpiryDateImplausiblyFar` can fire only within the (ref+10y, ref+50y] window because `MrzDate.parseExpiry` rejects expiries beyond +50y as `RAW_ONLY`.
+- `docs/open-questions.md`: "Expiry-date warnings" entry marked Resolved; new entry "Validator options (configurable thresholds)" tracking the deferral of a `ValidationOptions`-style configuration surface.
 
 ### Removed
 
@@ -86,13 +97,14 @@ These are documented commitments that are explicitly *not* in this `[Unreleased]
 - `ValidationResult.passedChecks` transparency surface (current `ValidationResult` exposes `validationFailures` + `warnings` only)
 - Other validator semantic checks (`MrzUnknownCountryCode`, `MrzUnknownDocumentTypeCode`, `MrzDateNotInCalendar`)
 - TD1 validator path (validator currently returns an empty `ValidationResult` for TD1 inputs; lands with the TD1 parser slice)
+- Validator options surface (`ValidationOptions`-style configurable thresholds); current slice ships `MrzExpiryDateImplausiblyFar`'s 10-year threshold as a private constant
 - Generator (`MrzGenerator` and inverse round-trip property)
 - Transliteration system (`TransliterationProfile`, `TransliterationProfileRegistry`)
 - Auto-detect parser entry point (`MrzParser.parse(input)`)
 - Other format parsers (TD1, TD2, MRV-A, MRV-B parser methods)
 - Name field parsing (`primaryIdentifier` / `secondaryIdentifier` / `nameTruncated` extraction from raw name field)
 - `CountryCode` value class + `CountryCodeTable`
-- Warnings: `MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`, `MrzNameTruncated`, `MrzPersonalNumberCheckDigitFiller`
+- Warnings: `MrzNameTruncated`, `MrzPersonalNumberCheckDigitFiller`
 - Document type code table population beyond the starter set
 - `ResultMetadata.timing: TimingInfo?` field (no timing instrumentation yet)
 - iOS targets, Android targets (waiting on Xcode install / 0.2.0 platform I/O work)
