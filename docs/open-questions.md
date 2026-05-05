@@ -82,7 +82,7 @@ The validator uses specific thresholds for date plausibility checks (130 years f
 
 **Source:** First validator implementation slice; aligns with `mrz-validation.md` "Layer 3 — Semantic" and `mrz-error-taxonomy.md`.
 
-**Resolution:** Add the date-in-calendar check in a follow-up slice. The signal is already on `MrzDate` (raw components are non-null but `computedDate` is null with `inferenceMethod == RAW_ONLY`); the check is detecting that combination and emitting `MrzDateNotInCalendar`.
+**Resolution:** Resolved — implemented for TD3 in `MrzValidator` for both `dateOfBirth` and `dateOfExpiry`. The dispatch is signal-driven from a new tri-state property on the model: `MrzDate.componentsFormCalendarDate: Boolean?`. The original `RAW_ONLY` enum value collapsed three distinct failure modes; the new property disambiguates them so the validator can emit `MrzDateNotInCalendar` only for the "components numeric but no calendar date" case, leaving "non-numeric components" (Layer-1 territory) and "calendar-valid but outside the parser's inference window" (a date that IS in the calendar) untouched. See `docs/features/mrz-data-model.md` "MrzDate" and `docs/features/mrz-validation.md` "Status of Implementation."
 
 ### Expiry-date warnings (`MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`)
 

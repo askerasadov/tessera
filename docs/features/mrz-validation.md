@@ -34,7 +34,7 @@ The validator ships incrementally. The design described in the rest of this docu
 | Layer 3 — Sex value range check (`MrzInvalidSexValue`) | Implemented |
 | Layer 3 — Country code recognition (`MrzUnknownCountryCode`) | Deferred (depends on `CountryCode` value class + `CountryCodeTable`) |
 | Layer 3 — Document type code recognition (`MrzUnknownDocumentTypeCode`) | Deferred |
-| Layer 3 — Date in calendar (`MrzDateNotInCalendar`) | Deferred |
+| Layer 3 — Date in calendar (`MrzDateNotInCalendar`) | Implemented (TD3, both birth and expiry; relies on `MrzDate.componentsFormCalendarDate` to distinguish "no real calendar date" from "components didn't parse as ints" or "calendar-valid but outside the parser's inference window") |
 | Expiry-date warnings (`MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`) | Implemented (TD3; `MrzExpiryDateImplausiblyFar` threshold defaults to 10 years and is non-configurable for now — see `docs/open-questions.md` "Validator options (configurable thresholds)") |
 | `ValidationResult.passedChecks` (transparency surface for what was verified) | Deferred (current `ValidationResult` exposes `validationFailures` and `warnings` only; the shape of `passedChecks` is itself an open question) |
 
@@ -43,6 +43,8 @@ The validator's wiring into the parser is in place: `MrzParser.parseTD3` invokes
 The set of valid sex characters used by Layer 3 is currently `{M, F, <, X}`. Confirming the canonical set against ICAO Doc 9303 primary source is tracked in `docs/open-questions.md`.
 
 Expiry warnings depend on the validator's reference time and are emitted only when `MrzDate.computedDate` is non-null (i.e., the parser was able to resolve a real calendar date for the expiry). Because `MrzDate.parseExpiry` currently rejects expiries more than 50 years past the reference time as `RAW_ONLY`, `MrzExpiryDateImplausiblyFar` can fire in practice only within the (reference + 10 years, reference + 50 years] window; expiries beyond that are not computed and therefore cannot produce the warning. This is a layered limitation, not a design choice, and is noted here so it does not surprise consumers.
+
+The date-in-calendar check (`MrzDateNotInCalendar`) is signal-driven from the model rather than re-derived in the validator. `MrzDate` carries `componentsFormCalendarDate: Boolean?`, populated by `parseBirth` and `parseExpiry`: `null` when the raw components did not parse as 2-digit numerics (Layer-1 territory, not surfaced by this check), `true` when the components form a real `LocalDate` in at least one candidate century, and `false` when they do not. The validator emits `MrzDateNotInCalendar` only when the signal is `false`, which means a date that is calendar-valid but rejected by the parser's inference window (e.g., an expiry more than 50 years out) does not produce this failure — the date IS in the calendar, just outside the heuristic.
 
 ---
 
