@@ -1,8 +1,11 @@
 package io.lightine.tessera.mrz
 
 import io.lightine.tessera.domain.MrzCharacterSetViolation
+import io.lightine.tessera.domain.MrzCheckDigitMismatch
+import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzFormat
 import io.lightine.tessera.domain.MrzInvalidLength
+import io.lightine.tessera.domain.MrzInvalidSexValue
 import io.lightine.tessera.domain.ReadMethod
 import io.lightine.tessera.domain.Sex
 import kotlinx.datetime.Instant
@@ -81,7 +84,7 @@ class MrzParserTest {
     }
 
     @Test
-    fun success_metadata_has_empty_warnings_and_validation_failures_in_this_release() {
+    fun success_metadata_has_empty_warnings_and_validation_failures_for_clean_specimen() {
         val result = MrzParser.parseTD3(specimenLines, referenceTime = ref2026)
         val success = assertIs<ParseResult.Success>(result)
         assertTrue(success.metadata.warnings.isEmpty())
@@ -162,6 +165,69 @@ class MrzParserTest {
         val result = MrzParser.parseTD3(listOf(specimenLine1, line2), referenceTime = ref2026)
         val td3 = assertIs<TD3>(assertIs<ParseResult.Success>(result).document)
         assertEquals(Sex.UNSPECIFIED, td3.commonFields.sex)
+    }
+
+    // --- Validation wiring (parser → validator) ---
+
+    @Test
+    fun returns_partial_success_with_check_digit_mismatch_when_document_number_check_digit_is_corrupted() {
+        // Specimen line 2 with the document-number check digit flipped from '3' to '7'.
+        // Composite digit must also be invalidated to remain consistent — so we corrupt only
+        // the per-field digit and accept that the composite digit will also fail. The test
+        // asserts the per-field finding is present.
+        val corrupted = "L898902C<7UTO6908061F9406236ZE184226B<<<<<14"
+        val result = MrzParser.parseTD3(listOf(specimenLine1, corrupted), referenceTime = ref2026)
+        val partial = assertIs<ParseResult.PartialSuccess>(result)
+
+        val mismatch =
+            partial.metadata.validationFailures
+                .filterIsInstance<MrzCheckDigitMismatch>()
+                .firstOrNull { it.field == MrzField.DOCUMENT_NUMBER }
+        assertTrue(mismatch != null, "Expected MrzCheckDigitMismatch for DOCUMENT_NUMBER; got ${partial.metadata.validationFailures}")
+        assertEquals('3', mismatch.expected)
+        assertEquals('7', mismatch.observed)
+    }
+
+    @Test
+    fun returns_partial_success_with_invalid_sex_value_when_sex_character_is_not_in_allowed_set() {
+        val line2WithInvalidSex = "L898902C<3UTO6908061Q9406236ZE184226B<<<<<14"
+        val result = MrzParser.parseTD3(listOf(specimenLine1, line2WithInvalidSex), referenceTime = ref2026)
+        val partial = assertIs<ParseResult.PartialSuccess>(result)
+        val td3 = assertIs<TD3>(partial.document)
+
+        // sex enum still defaults to UNSPECIFIED for unrecognized characters; raw character
+        // is preserved on CommonFields and surfaced via MrzInvalidSexValue.
+        assertEquals(Sex.UNSPECIFIED, td3.commonFields.sex)
+        assertEquals('Q', td3.commonFields.rawSex)
+
+        val invalid =
+            partial.metadata.validationFailures
+                .filterIsInstance<MrzInvalidSexValue>()
+                .firstOrNull()
+        assertTrue(invalid != null, "Expected MrzInvalidSexValue; got ${partial.metadata.validationFailures}")
+        assertEquals('Q', invalid.observed)
+        assertEquals(64, invalid.position)
+    }
+
+    @Test
+    fun specimen_with_valid_check_digits_and_sex_returns_success_not_partial_success() {
+        val result = MrzParser.parseTD3(specimenLines, referenceTime = ref2026)
+        assertIs<ParseResult.Success>(result)
+    }
+
+    @Test
+    fun preserves_raw_sex_character_verbatim_for_each_recognized_value() {
+        val line2Female = "L898902C<3UTO6908061F9406236ZE184226B<<<<<14"
+        val line2Male = "L898902C<3UTO6908061M9406236ZE184226B<<<<<14"
+        val line2Filler = "L898902C<3UTO6908061<9406236ZE184226B<<<<<14"
+
+        val female = assertIs<TD3>(assertIs<ParseResult.Success>(MrzParser.parseTD3(listOf(specimenLine1, line2Female), ref2026)).document)
+        val male = assertIs<TD3>(assertIs<ParseResult.Success>(MrzParser.parseTD3(listOf(specimenLine1, line2Male), ref2026)).document)
+        val filler = assertIs<TD3>(assertIs<ParseResult.Success>(MrzParser.parseTD3(listOf(specimenLine1, line2Filler), ref2026)).document)
+
+        assertEquals('F', female.commonFields.rawSex)
+        assertEquals('M', male.commonFields.rawSex)
+        assertEquals('<', filler.commonFields.rawSex)
     }
 
     // --- Error paths ---

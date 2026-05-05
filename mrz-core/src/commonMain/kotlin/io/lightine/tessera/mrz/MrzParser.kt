@@ -5,6 +5,7 @@ import io.lightine.tessera.domain.MrzFormat
 import io.lightine.tessera.domain.MrzInvalidLength
 import io.lightine.tessera.domain.ReadMethod
 import io.lightine.tessera.domain.Sex
+import io.lightine.tessera.mrz.validation.MrzValidator
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
@@ -37,7 +38,18 @@ public object MrzParser {
         }
 
         val td3 = sliceTd3Fields(input, referenceTime)
-        return ParseResult.Success(document = td3, metadata = emptyMetadata)
+        val validation = MrzValidator.validate(td3)
+        val metadata =
+            ResultMetadata(
+                readMethod = ReadMethod.BACKEND_STRING_INPUT,
+                warnings = validation.warnings,
+                validationFailures = validation.validationFailures,
+            )
+        return if (validation.validationFailures.isEmpty()) {
+            ParseResult.Success(document = td3, metadata = metadata)
+        } else {
+            ParseResult.PartialSuccess(document = td3, metadata = metadata)
+        }
     }
 
     private fun validateLineShape(input: List<String>): MrzInvalidLength? {
@@ -138,6 +150,7 @@ public object MrzParser {
                 nationality = nationality,
                 dateOfBirth = dateOfBirth,
                 sex = sex,
+                rawSex = sexChar,
                 dateOfExpiry = dateOfExpiry,
                 checkDigits = checkDigits,
             )
