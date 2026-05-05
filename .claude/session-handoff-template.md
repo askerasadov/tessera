@@ -22,17 +22,23 @@ For trivial sessions (a small fix, a one-question consultation), a handoff is no
 
 ## Where to Put the Handoff
 
-The handoff is a file at the project root, named with the date and a short kebab-case slug describing the slice:
+The handoff is a file at the project root, named with the date, the UTC time, and a short kebab-case slug describing the slice:
 
 ```
-SESSION-HANDOFF-YYYY-MM-DD-<slug>.md
+SESSION-HANDOFF-YYYY-MM-DD-HHMM-<slug>.md
 ```
 
-The slug summarizes what the session shipped — match the feature branch's slug when there is one (`feature/mrz-validator` → `validator`, `feature/mrz-expiry-warnings` → `expiry-warnings`, `docs/handoff-filename-slug-convention` → `handoff-filename-slug-convention`). The slug is mandatory: it makes the directory listing self-documenting and prevents collisions when two sessions ship on the same calendar day.
+Where:
 
-The next session reads the most recent handoff by sorting on date first (`YYYY-MM-DD` portion), then by mtime to break ties between same-day slugs.
+- `YYYY-MM-DD` is the UTC date the handoff is written.
+- `HHMM` is the UTC time as four digits with no separator (`0930`, `2256`). Get it with `date -u +%H%M`.
+- `<slug>` summarizes what the session shipped — match the feature branch's slug when there is one (`feature/mrz-validator` → `validator`, `feature/mrz-expiry-warnings` → `expiry-warnings`, `docs/handoff-filename-add-utc-time` → `handoff-filename-add-utc-time`).
 
-Older handoffs may exist in the legacy form `SESSION-HANDOFF-YYYY-MM-DD.md` (no slug). Treat them the same as slug-form handoffs; do not bulk-rename historical files.
+Both the time and the slug are mandatory. The time makes `ls -1 SESSION-HANDOFF-*.md | sort -r | head -1` deterministic — no dependency on filesystem mtime (which is unreliable across `git clone`, `rsync`, archive extraction, file syncs). The slug makes the directory listing self-documenting at a glance: the reader sees what each session shipped without opening files.
+
+The next session reads the most recent handoff by sorting filenames descending. The `YYYY-MM-DD-HHMM` prefix is lexically sortable, so `sort -r | head -1` returns the canonical latest.
+
+Older handoffs may exist in either of two legacy forms — `SESSION-HANDOFF-YYYY-MM-DD-<slug>.md` (date + slug, no time) or `SESSION-HANDOFF-YYYY-MM-DD.md` (date only). Treat them the same as new-form handoffs when reading; do not bulk-rename historical files. Within any single date, all handoffs share the form current at that time — within-date form mixing is not expected.
 
 This file is **not committed** to the repository. It is a working note. It lives on the user's machine, gets read by the next Claude Code session, and is then discarded or archived to a personal notes folder.
 
