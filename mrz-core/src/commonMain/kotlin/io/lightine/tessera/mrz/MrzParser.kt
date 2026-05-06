@@ -141,13 +141,13 @@ public object MrzParser {
         val commonFields =
             CommonFields(
                 documentType = DocumentType(documentTypeCode),
-                issuingState = issuingState,
+                issuingState = CountryCode(issuingState),
                 primaryIdentifier = "",
                 secondaryIdentifier = "",
                 nameTruncated = false,
                 rawNameField = rawNameField,
                 documentNumber = documentNumber,
-                nationality = nationality,
+                nationality = CountryCode(nationality),
                 dateOfBirth = dateOfBirth,
                 sex = sex,
                 rawSex = sexChar,

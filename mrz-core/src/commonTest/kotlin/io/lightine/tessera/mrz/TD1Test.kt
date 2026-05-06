@@ -10,13 +10,13 @@ class TD1Test {
     private val syntheticCommonFields =
         CommonFields(
             documentType = DocumentType("I"),
-            issuingState = "UTO",
+            issuingState = CountryCode("UTO"),
             primaryIdentifier = "ERIKSSON",
             secondaryIdentifier = "ANNA MARIA",
             nameTruncated = false,
             rawNameField = "ERIKSSON<<ANNA<MARIA<<<<<<<<<<",
             documentNumber = "L898902C<",
-            nationality = "UTO",
+            nationality = CountryCode("UTO"),
             dateOfBirth = MrzDate(rawYear = "69", rawMonth = "08", rawDay = "06"),
             sex = Sex.FEMALE,
             rawSex = 'F',
@@ -47,7 +47,7 @@ class TD1Test {
     @Test
     fun td1_synthetic_constructs_and_exposes_common_fields_verbatim() {
         assertEquals("I", syntheticTd1.commonFields.documentType.rawCode)
-        assertEquals("UTO", syntheticTd1.commonFields.issuingState)
+        assertEquals("UTO", syntheticTd1.commonFields.issuingState.rawCode)
         assertEquals("ERIKSSON", syntheticTd1.commonFields.primaryIdentifier)
         assertEquals("ANNA MARIA", syntheticTd1.commonFields.secondaryIdentifier)
         assertEquals("L898902C<", syntheticTd1.commonFields.documentNumber)

@@ -62,11 +62,11 @@ The validator uses specific thresholds for date plausibility checks (130 years f
 
 ### Country code recognition validation (`MrzUnknownCountryCode`)
 
-`mrz-error-taxonomy.md` lists `MrzUnknownCountryCode` as a representative validation failure: the issuing state or nationality code is not in the recognized lookup tables. The first validator slice does not produce this failure because the SDK does not yet have a `CountryCode` value class or `CountryCodeTable`.
+`mrz-error-taxonomy.md` lists `MrzUnknownCountryCode` as a representative warning: the issuing state or nationality code is not in the recognized lookup tables. The first validator slice did not produce this output because the SDK did not yet have a `CountryCode` value class or `CountryCodeTable`.
 
 **Source:** First validator implementation slice; aligns with `lookup-tables.md` ("Initial Country Code Coverage").
 
-**Resolution:** Add the country-code recognition check together with the `CountryCode` value class + `CountryCodeTable` slice. Same ADR-012 pattern as `DocumentType`.
+**Resolution:** Resolved — implemented for TD3 in `MrzValidator`. `CountryCode` value class and `CountryCodeTable` landed in `mrz-core` (per [ADR-012](decisions/0012-recognition-types-live-with-tables.md)); `CommonFields.issuingState` and `CommonFields.nationality` changed from `String` to `CountryCode`. The validator emits up to two `MrzUnknownCountryCode` warnings per TD3 document — one for `issuingState` (position 2) and one for `nationality` (position 54) — distinguished by a `field: MrzField` discriminator. The categorical placement (warning, not failure) is the same as `MrzUnknownDocumentTypeCode` per [ADR-013](decisions/0013-recognition-failures-are-warnings.md). The table-completeness question is tracked separately under "Country code table completeness" below.
 
 ### Document type code recognition validation (`MrzUnknownDocumentTypeCode`)
 
@@ -267,6 +267,16 @@ The architectural pattern (recognition-bearing value class living next to its lo
 **Source:** First implementation slice for `DocumentType` (2026-05-04 session); aligns with `lookup-tables.md` coverage commitment.
 
 **Resolution:** Populate the table from current ICAO Doc 9303 Part 3 Section 4 when an authoritative copy of the publication is available. Update tests to match the full set. Remove this entry once the table matches the spec.
+
+### Country code table completeness
+
+The `CountryCodeTable` in `mrz-core` ships with a deliberate starter set of five ISO 3166-1 alpha-3 state codes (`USA`, `GBR`, `DEU`, `FRA`, `JPN`) — not the complete enumeration committed to in `docs/features/lookup-tables.md` ("Initial Country Code Coverage"). The complete list combines all of ISO 3166-1 alpha-3, ICAO Doc 9303 Part 3 Section 5 extensions (organizations, stateless persons, refugees, and historical states), and the canonical ICAO Doc 9303 publication that the project does not currently have at hand.
+
+The architectural pattern (recognition-bearing value class living next to its lookup table per ADR-012) is in place; the data is intentionally partial. Same shape as the `DocumentTypeCodeTable` starter-set incompleteness above. The starter set is documented as such in `CountryCodeTable.kt` (file-level comment), and the table is structured so that adding entries is a non-breaking change (per `lookup-tables.md` "Updating the Tables"). Four tests (`CountryCodeTableTest.by_category_organization_returns_empty_list_in_starter_set` and the three sibling category-empty tests) lock the current coverage so any expansion surfaces explicitly. The `MrzUnknownCountryCode` warning will fire frequently in real-world inputs because of this until the table is populated.
+
+**Source:** First implementation slice for `CountryCode` (2026-05-06 session); aligns with `lookup-tables.md` coverage commitment.
+
+**Resolution:** Populate the table from ISO 3166-1 alpha-3 plus ICAO Doc 9303 Part 3 Section 5 extensions when authoritative copies of the publications are available. Update tests to match the full set. Remove this entry once the table matches the spec.
 
 ### Driver's license format choice (mDoc vs proprietary)
 

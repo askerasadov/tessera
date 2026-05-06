@@ -36,6 +36,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - `DocumentTypeCodeEntry` data class (code, displayName, category, generation)
   - `DocumentTypeGeneration` enum (`LEGACY_SINGLE_CHARACTER`, `CURRENT_TWO_CHARACTER`)
   - Starter set of 6 codes (`P`, `V`, `I`, `PP`, `PD`, `PS`); deliberately incomplete and tracked in [`docs/open-questions.md`](docs/open-questions.md)
+  - `CountryCode` value class wrapping a raw three-letter code with `entry`, `isRecognized`, `displayName`, `category` accessors
+  - `CountryCodeTable` object with `lookup` / `all` / `byCategory`
+  - `CountryCodeEntry` data class (code, displayName, category)
+  - Starter set of 5 ISO 3166-1 alpha-3 state codes (`USA`, `GBR`, `DEU`, `FRA`, `JPN`); deliberately incomplete and tracked in [`docs/open-questions.md`](docs/open-questions.md) under "Country code table completeness"
 - `mrz-core` module: TD3 parser
   - `MrzParser.parseTD3(input: String, referenceTime: Instant)` and `MrzParser.parseTD3(input: List<String>, referenceTime: Instant)` overloads
   - String input normalizes LF/CRLF/CR line endings, drops leading empty lines, trims trailing whitespace
@@ -44,10 +48,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - `ParseResult` sealed class with `Success`, `PartialSuccess`, `Failure` variants
   - `ResultMetadata` aggregate (`readMethod`, `warnings`, `validationFailures`)
 - `domain` module: validator-related taxonomy
-  - `MrzField` enum (`DOCUMENT_NUMBER`, `DATE_OF_BIRTH`, `DATE_OF_EXPIRY`, `OPTIONAL_DATA`, `COMPOSITE`)
+  - `MrzField` enum (`ISSUING_STATE`, `DOCUMENT_NUMBER`, `NATIONALITY`, `DATE_OF_BIRTH`, `DATE_OF_EXPIRY`, `OPTIONAL_DATA`, `COMPOSITE`)
   - `MrzCheckDigitMismatch` validation error carrying `field`, `expected`, `observed`, `position`
   - `MrzInvalidSexValue` validation error carrying `observed`, `position`
   - `MrzUnknownDocumentTypeCode` warning carrying `rawCode`, `position`. Emitted by the validator when the document's `DocumentType` is not in `DocumentTypeCodeTable`. Categorical placement (warning, not validation failure) recorded in [ADR-013](docs/decisions/0013-recognition-failures-are-warnings.md): a recognition-table-derived check that reduces to "this code is not in our table" is a warning, because the SDK's tables are deliberately incomplete (Principle 1, Principle 4). Strict consumers who treat unrecognized codes as disqualifying read `result.warnings.isEmpty()` together with `result.validationFailures.isEmpty()`.
+  - `MrzUnknownCountryCode` warning carrying `field: MrzField`, `rawCode`, `position`. Emitted by the validator when the document's `issuingState` or `nationality` `CountryCode` is not in `CountryCodeTable`. Same categorical placement as `MrzUnknownDocumentTypeCode` per [ADR-013](docs/decisions/0013-recognition-failures-are-warnings.md). The `field` discriminator distinguishes which of the two TD3 country-code positions emitted the warning (`MrzField.ISSUING_STATE` at TD3 position 2; `MrzField.NATIONALITY` at TD3 position 54).
 - `mrz-core` module: validator (first slice)
   - `io.lightine.tessera.mrz.validation` subpackage (parallel to `checkdigit/`)
   - `ValidationResult(validationFailures, warnings)` aggregate (`passedChecks` deferred)
@@ -105,6 +110,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `docs/decisions/0013-recognition-failures-are-warnings.md`: new ADR formalizing the principle-grounded reasoning. Recognition-table-derived checks that reduce to "this code is not in our table" surface as warnings, not validation failures. Generalizes to `MrzUnknownCountryCode` and any analogous future check.
 - `docs/open-questions.md`: "Document type code recognition validation (`MrzUnknownDocumentTypeCode`)" entry marked Resolved with a cross-reference to ADR-013. The separate "Document type code table completeness" entry remains open (the starter set is still the deliberate-incomplete one).
 - `mrz-core` and `domain` Gradle builds now enable Kotlin's `explicitApi()` strict mode. Existing code is already 100% compliant — every top-level and member declaration has an explicit visibility modifier, and the build passes without changes. The mode is a forward-looking enforcement gate: future declarations missing `public` / `internal` / `private` (or missing return types on public API functions) now fail compilation rather than silently defaulting to public. Resolves audit item 2 from the 2026-05-04 alignment recap (lock down the public API surface before more slices accumulate, and especially before `CountryCode` doubles `mrz-core`'s public footprint). The other modules (`emrtd-core`, `telemetry`, `logging`) are empty placeholders today and not in scope; when their first source file lands, `explicitApi()` should be added as part of that slice.
+- `CommonFields.issuingState` and `CommonFields.nationality` types changed from `String` to `CountryCode` (the recognition-bearing value class). Pre-0.1.0, no backcompat impact. The change brings recognition state onto the model directly, parallel to how `documentType: DocumentType` already exposes `isRecognized`. `MrzParser.parseTD3` constructs the `CountryCode` instances; `MrzValidator.validateTD3` consults `isRecognized` to dispatch the `MrzUnknownCountryCode` warning.
+- `MrzField` enum extended with `ISSUING_STATE` and `NATIONALITY` variants so `MrzUnknownCountryCode` can identify which of the two TD3 country-code positions surfaced the warning. The enum's order is now field-position order (line 1 → line 2), making it easier to reason about. No existing call site is sensitive to the ordering.
 - Session handoff filename convention extended from `SESSION-HANDOFF-YYYY-MM-DD-<slug>.md` to `SESSION-HANDOFF-YYYY-MM-DD-HHMM-<slug>.md`, where `HHMM` is the UTC time as four digits with no separator. The motivation: when multiple handoffs land on the same calendar day (three on 2026-05-05), the slug-only convention fell back to mtime as the same-day tiebreaker, but mtime is unreliable across `git clone`, `rsync`, archive extraction, and file syncs. With the time component in the filename, `ls -1 SESSION-HANDOFF-*.md | sort -r | head -1` returns the canonical latest deterministically. The slug stays so the directory listing is still self-documenting at a glance. Updated `CLAUDE.md` ("What to Do First" + "Session Discipline") and `.claude/session-handoff-template.md` ("Where to Put the Handoff"). Legacy handoff files (date-only and date+slug) are not bulk-renamed; the new convention applies going forward and within-date form mixing is not expected.
 
 ### Removed
@@ -118,7 +125,6 @@ These are documented commitments that are explicitly *not* in this `[Unreleased]
 
 - Validator standalone string-input overloads (`MrzValidator.validate(input: String / List<String> / String, format)`); current slice ships `validate(MrzDocument)` only
 - `ValidationResult.passedChecks` transparency surface (current `ValidationResult` exposes `validationFailures` + `warnings` only)
-- Other validator semantic checks (`MrzUnknownCountryCode`, `MrzUnknownDocumentTypeCode`)
 - TD1 validator path (validator currently returns an empty `ValidationResult` for TD1 inputs; lands with the TD1 parser slice)
 - Validator options surface (`ValidationOptions`-style configurable thresholds); current slice ships `MrzExpiryDateImplausiblyFar`'s 10-year threshold as a private constant
 - Generator (`MrzGenerator` and inverse round-trip property)
@@ -126,9 +132,9 @@ These are documented commitments that are explicitly *not* in this `[Unreleased]
 - Auto-detect parser entry point (`MrzParser.parse(input)`)
 - Other format parsers (TD1, TD2, MRV-A, MRV-B parser methods)
 - Name field parsing (`primaryIdentifier` / `secondaryIdentifier` / `nameTruncated` extraction from raw name field)
-- `CountryCode` value class + `CountryCodeTable`
 - Warnings: `MrzNameTruncated`, `MrzPersonalNumberCheckDigitFiller`
 - Document type code table population beyond the starter set
+- Country code table population beyond the starter set
 - `ResultMetadata.timing: TimingInfo?` field (no timing instrumentation yet)
 - iOS targets, Android targets (waiting on Xcode install / 0.2.0 platform I/O work)
 - Platform I/O modules (`mrz-camera-*`, `emrtd-nfc-*`, `mrz-camera-ui-*`)

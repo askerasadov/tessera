@@ -8,6 +8,7 @@ import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzFormat
 import io.lightine.tessera.domain.MrzInvalidLength
 import io.lightine.tessera.domain.MrzInvalidSexValue
+import io.lightine.tessera.domain.MrzUnknownCountryCode
 import io.lightine.tessera.domain.ReadMethod
 import io.lightine.tessera.domain.Sex
 import kotlinx.datetime.Instant
@@ -35,9 +36,9 @@ class MrzParserTest {
 
         assertEquals(MrzFormat.TD3, td3.format)
         assertEquals("P", td3.commonFields.documentType.rawCode)
-        assertEquals("UTO", td3.commonFields.issuingState)
+        assertEquals("UTO", td3.commonFields.issuingState.rawCode)
         assertEquals("L898902C<", td3.commonFields.documentNumber)
-        assertEquals("UTO", td3.commonFields.nationality)
+        assertEquals("UTO", td3.commonFields.nationality.rawCode)
         assertEquals(Sex.FEMALE, td3.commonFields.sex)
         assertEquals("ERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<", td3.commonFields.rawNameField)
     }
@@ -87,11 +88,17 @@ class MrzParserTest {
     }
 
     @Test
-    fun success_metadata_has_empty_warnings_and_validation_failures_for_clean_specimen() {
+    fun success_metadata_has_no_validation_failures_for_clean_specimen() {
+        // The ICAO specimen uses fictional country code "UTO" (Utopia). Since "UTO" is not in
+        // the SDK's deliberate starter set of recognized country codes, the validator emits two
+        // MrzUnknownCountryCode warnings (one for issuingState, one for nationality). Warnings
+        // do not downgrade Success to PartialSuccess; only validationFailures do.
         val result = MrzParser.parseTD3(specimenLines, referenceTime = ref2026)
         val success = assertIs<ParseResult.Success>(result)
-        assertTrue(success.metadata.warnings.isEmpty())
         assertTrue(success.metadata.validationFailures.isEmpty())
+        val unknownCountryWarnings = success.metadata.warnings.filterIsInstance<MrzUnknownCountryCode>()
+        assertEquals(2, unknownCountryWarnings.size, "Expected two MrzUnknownCountryCode warnings; got ${success.metadata.warnings}")
+        assertEquals(setOf(MrzField.ISSUING_STATE, MrzField.NATIONALITY), unknownCountryWarnings.map { it.field }.toSet())
     }
 
     @Test
