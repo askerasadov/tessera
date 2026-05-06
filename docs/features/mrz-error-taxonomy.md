@@ -147,7 +147,7 @@ Generic catch-all errors with only a description string are not used. If a failu
 Type names follow the patterns established in `conventions.md`. Specifically:
 
 - Error types describe the specific failure: `MrzInvalidLength`, `MrzCharacterSetViolation`, `MrzGenerationFieldOverflow`
-- Validation error types describe the specific spec violation: `MrzCheckDigitMismatch`, `MrzUnknownCountryCode`, `MrzDateNotInCalendar`
+- Validation error types describe the specific spec violation: `MrzCheckDigitMismatch`, `MrzInvalidSexValue`, `MrzDateNotInCalendar`
 - Warning types describe the specific anomaly: `MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`, `MrzNameTruncated`
 
 Names that would be rejected:
@@ -175,8 +175,6 @@ The following examples illustrate the kinds of types each category contains. Thi
 ### Validation Failures (data extracted but does not conform)
 
 - `MrzCheckDigitMismatch` — a check digit does not match the computed value, with field identifier and observed/expected values
-- `MrzUnknownCountryCode` — issuing state or nationality code is not in the recognized lookup tables
-- `MrzUnknownDocumentTypeCode` — document type code is not in the recognized lookup tables
 - `MrzDateNotInCalendar` — date is structurally well-formed but does not represent a real calendar date
 - `MrzInvalidSexValue` — sex field contains a character other than `M`, `F`, `<`, or `X`
 
@@ -185,6 +183,8 @@ The following examples illustrate the kinds of types each category contains. Thi
 - `MrzExpiryDatePast` — document's expiry date has passed
 - `MrzExpiryDateImplausiblyFar` — document's expiry date is more than 10 years in the future
 - `MrzBirthDateImplausiblyOld` — date-of-birth components imply an age greater than 130 years at every candidate century interpretation
+- `MrzUnknownCountryCode` — issuing state or nationality code is not in the SDK's recognized lookup tables (warning rather than failure per [ADR-013](../decisions/0013-recognition-failures-are-warnings.md): the SDK's tables are deliberately incomplete, so an unrecognized code is "not in our table," not "not in the spec")
+- `MrzUnknownDocumentTypeCode` — document type code is not in the SDK's recognized lookup tables (warning rather than failure per [ADR-013](../decisions/0013-recognition-failures-are-warnings.md))
 - `MrzNameTruncated` — name field shows the truncation indicator per ICAO Doc 9303
 - `MrzPersonalNumberCheckDigitFiller` — the personal number check digit is the filler character `<`, which some issuing states use even when the personal number is populated
 

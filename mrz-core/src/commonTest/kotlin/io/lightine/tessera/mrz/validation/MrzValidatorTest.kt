@@ -8,6 +8,7 @@ import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzFormat
 import io.lightine.tessera.domain.MrzInvalidSexValue
+import io.lightine.tessera.domain.MrzUnknownDocumentTypeCode
 import io.lightine.tessera.domain.Sex
 import io.lightine.tessera.mrz.CommonFields
 import io.lightine.tessera.mrz.DocumentType
@@ -664,6 +665,74 @@ class MrzValidatorTest {
             )
         assertEquals(LocalDate(2200, 1, 1), warning.referenceDate)
         assertEquals(130, warning.thresholdYears)
+    }
+
+    // --- Unknown document type code warning ---
+
+    @Test
+    fun unrecognized_document_type_code_emits_MrzUnknownDocumentTypeCode_with_raw_code_and_position() {
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields().copy(documentType = DocumentType("XY")),
+            )
+        val result = MrzValidator.validate(td3)
+        val warning =
+            result.warnings.filterIsInstance<MrzUnknownDocumentTypeCode>().singleOrNull()
+                ?: error("Expected exactly one MrzUnknownDocumentTypeCode; got ${result.warnings}")
+        assertEquals("XY", warning.rawCode)
+        assertEquals(0, warning.position)
+    }
+
+    @Test
+    fun empty_document_type_code_emits_MrzUnknownDocumentTypeCode_preserving_empty_raw_code() {
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields().copy(documentType = DocumentType("")),
+            )
+        val result = MrzValidator.validate(td3)
+        val warning =
+            result.warnings.filterIsInstance<MrzUnknownDocumentTypeCode>().singleOrNull()
+                ?: error("Expected exactly one MrzUnknownDocumentTypeCode; got ${result.warnings}")
+        assertEquals("", warning.rawCode)
+        assertEquals(0, warning.position)
+    }
+
+    @Test
+    fun all_starter_set_document_type_codes_do_not_emit_unknown_warning() {
+        val starterSet = listOf("P", "V", "I", "PP", "PD", "PS")
+        for (code in starterSet) {
+            val td3 =
+                specimenTd3(
+                    commonFields =
+                        specimenCommonFields().copy(documentType = DocumentType(code)),
+                )
+            val result = MrzValidator.validate(td3)
+            assertTrue(
+                result.warnings.none { it is MrzUnknownDocumentTypeCode },
+                "Expected no MrzUnknownDocumentTypeCode warning for recognized code '$code'; got ${result.warnings}",
+            )
+        }
+    }
+
+    @Test
+    fun unrecognized_document_type_code_does_not_block_other_validation() {
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields(rawSex = '?', sex = Sex.UNSPECIFIED)
+                        .copy(documentType = DocumentType("XY")),
+            )
+        val result = MrzValidator.validate(td3)
+        assertTrue(
+            result.warnings.any { it is MrzUnknownDocumentTypeCode },
+            "Expected MrzUnknownDocumentTypeCode warning; got ${result.warnings}",
+        )
+        assertTrue(
+            result.validationFailures.any { it is MrzInvalidSexValue },
+            "Expected MrzInvalidSexValue failure to still be reported; got ${result.validationFailures}",
+        )
     }
 
     // --- TD1 (deferred path) ---
