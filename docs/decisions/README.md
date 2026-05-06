@@ -24,6 +24,7 @@ The format is documented in `conventions.md`. ADRs are *fixed* once accepted: if
 | [010](0010-apache-2-license.md) | Apache 2.0 license at public release | Accepted |
 | [011](0011-open-source-at-public-release.md) | Open source at public release | Accepted |
 | [012](0012-recognition-types-live-with-tables.md) | Recognition-bearing value classes live with their lookup tables | Accepted |
+| [013](0013-recognition-failures-are-warnings.md) | Recognition failures are warnings, not validation errors | Accepted |
 
 ---
 

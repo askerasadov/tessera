@@ -7,8 +7,10 @@ import io.lightine.tessera.domain.MrzExpiryDateImplausiblyFar
 import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzInvalidSexValue
+import io.lightine.tessera.domain.MrzUnknownDocumentTypeCode
 import io.lightine.tessera.domain.MrzValidationError
 import io.lightine.tessera.domain.MrzWarning
+import io.lightine.tessera.mrz.DocumentType
 import io.lightine.tessera.mrz.MrzDate
 import io.lightine.tessera.mrz.MrzDocument
 import io.lightine.tessera.mrz.TD1
@@ -111,8 +113,22 @@ public object MrzValidator {
             birthDate = document.commonFields.dateOfBirth,
             referenceTime = referenceTime,
         )
+        addUnknownDocumentTypeCodeWarningIfApplicable(
+            into = warnings,
+            documentType = document.commonFields.documentType,
+            position = TD3_DOCUMENT_TYPE_POSITION,
+        )
 
         return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
+    }
+
+    private fun addUnknownDocumentTypeCodeWarningIfApplicable(
+        into: MutableList<MrzWarning>,
+        documentType: DocumentType,
+        position: Int,
+    ) {
+        if (documentType.isRecognized) return
+        into += MrzUnknownDocumentTypeCode(rawCode = documentType.rawCode, position = position)
     }
 
     private fun addBirthAgeWarningIfApplicable(
@@ -186,4 +202,5 @@ public object MrzValidator {
     }
 
     private const val TD3_LINE_LENGTH = 44
+    private const val TD3_DOCUMENT_TYPE_POSITION = 0
 }

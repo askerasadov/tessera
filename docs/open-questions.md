@@ -70,11 +70,11 @@ The validator uses specific thresholds for date plausibility checks (130 years f
 
 ### Document type code recognition validation (`MrzUnknownDocumentTypeCode`)
 
-`mrz-error-taxonomy.md` lists `MrzUnknownDocumentTypeCode` as a representative validation failure. The `DocumentType` value class and `DocumentTypeCodeTable` already exist (with a starter set), so the recognition signal is available via `DocumentType.isRecognized`. The first validator slice does not produce this failure to keep the slice focused on closing the check-digit translation-owed loop.
+`mrz-error-taxonomy.md` lists `MrzUnknownDocumentTypeCode`. The `DocumentType` value class and `DocumentTypeCodeTable` already exist (with a starter set), so the recognition signal is available via `DocumentType.isRecognized`. The first validator slice did not produce this output to keep the slice focused on closing the check-digit translation-owed loop.
 
 **Source:** First validator implementation slice.
 
-**Resolution:** Add the document-type recognition check in a focused follow-up slice. Decide whether a starter-set unrecognized code should be a failure or a warning given the deliberate incompleteness of the table (`docs/open-questions.md` "Document type code table completeness").
+**Resolution:** Resolved — implemented for TD3 in `MrzValidator`. The categorical placement (warning vs. validation failure) is recorded in [ADR-013](decisions/0013-recognition-failures-are-warnings.md): a recognition-table-derived check that reduces to "this code is not in our table" is a warning, because the SDK's tables are deliberately incomplete and overclaiming non-conformance would violate Principle 1 (Reader, not oracle) and Principle 4 (Honest about what we know). The check runs unconditionally for every TD3 document; the warning carries the verbatim `rawCode` and the field's start position. The table-completeness question is tracked separately under "Document type code table completeness" below. The same categorical placement applies prospectively to `MrzUnknownCountryCode` when the `CountryCode` slice lands.
 
 ### Date-in-calendar validation (`MrzDateNotInCalendar`)
 
