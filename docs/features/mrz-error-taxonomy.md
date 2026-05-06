@@ -184,6 +184,7 @@ The following examples illustrate the kinds of types each category contains. Thi
 
 - `MrzExpiryDatePast` — document's expiry date has passed
 - `MrzExpiryDateImplausiblyFar` — document's expiry date is more than 10 years in the future
+- `MrzBirthDateImplausiblyOld` — date-of-birth components imply an age greater than 130 years at every candidate century interpretation
 - `MrzNameTruncated` — name field shows the truncation indicator per ICAO Doc 9303
 - `MrzPersonalNumberCheckDigitFiller` — the personal number check digit is the filler character `<`, which some issuing states use even when the personal number is populated
 

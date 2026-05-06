@@ -36,6 +36,7 @@ The validator ships incrementally. The design described in the rest of this docu
 | Layer 3 — Document type code recognition (`MrzUnknownDocumentTypeCode`) | Deferred |
 | Layer 3 — Date in calendar (`MrzDateNotInCalendar`) | Implemented (TD3, both birth and expiry; relies on `MrzDate.componentsFormCalendarDate` to distinguish "no real calendar date" from "components didn't parse as ints" or "calendar-valid but outside the parser's inference window") |
 | Expiry-date warnings (`MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`) | Implemented (TD3; `MrzExpiryDateImplausiblyFar` threshold defaults to 10 years and is non-configurable for now — see `docs/open-questions.md` "Validator options (configurable thresholds)") |
+| Birth-date warning (`MrzBirthDateImplausiblyOld`) | Implemented (TD3; threshold matches the parser's `MrzDate.MAX_PLAUSIBLE_AGE_YEARS = 130` cap and is non-configurable for now — see `docs/open-questions.md` "Validator options (configurable thresholds)") |
 | `ValidationResult.passedChecks` (transparency surface for what was verified) | Deferred (current `ValidationResult` exposes `validationFailures` and `warnings` only; the shape of `passedChecks` is itself an open question) |
 
 The validator's wiring into the parser is in place: `MrzParser.parseTD3` invokes `MrzValidator.validate(...)` on the constructed document, threading the same `referenceTime` through, and returns `ParseResult.PartialSuccess` with the failures populated in `ResultMetadata.validationFailures` whenever any failure surfaces, otherwise `ParseResult.Success`. Warnings are populated in `ResultMetadata.warnings` independently of the Success/PartialSuccess decision — a result with warnings but no failures is `Success`.
@@ -45,6 +46,8 @@ The set of valid sex characters used by Layer 3 is currently `{M, F, <, X}`. Con
 Expiry warnings depend on the validator's reference time and are emitted only when `MrzDate.computedDate` is non-null (i.e., the parser was able to resolve a real calendar date for the expiry). Because `MrzDate.parseExpiry` currently rejects expiries more than 50 years past the reference time as `RAW_ONLY`, `MrzExpiryDateImplausiblyFar` can fire in practice only within the (reference + 10 years, reference + 50 years] window; expiries beyond that are not computed and therefore cannot produce the warning. This is a layered limitation, not a design choice, and is noted here so it does not surprise consumers.
 
 The date-in-calendar check (`MrzDateNotInCalendar`) is signal-driven from the model rather than re-derived in the validator. `MrzDate` carries `componentsFormCalendarDate: Boolean?`, populated by `parseBirth` and `parseExpiry`: `null` when the raw components did not parse as 2-digit numerics (Layer-1 territory, not surfaced by this check), `true` when the components form a real `LocalDate` in at least one candidate century, and `false` when they do not. The validator emits `MrzDateNotInCalendar` only when the signal is `false`, which means a date that is calendar-valid but rejected by the parser's inference window (e.g., an expiry more than 50 years out) does not produce this failure — the date IS in the calendar, just outside the heuristic.
+
+The birth-age warning (`MrzBirthDateImplausiblyOld`) is signal-driven from the model in the same way. `MrzDate` carries `componentsExceedBirthAgeLimit: Boolean?`, populated only by `parseBirth`: `true` when the parser fell to `RAW_ONLY` because every calendar-valid past candidate exceeds the parser's age cap (`MrzDate.MAX_PLAUSIBLE_AGE_YEARS = 130`), `false` when the parser succeeded or when no past calendar-valid candidate exists, `null` when the question does not apply (non-numeric components, no candidate forms a calendar date, or the date came from `parseExpiry` / direct construction). The validator emits `MrzBirthDateImplausiblyOld` only when the signal is `true`. Because the warning's threshold is the parser's own inference cap, the warning fires only when the parser would otherwise silently fail to compute a date for age reasons — under current-era reference times (year ≤ ~2130) the cap is unreachable in practice; the warning matters for replay scenarios, audit pipelines, and far-future reference times that consumers may pass explicitly.
 
 ---
 
@@ -166,11 +169,11 @@ Validation never refuses to return a result. There is always a `ValidationResult
 
 Several validators check whether dates fall within plausible ranges. The conventions used:
 
-- **Date of birth** — must be in the past relative to the reference time, and not unreasonably so (the validator uses an upper bound of 130 years to define "unreasonable")
+- **Date of birth** — components that imply an age greater than 130 years at every candidate century interpretation produce a warning (`MrzBirthDateImplausiblyOld`). The 130-year threshold matches `MrzDate.MAX_PLAUSIBLE_AGE_YEARS` (the parser's age-rejection cap) so the warning fires only when the parser falls to `RAW_ONLY` for age. The implicit "must be in the past" expectation is enforced earlier in the parser's century-pick step rather than as a validator finding.
 - **Date of expiry** — checked against the reference time; an expiry in the past produces a warning (`MrzExpiryDatePast`); an expiry far in the future produces a different warning (`MrzExpiryDateImplausiblyFar`, with the threshold documented in the warning)
 - **Issuance dates** (where applicable) — must be in the past, and the gap to expiry must be plausible
 
-These thresholds are configurable through the validator's options, with the documented defaults applied when no configuration is provided. Consumers who need stricter or looser conventions can override.
+These thresholds are intended to be configurable through the validator's options, with the documented defaults applied when no configuration is provided. The configuration surface itself is deferred (see `docs/open-questions.md` "Validator options (configurable thresholds)"); the current slice ships the thresholds as constants matching the documented defaults.
 
 ---
 
