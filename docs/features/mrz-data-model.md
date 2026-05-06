@@ -155,6 +155,7 @@ The class exposes:
 - **`computedDate`** — a platform-appropriate date type (e.g., `LocalDate` on JVM/KMP) representing the full computed date
 - **`inferenceMethod`** — an enum value describing which heuristic produced the computed year
 - **`componentsFormCalendarDate`** — a `Boolean?` signal that disambiguates the `RAW_ONLY` cases. `null` when the raw components did not parse as 2-digit numerics (so the calendar question does not apply). `true` when the components form a real calendar date for at least one candidate year (covers both successful inference and dates that are calendar-valid but outside the SDK's inference window). `false` when the components parsed as numerics but no candidate year forms a real calendar date (e.g., February 30, month 13). The validator uses this signal to emit `MrzDateNotInCalendar` only for the `false` case.
+- **`componentsExceedBirthAgeLimit`** — a `Boolean?` signal that is birth-specific. `true` only when `parseBirth` falls to `RAW_ONLY` because every calendar-valid past candidate exceeds the parser's age cap (`MAX_PLAUSIBLE_AGE_YEARS = 130`); `false` when `parseBirth` succeeded or when no past calendar-valid candidate exists; `null` for `parseExpiry`-produced dates, for direct-construction defaults, for non-numeric components, or when no candidate forms a calendar date. The validator uses this signal to emit `MrzBirthDateImplausiblyOld` only for the `true` case.
 
 The supported inference methods include:
 

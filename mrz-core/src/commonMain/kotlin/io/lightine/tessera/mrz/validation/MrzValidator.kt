@@ -1,5 +1,6 @@
 package io.lightine.tessera.mrz.validation
 
+import io.lightine.tessera.domain.MrzBirthDateImplausiblyOld
 import io.lightine.tessera.domain.MrzCheckDigitMismatch
 import io.lightine.tessera.domain.MrzDateNotInCalendar
 import io.lightine.tessera.domain.MrzExpiryDateImplausiblyFar
@@ -105,8 +106,30 @@ public object MrzValidator {
             expiryComputedDate = document.commonFields.dateOfExpiry.computedDate,
             referenceTime = referenceTime,
         )
+        addBirthAgeWarningIfApplicable(
+            into = warnings,
+            birthDate = document.commonFields.dateOfBirth,
+            referenceTime = referenceTime,
+        )
 
         return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
+    }
+
+    private fun addBirthAgeWarningIfApplicable(
+        into: MutableList<MrzWarning>,
+        birthDate: MrzDate,
+        referenceTime: Instant,
+    ) {
+        if (birthDate.componentsExceedBirthAgeLimit != true) return
+        val referenceDate = referenceTime.toLocalDateTime(TimeZone.UTC).date
+        into +=
+            MrzBirthDateImplausiblyOld(
+                rawYear = birthDate.rawYear,
+                rawMonth = birthDate.rawMonth,
+                rawDay = birthDate.rawDay,
+                referenceDate = referenceDate,
+                thresholdYears = MrzDate.MAX_PLAUSIBLE_AGE_YEARS,
+            )
     }
 
     private fun addDateNotInCalendarFailureIfApplicable(
