@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- [ADR-014](docs/decisions/0014-unicode-normalization-strategy.md) — Unicode normalization strategy for transliteration. Decision: normalize consumer input to NFC via platform-native normalizers (`java.text.Normalizer` on JVM/Android, `precomposedStringWithCanonicalMapping` on iOS, `String.prototype.normalize` on JS/Wasm) exposed through a Kotlin Multiplatform `expect`/`actual` declaration. For `0.1.0` only the JVM `actual` is implemented; other platforms supply their one-line `actual` when their targets activate. The post-normalization, pre-transliteration form is exposed to consumers per Principle 5. This is the implementation-strategy companion to ADR-009 and the output of the first formal invocation of the Pre-Release Tech-Stack Review rule (landed in [#31](https://github.com/askerasadov/tessera/pull/31)/[#32](https://github.com/askerasadov/tessera/pull/32) and applied to `0.1.0` in [#33](https://github.com/askerasadov/tessera/pull/33)). Cross-referenced from `docs/features/transliteration.md` (new "Unicode Normalization Before Profile Lookup" section) and from ADR-009's `Related Decisions`. Index in `docs/decisions/README.md` updated
 - `domain` module: foundational vocabulary types
   - `Sex`, `MrzFormat`, `DocumentCategory`, `CountryCodeCategory` enums
   - `ReadMethod` enum (`LIVE_CAMERA`, `PRE_CAPTURED_IMAGE`, `MANUAL_ENTRY`, `NFC_CHIP`, `BACKEND_STRING_INPUT`, `MIXED`)
