@@ -130,7 +130,7 @@ A value class wrapping a one or two-character document type code. Both legacy si
 
 The class exposes:
 
-- The raw one or two-character string
+- **`rawCode`** — the document type code with trailing MRZ filler character `<` stripped. A single-character code `P` followed by filler in the second position appears as `rawCode = "P"`; a two-character code `PP` appears verbatim as `rawCode = "PP"`; a fully empty slot (`<<`) appears as `rawCode = ""`. Trailing filler is treated as structural (it marks the end of the code, not part of the code itself), parallel to how dates expose `rawYear` / `rawMonth` / `rawDay` without the surrounding two-character framing. Leading filler — which the ICAO Doc 9303 specification does not contemplate for the document type slot — is preserved as-is (e.g., a malformed slot `<P` becomes `rawCode = "<P"`); the parser does not auto-correct (Principle 1). Recognition lookup is keyed by `rawCode` exactly, so the lookup table contains the un-filler forms (`P`, `PP`, etc.) and an empty `rawCode` is unrecognized. Consumers who need the verbatim two-character slot including filler can read it from `commonFields.rawLines` at the format's documented document-type position.
 - A boolean indicating whether the code is recognized
 - A categorical interpretation (`PASSPORT`, `IDENTITY_CARD`, `RESIDENCE_PERMIT`, `VISA`, `OTHER`) when recognized
 
