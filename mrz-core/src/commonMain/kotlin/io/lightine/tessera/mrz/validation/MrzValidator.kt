@@ -7,9 +7,11 @@ import io.lightine.tessera.domain.MrzExpiryDateImplausiblyFar
 import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzInvalidSexValue
+import io.lightine.tessera.domain.MrzUnknownCountryCode
 import io.lightine.tessera.domain.MrzUnknownDocumentTypeCode
 import io.lightine.tessera.domain.MrzValidationError
 import io.lightine.tessera.domain.MrzWarning
+import io.lightine.tessera.mrz.CountryCode
 import io.lightine.tessera.mrz.DocumentType
 import io.lightine.tessera.mrz.MrzDate
 import io.lightine.tessera.mrz.MrzDocument
@@ -118,6 +120,18 @@ public object MrzValidator {
             documentType = document.commonFields.documentType,
             position = TD3_DOCUMENT_TYPE_POSITION,
         )
+        addUnknownCountryCodeWarningIfApplicable(
+            into = warnings,
+            countryCode = document.commonFields.issuingState,
+            field = MrzField.ISSUING_STATE,
+            position = TD3_ISSUING_STATE_POSITION,
+        )
+        addUnknownCountryCodeWarningIfApplicable(
+            into = warnings,
+            countryCode = document.commonFields.nationality,
+            field = MrzField.NATIONALITY,
+            position = line2GlobalOffset + TD3_NATIONALITY_LINE2_OFFSET,
+        )
 
         return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
     }
@@ -129,6 +143,16 @@ public object MrzValidator {
     ) {
         if (documentType.isRecognized) return
         into += MrzUnknownDocumentTypeCode(rawCode = documentType.rawCode, position = position)
+    }
+
+    private fun addUnknownCountryCodeWarningIfApplicable(
+        into: MutableList<MrzWarning>,
+        countryCode: CountryCode,
+        field: MrzField,
+        position: Int,
+    ) {
+        if (countryCode.isRecognized) return
+        into += MrzUnknownCountryCode(field = field, rawCode = countryCode.rawCode, position = position)
     }
 
     private fun addBirthAgeWarningIfApplicable(
@@ -203,4 +227,6 @@ public object MrzValidator {
 
     private const val TD3_LINE_LENGTH = 44
     private const val TD3_DOCUMENT_TYPE_POSITION = 0
+    private const val TD3_ISSUING_STATE_POSITION = 2
+    private const val TD3_NATIONALITY_LINE2_OFFSET = 10
 }

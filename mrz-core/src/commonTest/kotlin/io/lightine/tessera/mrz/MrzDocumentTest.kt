@@ -9,13 +9,13 @@ class MrzDocumentTest {
     private val specimenCommonFields =
         CommonFields(
             documentType = DocumentType("P"),
-            issuingState = "UTO",
+            issuingState = CountryCode("UTO"),
             primaryIdentifier = "ERIKSSON",
             secondaryIdentifier = "ANNA MARIA",
             nameTruncated = false,
             rawNameField = "ERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<",
             documentNumber = "L898902C<",
-            nationality = "UTO",
+            nationality = CountryCode("UTO"),
             dateOfBirth = MrzDate(rawYear = "69", rawMonth = "08", rawDay = "06"),
             sex = Sex.FEMALE,
             rawSex = 'F',
@@ -45,12 +45,12 @@ class MrzDocumentTest {
     @Test
     fun td3_specimen_constructs_and_exposes_common_fields_verbatim() {
         assertEquals("P", specimenTd3.commonFields.documentType.rawCode)
-        assertEquals("UTO", specimenTd3.commonFields.issuingState)
+        assertEquals("UTO", specimenTd3.commonFields.issuingState.rawCode)
         assertEquals("ERIKSSON", specimenTd3.commonFields.primaryIdentifier)
         assertEquals("ANNA MARIA", specimenTd3.commonFields.secondaryIdentifier)
         assertEquals(false, specimenTd3.commonFields.nameTruncated)
         assertEquals("L898902C<", specimenTd3.commonFields.documentNumber)
-        assertEquals("UTO", specimenTd3.commonFields.nationality)
+        assertEquals("UTO", specimenTd3.commonFields.nationality.rawCode)
         assertEquals(Sex.FEMALE, specimenTd3.commonFields.sex)
     }
 

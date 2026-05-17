@@ -8,9 +8,11 @@ import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzFormat
 import io.lightine.tessera.domain.MrzInvalidSexValue
+import io.lightine.tessera.domain.MrzUnknownCountryCode
 import io.lightine.tessera.domain.MrzUnknownDocumentTypeCode
 import io.lightine.tessera.domain.Sex
 import io.lightine.tessera.mrz.CommonFields
+import io.lightine.tessera.mrz.CountryCode
 import io.lightine.tessera.mrz.DocumentType
 import io.lightine.tessera.mrz.MrzCheckDigits
 import io.lightine.tessera.mrz.MrzDate
@@ -42,13 +44,13 @@ class MrzValidatorTest {
     ): CommonFields =
         CommonFields(
             documentType = DocumentType("P"),
-            issuingState = "UTO",
+            issuingState = CountryCode("UTO"),
             primaryIdentifier = "",
             secondaryIdentifier = "",
             nameTruncated = false,
             rawNameField = "ERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<",
             documentNumber = "L898902C<",
-            nationality = "UTO",
+            nationality = CountryCode("UTO"),
             dateOfBirth = MrzDate(rawYear = "69", rawMonth = "08", rawDay = "06"),
             sex = sex,
             rawSex = rawSex,
@@ -74,7 +76,10 @@ class MrzValidatorTest {
     fun specimen_passes_all_check_digits_and_sex_validation() {
         val result = MrzValidator.validate(specimenTd3())
         assertTrue(result.validationFailures.isEmpty(), "Expected no failures; got ${result.validationFailures}")
-        assertTrue(result.warnings.isEmpty(), "Expected no warnings; got ${result.warnings}")
+        // Specimen uses fictional ICAO test code "UTO" (Utopia), intentionally not in the SDK starter set.
+        // Two MrzUnknownCountryCode warnings are expected (issuingState + nationality); no others.
+        val nonCountryWarnings = result.warnings.filterNot { it is MrzUnknownCountryCode }
+        assertTrue(nonCountryWarnings.isEmpty(), "Expected no warnings beyond MrzUnknownCountryCode; got $nonCountryWarnings")
     }
 
     // --- Per-field check digit failures ---
@@ -733,6 +738,90 @@ class MrzValidatorTest {
             result.validationFailures.any { it is MrzInvalidSexValue },
             "Expected MrzInvalidSexValue failure to still be reported; got ${result.validationFailures}",
         )
+    }
+
+    // --- Unknown country code warning ---
+
+    @Test
+    fun unrecognized_issuing_state_emits_MrzUnknownCountryCode_with_field_raw_code_and_position() {
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields().copy(issuingState = CountryCode("ZZZ")),
+            )
+        val result = MrzValidator.validate(td3)
+        val warning =
+            result.warnings
+                .filterIsInstance<MrzUnknownCountryCode>()
+                .firstOrNull { it.field == MrzField.ISSUING_STATE }
+                ?: error("Expected MrzUnknownCountryCode for ISSUING_STATE; got ${result.warnings}")
+        assertEquals("ZZZ", warning.rawCode)
+        assertEquals(2, warning.position)
+    }
+
+    @Test
+    fun unrecognized_nationality_emits_MrzUnknownCountryCode_with_field_raw_code_and_position() {
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields().copy(nationality = CountryCode("ZZZ")),
+            )
+        val result = MrzValidator.validate(td3)
+        val warning =
+            result.warnings
+                .filterIsInstance<MrzUnknownCountryCode>()
+                .firstOrNull { it.field == MrzField.NATIONALITY }
+                ?: error("Expected MrzUnknownCountryCode for NATIONALITY; got ${result.warnings}")
+        assertEquals("ZZZ", warning.rawCode)
+        assertEquals(54, warning.position)
+    }
+
+    @Test
+    fun recognized_country_code_emits_no_unknown_warning_for_that_field() {
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields().copy(issuingState = CountryCode("DEU")),
+            )
+        val result = MrzValidator.validate(td3)
+        assertTrue(
+            result.warnings
+                .filterIsInstance<MrzUnknownCountryCode>()
+                .none { it.field == MrzField.ISSUING_STATE },
+            "Recognized issuingState must not emit MrzUnknownCountryCode for ISSUING_STATE; got ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun both_country_code_fields_emit_independent_warnings_when_both_unrecognized() {
+        // Specimen has UTO for both fields by default; both warnings should fire.
+        val result = MrzValidator.validate(specimenTd3())
+        val warnings = result.warnings.filterIsInstance<MrzUnknownCountryCode>()
+        assertEquals(
+            setOf(MrzField.ISSUING_STATE, MrzField.NATIONALITY),
+            warnings.map { it.field }.toSet(),
+        )
+        assertTrue(warnings.all { it.rawCode == "UTO" })
+    }
+
+    @Test
+    fun empty_country_code_emits_MrzUnknownCountryCode_preserving_empty_raw_code() {
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields().copy(
+                        issuingState = CountryCode(""),
+                        nationality = CountryCode("DEU"),
+                    ),
+            )
+        val result = MrzValidator.validate(td3)
+        val warning =
+            result.warnings
+                .filterIsInstance<MrzUnknownCountryCode>()
+                .firstOrNull { it.field == MrzField.ISSUING_STATE }
+                ?: error("Expected MrzUnknownCountryCode for ISSUING_STATE; got ${result.warnings}")
+        assertEquals("", warning.rawCode)
+        assertEquals(2, warning.position)
     }
 
     // --- TD1 (deferred path) ---
