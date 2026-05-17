@@ -10,6 +10,29 @@ This document focuses on the SDK-specific design choices: the public API shape, 
 
 ---
 
+## Status of Implementation
+
+The generator ships incrementally, format by format, per the phased addition procedure in `conventions.md`. The design described in the rest of this document is the target shape; the table below records what is currently implemented versus what is documented but deferred.
+
+| Capability | Status |
+|---|---|
+| `MrzGenerator.generate(document: TD3): GenerationResult` | Implemented |
+| `MrzGenerator.generate(document: TD2): GenerationResult` | Deferred |
+| `MrzGenerator.generate(document: TD1): GenerationResult` | Deferred |
+| `MrzGenerator.generate(document: MrvA): GenerationResult` | Deferred |
+| `MrzGenerator.generate(document: MrvB): GenerationResult` | Deferred |
+| Per-format primitive-input methods (`generateTD3(documentType, issuingState, ...)` etc.) | Deferred (all five formats) — current slice ships the `MrzDocument`-input overloads only |
+| `MrzGenerationFieldOverflow` error type | Implemented |
+| `MrzGenerationMissingRequiredField` error type | Implemented (the type exists; surfaces when the primitive-input methods land and have required fields to enforce) |
+| `MrzGenerationUnsupportedCharacters` error type | Deferred (lands with transliteration, which is itself deferred) |
+| Long document number extension (TD3) | Deferred — `>9`-character document numbers currently fail with `MrzGenerationFieldOverflow` rather than spilling into the personal-number field |
+| Transliteration via `TransliterationProfile` parameter | Deferred (the transliteration subsystem is not yet implemented) |
+| Round-trip property tests (`parse ∘ generate = identity` on raw fields) | Implemented for TD3 with the canonical Anna Eriksson specimen and a custom-date variant |
+
+The generator's wiring into the parser is implicit: a `MrzGenerator.generate(td3)` followed by `MrzParser.parseTD3(generated.mrz)` round-trips the raw fields verbatim. Check digits are recomputed by the generator from the field data on every call — the check-digit values on the input `MrzDocument` are not used (strict ICAO conformance per Principle 7 over faithful round-trip of bad inputs).
+
+---
+
 ## Purpose
 
 The generator produces a syntactically valid MRZ string from structured input. It computes check digits, applies field padding, and produces output that conforms to ICAO Doc 9303 for the requested format. If the input cannot produce a conformant output, the generator fails with a typed error rather than producing invalid output silently (Principle 7 — Fail loudly, fail informatively).
