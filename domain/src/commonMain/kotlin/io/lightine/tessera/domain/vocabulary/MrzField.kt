@@ -1,5 +1,19 @@
 package io.lightine.tessera.domain.vocabulary
 
+/**
+ * A symbolic name for an MRZ field, used as a discriminator on errors and warnings that
+ * need to identify which field they refer to.
+ *
+ * Used by error types such as
+ * [`MrzCheckDigitMismatch`][io.lightine.tessera.domain.errors.MrzCheckDigitMismatch],
+ * [`MrzDateNotInCalendar`][io.lightine.tessera.domain.errors.MrzDateNotInCalendar],
+ * [`MrzGenerationFieldOverflow`][io.lightine.tessera.domain.errors.MrzGenerationFieldOverflow],
+ * and others. Position information is carried alongside the field name so consumers can
+ * render precise per-character diagnostics.
+ *
+ * The enumerated names are SDK-internal symbols, not strings drawn from any external
+ * specification.
+ */
 public enum class MrzField {
     DOCUMENT_TYPE,
     ISSUING_STATE,

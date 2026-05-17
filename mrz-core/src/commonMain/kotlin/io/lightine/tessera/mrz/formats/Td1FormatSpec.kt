@@ -1,5 +1,16 @@
 package io.lightine.tessera.mrz.formats
 
+/**
+ * Field positions for the TD1 identity card format per ICAO Doc 9303 Part 5. Three lines
+ * × 30 characters; line 1 carries the document number and first optional data block, line
+ * 2 carries the dates plus sex, nationality, second optional data block, and composite
+ * check digit, and line 3 carries the name field.
+ *
+ * Adds [optionalData1] and [optionalData2] beyond the base [MrzFormatSpec] surface; the
+ * composite check digit covers the document number + check, both optional data blocks,
+ * the date of birth + check, and the date of expiry + check (sex, nationality, and the
+ * composite digit itself are excluded).
+ */
 public object Td1FormatSpec : MrzFormatSpecWithComposite {
     override val lineCount: Int = 3
     override val lineLength: Int = 30

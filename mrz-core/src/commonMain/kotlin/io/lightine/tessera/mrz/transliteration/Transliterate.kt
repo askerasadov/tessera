@@ -1,9 +1,17 @@
 package io.lightine.tessera.mrz.transliteration
 
-// Public end-to-end transliteration entry point. Composes Unicode normalization
-// (per ADR-014, internal) with profile application (per ADR-009), surfacing
-// the post-normalization, pre-transliteration form alongside the original input
-// and the profile's output per Principle 5.
+/**
+ * Public end-to-end transliteration entry point. Composes Unicode normalization (per
+ * [ADR-014](https://github.com/askerasadov/Tessera/blob/main/docs/decisions/0014-unicode-normalization-strategy.md),
+ * internal) with profile application (per
+ * [ADR-009](https://github.com/askerasadov/Tessera/blob/main/docs/decisions/0009-transliteration-profiles.md)),
+ * surfacing the post-normalization, pre-transliteration form alongside the original
+ * input and the profile's output per Principle 5.
+ *
+ * Use this when you want transliteration outside the generator (for example, to
+ * pre-transliterate a name before passing it to a non-primitive generator entry point,
+ * or to apply a profile to a value that isn't an MRZ field at all).
+ */
 public fun TransliterationProfile.transliterate(input: String): TransliterationOutcome {
     val normalized = normalizeForTransliteration(input)
     val result = this.toMrzAlphabet(normalized)
@@ -15,6 +23,11 @@ public fun TransliterationProfile.transliterate(input: String): TransliterationO
     )
 }
 
+/**
+ * The outcome of [`TransliterationProfile.transliterate`][transliterate]: which profile
+ * ran, what the consumer passed in, what the SDK saw after Unicode normalization, and
+ * the profile's [TransliterationResult].
+ */
 public data class TransliterationOutcome(
     val profileIdentifier: String,
     val originalInput: String,

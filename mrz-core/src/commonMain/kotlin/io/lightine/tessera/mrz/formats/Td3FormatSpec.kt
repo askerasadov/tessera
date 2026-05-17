@@ -1,5 +1,15 @@
 package io.lightine.tessera.mrz.formats
 
+/**
+ * Field positions for the TD3 passport format per ICAO Doc 9303 Part 4. Two lines × 44
+ * characters; same line dimensions as MRV-A, disambiguated by the leading character (TD3
+ * does not start with `V`).
+ *
+ * Adds [personalNumber] and [personalNumberCheckDigit] beyond the base [MrzFormatSpec]
+ * surface; the composite check digit covers the document number + check, date of birth
+ * + check, date of expiry + check, and personal number + check (sex and the composite
+ * digit itself are excluded).
+ */
 public object Td3FormatSpec : MrzFormatSpecWithComposite {
     override val lineCount: Int = 2
     override val lineLength: Int = 44
