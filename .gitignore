@@ -67,6 +67,19 @@ logs/
 # for the leading slash.
 /RECAP-*.md
 
+# Conformance verification working notes (per-session findings from spec-vs-implementation
+# verification passes). Same rationale as the recap files — these are working artifacts, not
+# committed project history. Leading slash for the same reason.
+/CONFORMANCE-*.md
+
+# Local reference copies of external specifications (e.g., ICAO Doc 9303 PDFs downloaded for
+# implementation verification). These are NEVER committed: ICAO's terms restrict redistribution
+# of their materials without written permission. The spec content is consulted locally to
+# verify the SDK's implementations against authoritative source; findings translate into code
+# changes and citations via section numbers, never via verbatim spec content. Leading slash
+# anchors to project root (avoid accidental matches in nested module trees).
+/spec/
+
 # Coverage reports
 coverage/
 *.lcov
