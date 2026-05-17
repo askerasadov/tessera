@@ -13,6 +13,7 @@ public object TransliterationProfileRegistry {
 
     init {
         register(IcaoDefaultTransliterationProfile)
+        register(AzeTransliterationProfile)
     }
 
     public fun register(profile: TransliterationProfile) {
