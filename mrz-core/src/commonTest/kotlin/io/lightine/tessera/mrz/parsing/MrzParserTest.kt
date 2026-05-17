@@ -371,7 +371,7 @@ class MrzParserTest {
         try {
             val result = MrzParser.parseTD3(listOf(line1WithLowercase, specimenLine2), referenceTime = ref2026)
             assertIs<ParseResult.Failure>(result)
-            assertIs<MrzCharacterSetViolation>((result as ParseResult.Failure).error)
+            assertIs<MrzCharacterSetViolation>(result.error)
         } catch (e: IllegalArgumentException) {
             fail("Parser should not bubble IllegalArgumentException for non-MRZ-alphabet input; got: ${e.message}")
         }

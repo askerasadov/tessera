@@ -84,6 +84,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Build infrastructure
   - `kotlinx-datetime 0.6.1` declared as `api` dependency in `mrz-core` (transitively exposes `LocalDate`)
   - `kotlinx-datetime 0.6.1` declared as `api` dependency in `domain` (first date-bearing types in `domain` — the expiry warnings — carry `LocalDate`)
+- Build infrastructure upgrade (first cycle under the new 6-monthly upgrade cadence)
+  - Kotlin (and Kotlin Multiplatform plugin) `2.1.0` → `2.3.21` (latest stable as of 2026-05-17, released 2026-04-23 per the Kotlin release page). 2.3.x is the active language line; 2.1.x was ~18 months stale at the start of the upgrade
+  - Gradle wrapper `8.14` → `9.5.1` (latest stable, released 2026-05-12). Kotlin Gradle Plugin and Gradle remain inside their tested-pair window per [the KGP compatibility matrix](https://kotlinlang.org/docs/gradle-configure-project.html) and [Gradle 9.5.1 compatibility notes](https://docs.gradle.org/current/userguide/compatibility.html)
+  - JVM toolchain `17` → `21` across all five Gradle modules. JDK 21 is LTS through September 2031; the `jvmToolchain(N)` value sets the minimum JVM that consumers need to run the SDK. JDK 21 strikes the balance of "well-deployed LTS" and "modern language features (virtual threads, pattern matching) available to the implementation." Auto-provisioning via the existing `foojay-resolver-convention` plugin means contributors don't have to install JDK 21 manually
+  - `foojay-resolver-convention` plugin `0.9.0` → `1.0.0` (Gradle 9.x compatibility — `0.9.0` referenced an `IBM_SEMERU` JVM vendor enum constant that doesn't exist in Gradle 9.x, breaking toolchain provisioning at startup before this bump)
+  - No behavior change in shipped code. Two stale `@Suppress("USELESS_IS_CHECK")` annotations in `MrzFormatSpecTest` were removed (Kotlin 2.3.21 flags the underlying `is MrzFormatSpecWithComposite` checks as KTLC-365 "Check for instance is always 'false'" because the sealed hierarchy proves them statically; the runtime checks are now redundant). One unnecessary `as ParseResult.Failure` cast in `MrzParserTest` removed (Kotlin 2.3.21 smart-casts after `assertIs`)
+  - Test count unchanged: **428** tests pass on the new toolchain
 - Documentation
   - [`docs/decisions/0012-recognition-types-live-with-tables.md`](docs/decisions/0012-recognition-types-live-with-tables.md): ADR resolving where recognition-bearing value classes live (with their lookup tables in `mrz-core`, not `domain`)
   - "Error Sub-Categorization by Operation" section added to [`docs/features/mrz-error-taxonomy.md`](docs/features/mrz-error-taxonomy.md) documenting `MrzParseError` / `MrzGenerationError` intermediate sealed roots
