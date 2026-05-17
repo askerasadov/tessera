@@ -7,6 +7,7 @@ import io.lightine.tessera.domain.errors.MrzExpiryDateImplausiblyFar
 import io.lightine.tessera.domain.errors.MrzExpiryDatePast
 import io.lightine.tessera.domain.errors.MrzInvalidSexValue
 import io.lightine.tessera.domain.errors.MrzNameTruncated
+import io.lightine.tessera.domain.errors.MrzPersonalNumberCheckDigitFiller
 import io.lightine.tessera.domain.errors.MrzUnknownCountryCode
 import io.lightine.tessera.domain.errors.MrzUnknownDocumentTypeCode
 import io.lightine.tessera.domain.vocabulary.MrzField
@@ -23,6 +24,7 @@ import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MrzValidatorTest {
@@ -186,6 +188,137 @@ class MrzValidatorTest {
         assertEquals('1', mismatch.expected)
         assertEquals('0', mismatch.observed)
         assertEquals(86, mismatch.position)
+    }
+
+    // --- TD3 personal-number check digit filler deviation ---
+
+    @Test
+    fun emits_personal_number_check_digit_filler_warning_when_check_is_filler_and_number_is_populated() {
+        // Documented real-world deviation: some issuing states leave the personal-number check
+        // digit as `<` even when the personal number itself is populated. The validator surfaces
+        // this as a warning, not a validation failure.
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields(
+                        checkDigits =
+                            MrzCheckDigits(
+                                documentNumber = '3',
+                                dateOfBirth = '1',
+                                dateOfExpiry = '6',
+                                optionalData = '<',
+                                composite = '4',
+                            ),
+                    ),
+                personalNumberCheckDigit = '<',
+            )
+        val result = MrzValidator.validate(td3)
+
+        val warning =
+            result.warnings.filterIsInstance<MrzPersonalNumberCheckDigitFiller>().firstOrNull()
+        assertTrue(warning != null, "Expected MrzPersonalNumberCheckDigitFiller; got ${result.warnings}")
+        assertEquals("ZE184226B<<<<<", warning.rawPersonalNumber)
+        // Personal number check digit slot on TD3: line 1 index 42, global = 44 + 42 = 86
+        assertEquals(86, warning.position)
+    }
+
+    @Test
+    fun suppresses_optional_data_check_digit_failure_when_filler_warning_applies() {
+        // The warning case supersedes the per-field check-digit failure. The validator must NOT
+        // also emit MrzCheckDigitMismatch for OPTIONAL_DATA when the warning applies.
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields(
+                        checkDigits =
+                            MrzCheckDigits(
+                                documentNumber = '3',
+                                dateOfBirth = '1',
+                                dateOfExpiry = '6',
+                                optionalData = '<',
+                                composite = '4',
+                            ),
+                    ),
+                personalNumberCheckDigit = '<',
+            )
+        val result = MrzValidator.validate(td3)
+        val optionalDataMismatch =
+            result.validationFailures
+                .filterIsInstance<MrzCheckDigitMismatch>()
+                .firstOrNull { it.field == MrzField.OPTIONAL_DATA }
+        assertNull(
+            optionalDataMismatch,
+            "Filler-check-digit deviation should be surfaced as warning only — no MrzCheckDigitMismatch for OPTIONAL_DATA; got ${result.validationFailures}",
+        )
+    }
+
+    @Test
+    fun does_not_emit_filler_warning_when_personal_number_itself_is_entirely_filler() {
+        // When the personal number itself is all `<` (issuer signaling "no personal number"),
+        // the filler check digit is the conformant choice, not a deviation. The warning must
+        // not fire. The detection examines the raw personal-number bytes from rawLines, so
+        // overriding `line2` to a version with an all-filler personal-number slot is enough.
+        val td3 =
+            specimenTd3(
+                line2 = "L898902C<3UTO6908061F9406236<<<<<<<<<<<<<<<<",
+                commonFields =
+                    specimenCommonFields(
+                        checkDigits =
+                            MrzCheckDigits(
+                                documentNumber = '3',
+                                dateOfBirth = '1',
+                                dateOfExpiry = '6',
+                                optionalData = '<',
+                                composite = '<',
+                            ),
+                    ),
+                personalNumberCheckDigit = '<',
+            )
+        val result = MrzValidator.validate(td3)
+
+        val warning =
+            result.warnings.filterIsInstance<MrzPersonalNumberCheckDigitFiller>().firstOrNull()
+        assertNull(
+            warning,
+            "All-filler personal number should not trigger the deviation warning; got ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun documented_deviation_specimen_returns_no_validation_failures() {
+        // End-to-end intent: a TD3 with the deviation but otherwise valid digits parses to
+        // Success (no validation failures, only the warning). The composite digit must match
+        // the deviated input for this to hold. We compute a specimen where every other digit
+        // is valid; the composite digit value isn't asserted here, only the absence of
+        // OPTIONAL_DATA / COMPOSITE-related failures.
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields(
+                        checkDigits =
+                            MrzCheckDigits(
+                                documentNumber = '3',
+                                dateOfBirth = '1',
+                                dateOfExpiry = '6',
+                                optionalData = '<',
+                                // Composite over `...<` input — the test asserts the OPTIONAL_DATA
+                                // path is suppressed; composite mismatch is incidental.
+                                composite = '4',
+                            ),
+                    ),
+                personalNumberCheckDigit = '<',
+            )
+        val result = MrzValidator.validate(td3)
+
+        // OPTIONAL_DATA mismatch must NOT appear (replaced by the warning).
+        val optionalDataFailure =
+            result.validationFailures
+                .filterIsInstance<MrzCheckDigitMismatch>()
+                .firstOrNull { it.field == MrzField.OPTIONAL_DATA }
+        assertNull(optionalDataFailure)
+
+        // Warning IS emitted.
+        assertTrue(result.warnings.any { it is MrzPersonalNumberCheckDigitFiller })
     }
 
     @Test
