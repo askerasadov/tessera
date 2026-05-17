@@ -117,6 +117,24 @@ The project has many decisions captured in ADRs and feature documentation. Befor
 
 If after reading the reasoning you still think the decision is wrong, that is a legitimate position — propose a new ADR superseding the old one. But do not casually overturn established choices without engaging with why they were made.
 
+### Pre-commitment alignment check
+
+Before committing to a path on a *foundational* decision, verify alignment with primary sources. Foundational decisions are anything that ADR-007 backward-compatibility will lock at `0.1.0` (tech-stack choices, scope-defining wording, architectural commitments, API-shape locks). The cost of being wrong on these is much higher than the cost of pausing to check.
+
+Distinguish between two kinds of source:
+
+- **Primary sources** — the actual committed docs (`scope.md`, ADRs, `open-questions.md`, feature docs). These are the source of truth.
+- **Derived sources** — recaps, summaries, session handoffs, prior interpretations *of* the primary docs. Useful, but they can drift from the primary over time. Acting on a drifted derived source propagates the drift forward into new decisions.
+
+**The check:** when about to act on a recap, summary, or interpretation that will shape a foundational decision, read the underlying primary doc first. If they agree, proceed. If they don't, surface the drift explicitly and fix the derived source before proceeding.
+
+This is not "verify everything." Most decisions are routine and the default ("trust the doc system" — see `feedback_trust_existing_docs.md` memory) applies. The trigger for slowing down is *cost of being wrong is high*, not *I want to feel thorough*.
+
+- **Trigger the check on:** anything ADR-007 will lock at tag time, tech-stack decisions, scope-defining language, decisions surfaced during a Pre-Release Tech-Stack Review.
+- **Don't trigger on:** routine implementation slices, well-trodden patterns, doc fixes within established conventions, anything cheaply reversible.
+
+**Working example.** PR [#33](https://github.com/askerasadov/tessera/pull/33) (May 2026). The pre-`0.1.0` recap (derived source) had over-stated 0.1.0's mobile-target requirements. `scope.md` (primary) actually said target enablement is per-release. The recap drift had been carried forward into the Path-A vs Path-B discussion before the user surfaced it. The fix was a 6-line `scope.md` tightening that prevents the same misreading from recurring. The pattern was named in the same session that produced the catch.
+
 ### Assume nothing about the user's context
 
 The user is a working professional with significant context that does not appear in the documents or in the conversation. They have:

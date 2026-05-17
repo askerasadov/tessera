@@ -141,6 +141,7 @@ The project uses **GitHub Flow**: `main` is the trunk; feature branches off `mai
 - **Before drafting major changes**, confirm the change does not contradict an established decision.
 - **Before introducing a new dependency**, confirm it is justified. Each adds a maintenance burden.
 - **Before writing more than ~50 lines of new content without checking in**, pause and verify direction with the user. Short cycles produce better outcomes.
+- **Before committing to a foundational decision**, verify alignment with primary sources — the actual committed docs (`scope.md`, ADRs, `open-questions.md`, feature docs) — not derived sources (recaps, summaries, prior interpretations) that can drift. Foundational decisions are anything ADR-007 backward-compatibility will lock at `0.1.0` (tech-stack choices, scope-defining wording, architectural commitments). The trigger is *cost of being wrong is high*, not *I want to feel thorough*. Full pattern in [`.claude/working-patterns.md`](.claude/working-patterns.md) under "Pre-commitment alignment check"; complements the "trust the doc system" stance by naming its exception.
 
 ### Resisting "Looks Ready"
 
@@ -168,6 +169,8 @@ When new content needs a home, use this guidance:
 | A new API or capability | The relevant feature doc in [`docs/features/`](docs/features/) |
 | A testing commitment | [`docs/testing.md`](docs/testing.md) |
 | A risk profile for a new reading method | [`docs/reading-risks.md`](docs/reading-risks.md) |
+
+Some rules and patterns serve **multiple audiences** — both AI assistants and human contributors. When that's the case, place the content in its primary home and cross-reference from secondary homes. The established precedent in this project: rules in CLAUDE.md that also affect human contributors get a short cross-reference subsection in [`docs/conventions.md`](docs/conventions.md). The Dependency Upgrade Cadence, Pre-Release Tech-Stack Review, and Pre-commitment alignment check rules are the working precedents. Before placing a new rule, ask: *who does this serve — future AI sessions, future human contributors, or both?* Place and cross-reference accordingly. Memories serve a narrower audience (one Claude on one machine) and are appropriate when the content is genuinely local; rules that apply to any contributor or any AI on the repo belong in committed files instead.
 
 After every substantive session, ask: *did this session reveal anything that should be added to the documentation? Was anything in the docs wrong relative to what was built?* If yes, update before writing the handoff.
 
