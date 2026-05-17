@@ -26,6 +26,7 @@ The format is documented in `conventions.md`. ADRs are *fixed* once accepted: if
 | [012](0012-recognition-types-live-with-tables.md) | Recognition-bearing value classes live with their lookup tables | Accepted |
 | [013](0013-recognition-failures-are-warnings.md) | Recognition failures are warnings, not validation errors | Accepted |
 | [014](0014-unicode-normalization-strategy.md) | Unicode normalization via platform-native normalizers (expect/actual) | Accepted |
+| [015](0015-telemetry-contract-only-at-0-1-0.md) | Telemetry interface ships as contract-only at 0.1.0 with an open event hierarchy | Accepted |
 
 ---
 
