@@ -5,6 +5,9 @@ import io.lightine.tessera.domain.errors.MrzInvalidLength
 import io.lightine.tessera.domain.vocabulary.MrzFormat
 import io.lightine.tessera.domain.vocabulary.ReadMethod
 import io.lightine.tessera.domain.vocabulary.Sex
+import io.lightine.tessera.mrz.formats.Td3FormatSpec
+import io.lightine.tessera.mrz.formats.extractCharFrom
+import io.lightine.tessera.mrz.formats.extractFrom
 import io.lightine.tessera.mrz.model.CommonFields
 import io.lightine.tessera.mrz.model.MrzCheckDigits
 import io.lightine.tessera.mrz.model.MrzDate
@@ -16,9 +19,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 public object MrzParser {
-    private const val TD3_LINE_COUNT = 2
-    private const val TD3_LINE_LENGTH = 44
-
     public fun parseTD3(
         input: String,
         referenceTime: Instant = Clock.System.now(),
@@ -60,15 +60,15 @@ public object MrzParser {
 
     private fun validateLineShape(input: List<String>): MrzInvalidLength? {
         val observedLengths = input.map { it.length }
-        val countMatches = input.size == TD3_LINE_COUNT
-        val lengthsMatch = observedLengths.all { it == TD3_LINE_LENGTH }
+        val countMatches = input.size == Td3FormatSpec.lineCount
+        val lengthsMatch = observedLengths.all { it == Td3FormatSpec.lineLength }
         return if (countMatches && lengthsMatch) {
             null
         } else {
             MrzInvalidLength(
                 format = MrzFormat.TD3,
-                expectedLineCount = TD3_LINE_COUNT,
-                expectedLineLength = TD3_LINE_LENGTH,
+                expectedLineCount = Td3FormatSpec.lineCount,
+                expectedLineLength = Td3FormatSpec.lineLength,
                 observedLineCount = input.size,
                 observedLineLengths = observedLengths,
             )
@@ -81,7 +81,7 @@ public object MrzParser {
                 if (!isMrzAlphabetCharacter(c)) {
                     return MrzCharacterSetViolation(
                         offendingCharacter = c,
-                        position = lineIndex * TD3_LINE_LENGTH + charIndex,
+                        position = lineIndex * Td3FormatSpec.lineLength + charIndex,
                     )
                 }
             }
@@ -93,24 +93,21 @@ public object MrzParser {
         input: List<String>,
         referenceTime: Instant,
     ): TD3 {
-        val line1 = input[0]
-        val line2 = input[1]
+        val documentTypeCode = Td3FormatSpec.documentType.extractFrom(input).trimEnd('<')
+        val issuingState = Td3FormatSpec.issuingState.extractFrom(input)
+        val rawNameField = Td3FormatSpec.rawNameField.extractFrom(input)
 
-        val documentTypeCode = line1.substring(0, 2).trimEnd('<')
-        val issuingState = line1.substring(2, 5)
-        val rawNameField = line1.substring(5, 44)
-
-        val documentNumber = line2.substring(0, 9)
-        val docNumberCheckDigit = line2[9]
-        val nationality = line2.substring(10, 13)
-        val rawDob = line2.substring(13, 19)
-        val dobCheckDigit = line2[19]
-        val sexChar = line2[20]
-        val rawExpiry = line2.substring(21, 27)
-        val expiryCheckDigit = line2[27]
-        val personalNumber = line2.substring(28, 42)
-        val personalNumberCheckDigit = line2[42]
-        val compositeCheckDigit = line2[43]
+        val documentNumber = Td3FormatSpec.documentNumber.extractFrom(input)
+        val docNumberCheckDigit = Td3FormatSpec.documentNumberCheckDigit.extractCharFrom(input)
+        val nationality = Td3FormatSpec.nationality.extractFrom(input)
+        val rawDob = Td3FormatSpec.dateOfBirth.extractFrom(input)
+        val dobCheckDigit = Td3FormatSpec.dateOfBirthCheckDigit.extractCharFrom(input)
+        val sexChar = Td3FormatSpec.sex.extractCharFrom(input)
+        val rawExpiry = Td3FormatSpec.dateOfExpiry.extractFrom(input)
+        val expiryCheckDigit = Td3FormatSpec.dateOfExpiryCheckDigit.extractCharFrom(input)
+        val personalNumber = Td3FormatSpec.personalNumber.extractFrom(input)
+        val personalNumberCheckDigit = Td3FormatSpec.personalNumberCheckDigit.extractCharFrom(input)
+        val compositeCheckDigit = Td3FormatSpec.compositeCheckDigit.extractCharFrom(input)
 
         val sex =
             when (sexChar) {
