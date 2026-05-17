@@ -7,6 +7,7 @@ import io.lightine.tessera.domain.errors.MrzExpiryDateImplausiblyFar
 import io.lightine.tessera.domain.errors.MrzExpiryDatePast
 import io.lightine.tessera.domain.errors.MrzInvalidSexValue
 import io.lightine.tessera.domain.errors.MrzNameTruncated
+import io.lightine.tessera.domain.errors.MrzPersonalNumberCheckDigitFiller
 import io.lightine.tessera.domain.errors.MrzUnknownCountryCode
 import io.lightine.tessera.domain.errors.MrzUnknownDocumentTypeCode
 import io.lightine.tessera.domain.errors.MrzValidationError
@@ -58,6 +59,7 @@ public object MrzValidator {
     ): ValidationResult {
         val rawLines = document.rawLines
         val failures = mutableListOf<MrzValidationError>()
+        val warnings = mutableListOf<MrzWarning>()
 
         addCheckDigitFailureIfMismatch(
             into = failures,
@@ -80,13 +82,33 @@ public object MrzValidator {
             field = MrzField.DATE_OF_EXPIRY,
             position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.dateOfExpiryCheckDigit),
         )
-        addCheckDigitFailureIfMismatch(
-            into = failures,
-            input = Td3FormatSpec.personalNumber.extractFrom(rawLines),
-            observed = document.personalNumberCheckDigit,
-            field = MrzField.OPTIONAL_DATA,
-            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.personalNumberCheckDigit),
-        )
+        // TD3 personal-number check digit: distinguish "filler with populated personal number"
+        // (a documented real-world deviation surfaced as a warning) from "wrong digit" (a strict
+        // ICAO non-conformance surfaced as a validation failure). See
+        // `docs/features/mrz-parsing.md` "Personal Number Check Digit as Filler" and
+        // [ADR-013](../../../decisions/0013-recognition-failures-are-warnings.md).
+        val rawPersonalNumber = Td3FormatSpec.personalNumber.extractFrom(rawLines)
+        val personalNumberCheck = document.personalNumberCheckDigit
+        val personalNumberHasContent = rawPersonalNumber.any { it != '<' }
+        if (personalNumberCheck == '<' && personalNumberHasContent) {
+            // Documented deviation: issuer left the check digit as filler while populating the
+            // personal number itself. Per Principle 1 and [ADR-013], not a failure — surfaced
+            // as a typed warning so consumers can decide whether to treat the deviation as
+            // disqualifying for their use case.
+            warnings +=
+                MrzPersonalNumberCheckDigitFiller(
+                    rawPersonalNumber = rawPersonalNumber,
+                    position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.personalNumberCheckDigit),
+                )
+        } else {
+            addCheckDigitFailureIfMismatch(
+                into = failures,
+                input = rawPersonalNumber,
+                observed = personalNumberCheck,
+                field = MrzField.OPTIONAL_DATA,
+                position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.personalNumberCheckDigit),
+            )
+        }
 
         // TD3 always carries a composite check digit per ICAO Doc 9303 Part 4; the parser
         // populates it unconditionally, so the model-level `Char?` is structurally non-null here.
@@ -119,7 +141,6 @@ public object MrzValidator {
             position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.dateOfExpiry),
         )
 
-        val warnings = mutableListOf<MrzWarning>()
         addExpiryWarningsIfApplicable(
             into = warnings,
             expiryComputedDate = document.commonFields.dateOfExpiry.computedDate,
