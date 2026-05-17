@@ -1,5 +1,14 @@
 package io.lightine.tessera.mrz.formats
 
+/**
+ * Field positions for the MRV-B visa format per ICAO Doc 9303 Part 7. Two lines × 36
+ * characters; same line dimensions as TD2, disambiguated by the leading `V` character.
+ *
+ * MRV-B has no composite check digit: the last 8 characters of line 2 are entirely
+ * optional data. This object implements [MrzFormatSpec] (not [MrzFormatSpecWithComposite])
+ * to reflect that, so `compositeCheckDigit` and `compositeInputFields` are absent from
+ * its API surface.
+ */
 public object MrvBFormatSpec : MrzFormatSpec {
     override val lineCount: Int = 2
     override val lineLength: Int = 36
@@ -17,9 +26,4 @@ public object MrvBFormatSpec : MrzFormatSpec {
     override val dateOfExpiry: FieldSpec = FieldSpec(line = 1, startInLine = 21, endInLineExclusive = 27)
     override val dateOfExpiryCheckDigit: FieldSpec = FieldSpec(line = 1, startInLine = 27, endInLineExclusive = 28)
     public val optionalData: FieldSpec = FieldSpec(line = 1, startInLine = 28, endInLineExclusive = 36)
-
-    // MRV-B has no composite check digit per ICAO Doc 9303 Part 7: the last 8 characters of
-    // line 2 are entirely optional data. The spec implements `MrzFormatSpec` (not
-    // `MrzFormatSpecWithComposite`), so `compositeCheckDigit` and `compositeInputFields` are
-    // absent from this object's API surface.
 }

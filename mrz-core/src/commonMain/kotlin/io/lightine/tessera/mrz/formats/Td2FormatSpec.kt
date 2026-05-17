@@ -1,5 +1,14 @@
 package io.lightine.tessera.mrz.formats
 
+/**
+ * Field positions for the TD2 identity document format per ICAO Doc 9303 Part 6. Two
+ * lines × 36 characters; same line dimensions as MRV-B, disambiguated by the leading
+ * character (TD2 does not start with `V`).
+ *
+ * Adds [optionalData] beyond the base [MrzFormatSpec] surface; the composite check digit
+ * covers the document number + check, date of birth + check, and date of expiry + check
+ * + optional data (sex and the composite digit itself are excluded).
+ */
 public object Td2FormatSpec : MrzFormatSpecWithComposite {
     override val lineCount: Int = 2
     override val lineLength: Int = 36

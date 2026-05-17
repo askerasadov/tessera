@@ -6,6 +6,30 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.Instant
 
+/**
+ * An MRZ-encoded date: the raw two-digit year, month, and day components exactly as
+ * recorded on the document, together with the SDK's inference of which full
+ * [`LocalDate`][kotlinx.datetime.LocalDate] those components most likely represent.
+ *
+ * Per [ADR-008](https://github.com/askerasadov/Tessera/blob/main/docs/decisions/0008-date-inference-hybrid.md):
+ * the SDK exposes both the raw components and the computed date so consumers can decide
+ * which to trust. The [inferenceMethod] enum records how the computed date (if any) was
+ * picked.
+ *
+ * For birth dates the SDK applies a sliding-window heuristic (candidate must be in the
+ * past relative to the reference time and within [MAX_PLAUSIBLE_AGE_YEARS]); for expiry
+ * dates a different window (10 years past, 50 years future). When no candidate fits, only
+ * the raw components are populated and [inferenceMethod] is [MrzDateInferenceMethod.RAW_ONLY].
+ *
+ * The tri-state [componentsFormCalendarDate] distinguishes "we couldn't tell"
+ * (`null`, raw components didn't parse as numerics) from "valid calendar date for at
+ * least one candidate century" (`true`) and "not a real calendar date" (`false`).
+ * [componentsExceedBirthAgeLimit] is parallel — only populated for birth dates that
+ * form a calendar date but exceed the plausible-age window.
+ *
+ * Use the [parseBirth] and [parseExpiry] factories rather than constructing directly;
+ * they handle component parsing, century inference, and the tri-state flags consistently.
+ */
 public data class MrzDate(
     val rawYear: String,
     val rawMonth: String,
@@ -21,6 +45,15 @@ public data class MrzDate(
         private const val EXPIRY_PAST_WINDOW_YEARS = 10
         private const val EXPIRY_FUTURE_WINDOW_YEARS = 50
 
+        /**
+         * Parses a birth-date MRZ field. Returns an [MrzDate] whose [computedDate] (if
+         * resolved) is in the past relative to [referenceTime] and whose age is within
+         * [MAX_PLAUSIBLE_AGE_YEARS]. When no candidate century fits, returns an [MrzDate]
+         * with only the raw components populated and [inferenceMethod] = `RAW_ONLY`.
+         *
+         * [referenceTime] defaults to the current system time. Tests typically pass an
+         * explicit reference so they don't depend on the wall clock.
+         */
         public fun parseBirth(
             rawYear: String,
             rawMonth: String,
@@ -65,6 +98,14 @@ public data class MrzDate(
             )
         }
 
+        /**
+         * Parses an expiry-date MRZ field. Returns an [MrzDate] whose [computedDate]
+         * (if resolved) is within 10 years before to 50 years after [referenceTime].
+         * When no candidate century fits, returns an [MrzDate] with only the raw
+         * components populated and [inferenceMethod] = `RAW_ONLY`.
+         *
+         * [referenceTime] defaults to the current system time.
+         */
         public fun parseExpiry(
             rawYear: String,
             rawMonth: String,

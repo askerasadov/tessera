@@ -37,10 +37,36 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.Instant
 
+/**
+ * Validates parsed [`MrzDocument`][MrzDocument] objects against the per-field and
+ * cross-field checks defined by ICAO Doc 9303 and by the SDK's documented warnings.
+ *
+ * Returns a [ValidationResult] carrying any
+ * [`MrzValidationError`][io.lightine.tessera.domain.errors.MrzValidationError]s (per-field
+ * structural failures: check digit mismatches, calendar-invalid dates, out-of-range sex
+ * characters) and any
+ * [`MrzWarning`][io.lightine.tessera.domain.errors.MrzWarning]s (informational
+ * observations: implausible dates, name truncation, unknown country/document codes).
+ *
+ * `MrzParser` invokes the validator internally and folds the result into
+ * [`ResultMetadata`][io.lightine.tessera.mrz.parsing.ResultMetadata]; consumers reading
+ * parser output rarely need to call the validator directly. Direct callers are typically
+ * tests or callers re-validating a document constructed from primitive inputs.
+ *
+ * See
+ * [`docs/features/mrz-validation.md`](https://github.com/askerasadov/Tessera/blob/main/docs/features/mrz-validation.md)
+ * for the full feature description.
+ */
 public object MrzValidator {
     private val VALID_SEX_CHARACTERS = setOf('M', 'F', '<', 'X')
     private const val EXPIRY_IMPLAUSIBLY_FAR_THRESHOLD_YEARS = 10
 
+    /**
+     * Validates [document], using [referenceTime] for date-window checks (expiry past,
+     * expiry implausibly far in the future, birth date implausibly old). Defaults to the
+     * current system time; the parser passes its own `referenceTime` through so parser
+     * and validator agree on the date interpretation.
+     */
     public fun validate(
         document: MrzDocument,
         referenceTime: Instant = Clock.System.now(),

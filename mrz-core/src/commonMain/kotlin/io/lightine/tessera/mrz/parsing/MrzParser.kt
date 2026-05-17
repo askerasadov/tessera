@@ -28,12 +28,48 @@ import io.lightine.tessera.mrz.validation.MrzValidator
 import kotlin.time.Clock
 import kotlin.time.Instant
 
+/**
+ * Parses MRZ strings into [`MrzDocument`][io.lightine.tessera.mrz.model.MrzDocument]
+ * objects per ICAO Doc 9303. Provides both auto-detecting and format-specific entry
+ * points.
+ *
+ * Two families of entry points:
+ *
+ * 1. **Auto-detecting** — [parse]. Identifies the format from the input's line count and
+ *    per-line lengths and dispatches to the matching format-specific parser. Returns
+ *    [`MrzFormatNotDetected`][io.lightine.tessera.domain.errors.MrzFormatNotDetected]
+ *    when the input shape does not match any supported format. Inputs whose shape is
+ *    ambiguous between a non-visa and a visa format are disambiguated by the leading
+ *    `V` character on line 1 (per Principle 1: dispatch is deterministic, never
+ *    "ambiguous").
+ *
+ * 2. **Format-specific** — [parseTD3], [parseTD2], [parseTD1], [parseMRVA], [parseMRVB].
+ *    Use these when the consumer already knows the expected format. Format-specific
+ *    parsers return [`MrzInvalidLength`][io.lightine.tessera.domain.errors.MrzInvalidLength]
+ *    (not [`MrzFormatNotDetected`][io.lightine.tessera.domain.errors.MrzFormatNotDetected])
+ *    when the input doesn't match the format's dimensions.
+ *
+ * Every entry point optionally accepts a [`referenceTime`][kotlin.time.Instant] used for
+ * date-window inference (2-digit year disambiguation, expiry-past warnings, etc.). The
+ * default is the current system time; tests typically pass an explicit reference so they
+ * don't depend on the wall clock.
+ *
+ * See
+ * [`docs/features/mrz-parsing.md`](https://github.com/askerasadov/Tessera/blob/main/docs/features/mrz-parsing.md)
+ * for the full feature description.
+ */
 public object MrzParser {
+    /**
+     * Parses [input] by auto-detecting the format from its shape. Line endings (`\n`,
+     * `\r\n`, `\r`) are normalized; leading empty lines are dropped; trailing whitespace
+     * is trimmed before detection. See the dispatch rules in the class-level KDoc.
+     */
     public fun parse(
         input: String,
         referenceTime: Instant = Clock.System.now(),
     ): ParseResult = parse(splitLines(input), referenceTime)
 
+    /** Convenience overload of [parse] accepting pre-split lines. */
     public fun parse(
         input: List<String>,
         referenceTime: Instant = Clock.System.now(),
@@ -113,11 +149,21 @@ public object MrzParser {
 
     private fun startsWithVisaPrefix(line: String): Boolean = line.isNotEmpty() && line[0] == 'V'
 
+    /**
+     * Parses [input] as TD3 (passport, 2 lines × 44 characters per ICAO Doc 9303 Part 4).
+     * Returns [`MrzInvalidLength`][io.lightine.tessera.domain.errors.MrzInvalidLength] if
+     * the input does not match the format's dimensions;
+     * [`MrzCharacterSetViolation`][io.lightine.tessera.domain.errors.MrzCharacterSetViolation]
+     * if any character is outside the MRZ alphabet. Structurally-valid inputs produce
+     * [`Success`][ParseResult.Success] or [`PartialSuccess`][ParseResult.PartialSuccess]
+     * depending on whether the validator surfaced failures.
+     */
     public fun parseTD3(
         input: String,
         referenceTime: Instant = Clock.System.now(),
     ): ParseResult = parseTD3(splitLines(input), referenceTime)
 
+    /** Convenience overload of [parseTD3] accepting pre-split lines. */
     public fun parseTD3(
         input: List<String>,
         referenceTime: Instant = Clock.System.now(),
@@ -146,11 +192,16 @@ public object MrzParser {
         return finalizeParseResult(td3, referenceTime)
     }
 
+    /**
+     * Parses [input] as TD2 (smaller identity document, 2 lines × 36 characters per
+     * ICAO Doc 9303 Part 6). Error and result semantics match [parseTD3].
+     */
     public fun parseTD2(
         input: String,
         referenceTime: Instant = Clock.System.now(),
     ): ParseResult = parseTD2(splitLines(input), referenceTime)
 
+    /** Convenience overload of [parseTD2] accepting pre-split lines. */
     public fun parseTD2(
         input: List<String>,
         referenceTime: Instant = Clock.System.now(),
@@ -179,11 +230,17 @@ public object MrzParser {
         return finalizeParseResult(td2, referenceTime)
     }
 
+    /**
+     * Parses [input] as MRV-A (Type-A visa, 2 lines × 44 characters per ICAO Doc 9303
+     * Part 7). Error and result semantics match [parseTD3]; MRV-A has no composite check
+     * digit per the spec.
+     */
     public fun parseMRVA(
         input: String,
         referenceTime: Instant = Clock.System.now(),
     ): ParseResult = parseMRVA(splitLines(input), referenceTime)
 
+    /** Convenience overload of [parseMRVA] accepting pre-split lines. */
     public fun parseMRVA(
         input: List<String>,
         referenceTime: Instant = Clock.System.now(),
@@ -212,11 +269,17 @@ public object MrzParser {
         return finalizeParseResult(mrvA, referenceTime)
     }
 
+    /**
+     * Parses [input] as MRV-B (Type-B visa, 2 lines × 36 characters per ICAO Doc 9303
+     * Part 7). Error and result semantics match [parseTD3]; MRV-B has no composite check
+     * digit per the spec.
+     */
     public fun parseMRVB(
         input: String,
         referenceTime: Instant = Clock.System.now(),
     ): ParseResult = parseMRVB(splitLines(input), referenceTime)
 
+    /** Convenience overload of [parseMRVB] accepting pre-split lines. */
     public fun parseMRVB(
         input: List<String>,
         referenceTime: Instant = Clock.System.now(),
@@ -245,11 +308,16 @@ public object MrzParser {
         return finalizeParseResult(mrvB, referenceTime)
     }
 
+    /**
+     * Parses [input] as TD1 (identity card, 3 lines × 30 characters per ICAO Doc 9303
+     * Part 5). Error and result semantics match [parseTD3].
+     */
     public fun parseTD1(
         input: String,
         referenceTime: Instant = Clock.System.now(),
     ): ParseResult = parseTD1(splitLines(input), referenceTime)
 
+    /** Convenience overload of [parseTD1] accepting pre-split lines. */
     public fun parseTD1(
         input: List<String>,
         referenceTime: Instant = Clock.System.now(),
