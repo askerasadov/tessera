@@ -168,6 +168,22 @@ Each resolution required a written decision. Each became a small commit alongsid
 
 ---
 
+## Carrying Forward A Recap's Interpretation Without Checking The Primary Doc
+
+**The pitfall:** A recap, summary, or session-handoff note describes the state of the project at a moment in time. Later, a new decision needs to be made and the recap gets used as the source of truth. But the recap is a *derived* source — an interpretation of the primary docs (`scope.md`, ADRs, `open-questions.md`, feature docs). It can drift, subtly over- or under-state what the primary docs actually say, or fall behind as the primary docs evolve. Acting on a drifted recap without re-checking the primary doc propagates the drift forward into the new decision.
+
+**Why it happens:** Recaps are easier to read than primary docs. They compress decisions into digestible narratives. Once you've read the recap, going back to the original docs feels redundant. The general principle of trusting the doc system (per the `feedback_trust_existing_docs.md` memory) is healthy — but it applies to *primary* sources, not to derived ones, and the same level of trust should not extend to recaps and summaries when the cost of being wrong is high.
+
+**What's wrong with it:** Decisions made on a drifted recap inherit the drift. If ADR-007 backward-compatibility will lock the decision at `0.1.0`, the drift becomes a permanent error. Fixing the recap after the fact does not undo the decision the recap shaped.
+
+**Real example.** In May 2026, the pre-`0.1.0` recap stated that 0.1.0's readiness required mobile-target enablement (Android + iOS). This shaped the framing of a Path-A vs Path-B vs Path-C 0.1.0 strategy discussion — Path B looked materially heavier because it appeared to require Android/iOS target work. The user surfaced the question "are we sure Android/iOS are in 0.1.0?" prompting a direct read of `scope.md`. The primary doc said target enablement is per-release-need: mobile activates in 0.2.0 alongside camera reading. The recap had drifted from `scope.md`. The fix ([PR #33](https://github.com/askerasadov/tessera/pull/33)) was 6 lines of `scope.md` tightening to prevent recurrence; the cost of *not* catching the drift would have been weeks of incorrect 0.1.0 planning.
+
+**What to do instead:** When acting on a recap, summary, or session-handoff that will shape a foundational decision, read the underlying primary doc first. If they agree, proceed. If they don't, surface the drift explicitly, fix the derived source, and re-base the decision on the primary doc. This is the operational pattern named in `CLAUDE.md` under "Verification Before Acting" ("Before committing to a foundational decision...") and described in full in `.claude/working-patterns.md` under "Pre-commitment alignment check."
+
+The trigger for slowing down is *cost of being wrong is high*, not *I want to feel thorough*. Routine implementation slices, doc fixes within established conventions, and anything cheaply reversible do not need this check. Foundational decisions — anything ADR-007 will lock at `0.1.0`, tech-stack calls, scope-defining wording — do.
+
+---
+
 ## Tagging A Release Before Reality Matches The Claim
 
 **The pitfall:** Tagging `0.1.0` (or any release) when the documentation describes things that are not yet implemented. Feature docs claim `Available since: 0.1.0` based on the project's roadmap, but the *roadmap* is aspirational until shipped.
