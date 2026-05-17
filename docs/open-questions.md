@@ -278,6 +278,18 @@ The architectural pattern (recognition-bearing value class living next to its lo
 
 **Resolution:** Populate the table from ISO 3166-1 alpha-3 plus ICAO Doc 9303 Part 3 Section 5 extensions when authoritative copies of the publications are available. Update tests to match the full set. Remove this entry once the table matches the spec.
 
+### Transliteration profile coverage completeness
+
+The transliteration profiles that ship in `mrz-core` (`IcaoDefaultTransliterationProfile` and `AzeTransliterationProfile`) draw their Latin-script mappings from a shared internal helper (`buildIcaoLatinMappings()`) that implements a deliberate starter subset of ICAO Doc 9303 Part 3 Section 6 (Annex G): the common Latin diacritics under the no-expansion convention plus the explicit multi-character transliterations the standard names (`Æ → AE`, `Œ → OE`, `ß → SS`, `Þ → TH`, `Ð → D`, `Ĳ → IJ`, and `Ə/ə` mapped per profile — `E` for ICAO, `A` for AZE). It is not the complete enumeration: ICAO Doc 9303 Part 3 Section 6 also includes mappings from Cyrillic, Greek, and Arabic scripts plus additional Latin variants the starter set does not cover.
+
+Per-profile overrides on top of the shared table are also starter sets. `AzeTransliterationProfile` overrides only the schwa pair (the load-bearing divergence the ADR-009 example calls out); if observed practice for this issuing state diverges in additional characters, the profile is updated accordingly.
+
+Same shape as the `DocumentTypeCodeTable` and `CountryCodeTable` starter-set incompletenesses above. The starter sets are documented in each profile's file-level comment. Both profiles' fallback policy is to map any unmapped character to the filler `<`, so partial coverage is safe: a consumer who encounters a missing mapping gets a filler in the output rather than a runtime failure. Adding entries to the underlying table is a non-breaking change provided the existing mappings stay stable.
+
+**Source:** First implementation slice for `TransliterationProfile` (2026-05-17 session); aligns with `docs/features/transliteration.md` ("The ICAO Default Profile", "Country-Specific Profiles") and ADR-009.
+
+**Resolution:** Populate the table from current ICAO Doc 9303 Part 3 Section 6 (Annex G) when an authoritative copy of the publication is available. Update tests to match the full set. Consider whether non-Latin scripts (Cyrillic, Greek, Arabic) belong in the default profile or in separate per-script profiles selected explicitly. Country-specific profile expansions (additional overrides or additional profiles for other issuing states) ship per consumer demand. Remove this entry once the shared table matches the canonical set and each shipped profile's overrides are confirmed against observed practice.
+
 ### Driver's license format choice (mDoc vs proprietary)
 
 When driver's license NFC reading is added in a future release, the choice between standard mDoc-compliant licenses (ISO 18013-5) and proprietary national formats depends on which markets the project prioritizes.
