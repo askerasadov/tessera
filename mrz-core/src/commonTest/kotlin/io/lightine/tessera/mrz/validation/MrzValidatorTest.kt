@@ -8,6 +8,7 @@ import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzFormat
 import io.lightine.tessera.domain.MrzInvalidSexValue
+import io.lightine.tessera.domain.MrzNameTruncated
 import io.lightine.tessera.domain.MrzUnknownCountryCode
 import io.lightine.tessera.domain.MrzUnknownDocumentTypeCode
 import io.lightine.tessera.domain.Sex
@@ -822,6 +823,57 @@ class MrzValidatorTest {
                 ?: error("Expected MrzUnknownCountryCode for ISSUING_STATE; got ${result.warnings}")
         assertEquals("", warning.rawCode)
         assertEquals(2, warning.position)
+    }
+
+    // --- Name truncation warning ---
+
+    @Test
+    fun name_truncated_signal_emits_MrzNameTruncated_with_raw_field_and_position() {
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields().copy(
+                        nameTruncated = true,
+                        rawNameField = "VERYLONGPRIMARYNAME<<SECONDARYNAMEHERE0",
+                    ),
+            )
+        val result = MrzValidator.validate(td3)
+        val warning =
+            result.warnings
+                .filterIsInstance<MrzNameTruncated>()
+                .singleOrNull()
+                ?: error("Expected exactly one MrzNameTruncated; got ${result.warnings}")
+        assertEquals("VERYLONGPRIMARYNAME<<SECONDARYNAMEHERE0", warning.rawNameField)
+        assertEquals(5, warning.position)
+    }
+
+    @Test
+    fun non_truncated_name_emits_no_MrzNameTruncated_warning() {
+        // Specimen as-shipped: nameTruncated defaults to false in the fixture.
+        val result = MrzValidator.validate(specimenTd3())
+        assertTrue(
+            result.warnings.none { it is MrzNameTruncated },
+            "Non-truncated name must not emit MrzNameTruncated; got ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun name_truncation_warning_does_not_block_other_validation() {
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields(rawSex = '?', sex = Sex.UNSPECIFIED)
+                        .copy(nameTruncated = true),
+            )
+        val result = MrzValidator.validate(td3)
+        assertTrue(
+            result.warnings.any { it is MrzNameTruncated },
+            "Expected MrzNameTruncated warning; got ${result.warnings}",
+        )
+        assertTrue(
+            result.validationFailures.any { it is MrzInvalidSexValue },
+            "Expected MrzInvalidSexValue failure to still be reported; got ${result.validationFailures}",
+        )
     }
 
     // --- TD1 (deferred path) ---

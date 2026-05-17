@@ -41,6 +41,9 @@ class MrzParserTest {
         assertEquals("UTO", td3.commonFields.nationality.rawCode)
         assertEquals(Sex.FEMALE, td3.commonFields.sex)
         assertEquals("ERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<", td3.commonFields.rawNameField)
+        assertEquals("ERIKSSON", td3.commonFields.primaryIdentifier)
+        assertEquals("ANNA MARIA", td3.commonFields.secondaryIdentifier)
+        assertEquals(false, td3.commonFields.nameTruncated)
     }
 
     @Test

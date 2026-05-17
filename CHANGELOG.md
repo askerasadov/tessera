@@ -53,6 +53,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - `MrzInvalidSexValue` validation error carrying `observed`, `position`
   - `MrzUnknownDocumentTypeCode` warning carrying `rawCode`, `position`. Emitted by the validator when the document's `DocumentType` is not in `DocumentTypeCodeTable`. Categorical placement (warning, not validation failure) recorded in [ADR-013](docs/decisions/0013-recognition-failures-are-warnings.md): a recognition-table-derived check that reduces to "this code is not in our table" is a warning, because the SDK's tables are deliberately incomplete (Principle 1, Principle 4). Strict consumers who treat unrecognized codes as disqualifying read `result.warnings.isEmpty()` together with `result.validationFailures.isEmpty()`.
   - `MrzUnknownCountryCode` warning carrying `field: MrzField`, `rawCode`, `position`. Emitted by the validator when the document's `issuingState` or `nationality` `CountryCode` is not in `CountryCodeTable`. Same categorical placement as `MrzUnknownDocumentTypeCode` per [ADR-013](docs/decisions/0013-recognition-failures-are-warnings.md). The `field` discriminator distinguishes which of the two TD3 country-code positions emitted the warning (`MrzField.ISSUING_STATE` at TD3 position 2; `MrzField.NATIONALITY` at TD3 position 54).
+  - `MrzNameTruncated` warning carrying `rawNameField: String`, `position: Int`. Emitted by the validator when the document's `nameTruncated` signal is `true`. ICAO Doc 9303 convention: a complete name always leaves at least one trailing filler `<`, so a field that fills exactly to its boundary is indistinguishable from a truncated one and is treated as truncated. No `field: MrzField` discriminator (only one name field per format; position is unambiguous), parallel to `MrzExpiryDatePast`'s shape rather than `MrzUnknownCountryCode`'s.
+- `mrz-core` module: name field parsing
+  - Internal `parseNameField(rawNameField: String): NameFields` helper applied by `MrzParser.parseTD3` to populate `commonFields.primaryIdentifier`, `commonFields.secondaryIdentifier`, and `commonFields.nameTruncated` (previously placeholder empty strings / `false`)
+  - Primary/secondary split on first `<<` occurrence; remaining `<` decoded as space per ICAO reverse-mapping; trailing filler trimmed before splitting; truncation detected by absence of trailing filler. Lossy for apostrophes and hyphens (transliterated to `<` per ICAO Doc 9303); `commonFields.rawNameField` is preserved verbatim for consumers who need to handle this (Principle 5)
+  - Multiple `<<` within the secondary identifier (malformed input) are preserved verbatim: only the first `<<` splits, subsequent ones decode as double spaces in the secondary. No auto-correction (Principle 1)
 - `mrz-core` module: validator (first slice)
   - `io.lightine.tessera.mrz.validation` subpackage (parallel to `checkdigit/`)
   - `ValidationResult(validationFailures, warnings)` aggregate (`passedChecks` deferred)
@@ -131,8 +136,8 @@ These are documented commitments that are explicitly *not* in this `[Unreleased]
 - Transliteration system (`TransliterationProfile`, `TransliterationProfileRegistry`)
 - Auto-detect parser entry point (`MrzParser.parse(input)`)
 - Other format parsers (TD1, TD2, MRV-A, MRV-B parser methods)
-- Name field parsing (`primaryIdentifier` / `secondaryIdentifier` / `nameTruncated` extraction from raw name field)
-- Warnings: `MrzNameTruncated`, `MrzPersonalNumberCheckDigitFiller`
+- Warnings: `MrzPersonalNumberCheckDigitFiller`
+- Name field parsing for non-TD3 formats (TD1, TD2, MRV-A, MRV-B); lands with the respective parser slices
 - Document type code table population beyond the starter set
 - Country code table population beyond the starter set
 - `ResultMetadata.timing: TimingInfo?` field (no timing instrumentation yet)

@@ -7,6 +7,7 @@ import io.lightine.tessera.domain.MrzExpiryDateImplausiblyFar
 import io.lightine.tessera.domain.MrzExpiryDatePast
 import io.lightine.tessera.domain.MrzField
 import io.lightine.tessera.domain.MrzInvalidSexValue
+import io.lightine.tessera.domain.MrzNameTruncated
 import io.lightine.tessera.domain.MrzUnknownCountryCode
 import io.lightine.tessera.domain.MrzUnknownDocumentTypeCode
 import io.lightine.tessera.domain.MrzValidationError
@@ -132,8 +133,24 @@ public object MrzValidator {
             field = MrzField.NATIONALITY,
             position = line2GlobalOffset + TD3_NATIONALITY_LINE2_OFFSET,
         )
+        addNameTruncatedWarningIfApplicable(
+            into = warnings,
+            nameTruncated = document.commonFields.nameTruncated,
+            rawNameField = document.commonFields.rawNameField,
+            position = TD3_NAME_FIELD_POSITION,
+        )
 
         return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
+    }
+
+    private fun addNameTruncatedWarningIfApplicable(
+        into: MutableList<MrzWarning>,
+        nameTruncated: Boolean,
+        rawNameField: String,
+        position: Int,
+    ) {
+        if (!nameTruncated) return
+        into += MrzNameTruncated(rawNameField = rawNameField, position = position)
     }
 
     private fun addUnknownDocumentTypeCodeWarningIfApplicable(
@@ -228,5 +245,6 @@ public object MrzValidator {
     private const val TD3_LINE_LENGTH = 44
     private const val TD3_DOCUMENT_TYPE_POSITION = 0
     private const val TD3_ISSUING_STATE_POSITION = 2
+    private const val TD3_NAME_FIELD_POSITION = 5
     private const val TD3_NATIONALITY_LINE2_OFFSET = 10
 }
