@@ -13,8 +13,11 @@ public fun computeCheckDigit(input: String): Char {
 private fun characterValue(c: Char): Int =
     when (c) {
         in '0'..'9' -> c - '0'
+
         in 'A'..'Z' -> c - 'A' + 10
+
         '<' -> 0
+
         else -> throw IllegalArgumentException(
             "Character '$c' is outside the MRZ alphabet (A-Z, 0-9, <)",
         )
