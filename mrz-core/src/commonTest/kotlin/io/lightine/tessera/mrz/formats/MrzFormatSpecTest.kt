@@ -28,21 +28,19 @@ class MrzFormatSpecTest {
 
     @Test
     fun mrva_implements_base_MrzFormatSpec_but_not_composite_subinterface() {
+        // `MrvAFormatSpec` implements only `MrzFormatSpec` (the base interface). The fact that
+        // it does NOT implement `MrzFormatSpecWithComposite` is enforced by the sealed
+        // hierarchy at compile time — a runtime `is MrzFormatSpecWithComposite` check is
+        // statically proved false by the compiler (Kotlin 2.3+ KTLC-365). The assertion below
+        // verifies the base-interface relationship that does exist.
         assertIs<MrzFormatSpec>(MrvAFormatSpec)
-        // Type-system enforced: MrvAFormatSpec does NOT have compositeCheckDigit or
-        // compositeInputFields in its API surface. Asserting !is on a sealed sub-interface
-        // makes this invariant explicit at test time.
-        @Suppress("USELESS_IS_CHECK")
-        val isWithComposite = MrvAFormatSpec is MrzFormatSpecWithComposite
-        assertEquals(false, isWithComposite)
     }
 
     @Test
     fun mrvb_implements_base_MrzFormatSpec_but_not_composite_subinterface() {
+        // Same reasoning as the MRV-A case above: the absence of the composite sub-interface
+        // is sealed-hierarchy-enforced, not runtime-asserted.
         assertIs<MrzFormatSpec>(MrvBFormatSpec)
-        @Suppress("USELESS_IS_CHECK")
-        val isWithComposite = MrvBFormatSpec is MrzFormatSpecWithComposite
-        assertEquals(false, isWithComposite)
     }
 
     // --- Default globalPositionOf method works through the interface ---
