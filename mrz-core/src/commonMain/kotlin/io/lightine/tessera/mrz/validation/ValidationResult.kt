@@ -1,7 +1,7 @@
 package io.lightine.tessera.mrz.validation
 
-import io.lightine.tessera.domain.MrzValidationError
-import io.lightine.tessera.domain.MrzWarning
+import io.lightine.tessera.domain.errors.MrzValidationError
+import io.lightine.tessera.domain.errors.MrzWarning
 
 public data class ValidationResult(
     val validationFailures: List<MrzValidationError>,

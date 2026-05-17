@@ -42,7 +42,7 @@ If a type later needs to be reachable from a sibling module (for example, when `
 
 **Negative:**
 
-- When `emrtd-core` eventually needs `CountryCode` (chip data groups encode nationality), `CountryCode` will need to be promoted to `domain`. That promotion is a breaking package change for any consumer that has imported `io.lightine.tessera.mrz.CountryCode` directly. Per `docs/versioning.md`, this requires a deprecation cycle — the old location stays as a typealias for at least one minor version.
+- When `emrtd-core` eventually needs `CountryCode` (chip data groups encode nationality), `CountryCode` will need to be promoted to `domain`. That promotion is a breaking package change for any consumer that has imported `io.lightine.tessera.mrz.recognition.CountryCode` directly. Per `docs/versioning.md`, this requires a deprecation cycle — the old location stays as a typealias for at least one minor version.
 - Code in `domain` that wants to mention country codes (for example, an error variant that takes a country code as context) cannot use the value class directly. It must use the raw string, or the eventual promotion needs to happen earlier than this ADR currently anticipates. This is a watch item for the error taxonomy as it grows.
 - The ADR fixes a reading of architecture.md that the original text did not explicitly commit to. Future contributors who read the original wording differently may push back. The architecture.md update (see below) is intended to remove that ambiguity, not to relitigate it.
 
