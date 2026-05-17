@@ -13,9 +13,11 @@ import io.lightine.tessera.domain.errors.MrzValidationError
 import io.lightine.tessera.domain.errors.MrzWarning
 import io.lightine.tessera.domain.vocabulary.MrzField
 import io.lightine.tessera.mrz.checkdigit.computeCheckDigit
+import io.lightine.tessera.mrz.formats.MrvAFormatSpec
 import io.lightine.tessera.mrz.formats.Td2FormatSpec
 import io.lightine.tessera.mrz.formats.Td3FormatSpec
 import io.lightine.tessera.mrz.formats.extractFrom
+import io.lightine.tessera.mrz.model.MrvA
 import io.lightine.tessera.mrz.model.MrzDate
 import io.lightine.tessera.mrz.model.MrzDocument
 import io.lightine.tessera.mrz.model.TD1
@@ -42,6 +44,7 @@ public object MrzValidator {
         when (document) {
             is TD3 -> validateTD3(document, referenceTime)
             is TD2 -> validateTD2(document, referenceTime)
+            is MrvA -> validateMrvA(document, referenceTime)
             is TD1 -> ValidationResult(validationFailures = emptyList(), warnings = emptyList())
         }
 
@@ -81,14 +84,18 @@ public object MrzValidator {
             position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.personalNumberCheckDigit),
         )
 
+        // TD3 always carries a composite check digit per ICAO Doc 9303 Part 4; the parser
+        // populates it unconditionally, so the model-level `Char?` is structurally non-null here.
         val compositeInput = Td3FormatSpec.compositeInputFields.joinToString("") { it.extractFrom(rawLines) }
-        addCheckDigitFailureIfMismatch(
-            into = failures,
-            input = compositeInput,
-            observed = document.commonFields.checkDigits.composite,
-            field = MrzField.COMPOSITE,
-            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.compositeCheckDigit),
-        )
+        document.commonFields.checkDigits.composite?.let { composite ->
+            addCheckDigitFailureIfMismatch(
+                into = failures,
+                input = compositeInput,
+                observed = composite,
+                field = MrzField.COMPOSITE,
+                position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.compositeCheckDigit),
+            )
+        }
 
         val rawSex = document.commonFields.rawSex
         if (rawSex !in VALID_SEX_CHARACTERS) {
@@ -177,14 +184,18 @@ public object MrzValidator {
         // TD2 has no per-field check digit on optional data (ICAO Doc 9303 Part 6); only the
         // composite digit covers it.
 
+        // TD2 always carries a composite check digit per ICAO Doc 9303 Part 6; the parser
+        // populates it unconditionally, so the model-level `Char?` is structurally non-null here.
         val compositeInput = Td2FormatSpec.compositeInputFields.joinToString("") { it.extractFrom(rawLines) }
-        addCheckDigitFailureIfMismatch(
-            into = failures,
-            input = compositeInput,
-            observed = document.commonFields.checkDigits.composite,
-            field = MrzField.COMPOSITE,
-            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.compositeCheckDigit),
-        )
+        document.commonFields.checkDigits.composite?.let { composite ->
+            addCheckDigitFailureIfMismatch(
+                into = failures,
+                input = compositeInput,
+                observed = composite,
+                field = MrzField.COMPOSITE,
+                position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.compositeCheckDigit),
+            )
+        }
 
         val rawSex = document.commonFields.rawSex
         if (rawSex !in VALID_SEX_CHARACTERS) {
@@ -237,6 +248,93 @@ public object MrzValidator {
             nameTruncated = document.commonFields.nameTruncated,
             rawNameField = document.commonFields.rawNameField,
             position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.rawNameField),
+        )
+
+        return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
+    }
+
+    private fun validateMrvA(
+        document: MrvA,
+        referenceTime: Instant,
+    ): ValidationResult {
+        val rawLines = document.rawLines
+        val failures = mutableListOf<MrzValidationError>()
+
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = MrvAFormatSpec.documentNumber.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.documentNumber,
+            field = MrzField.DOCUMENT_NUMBER,
+            position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.documentNumberCheckDigit),
+        )
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = MrvAFormatSpec.dateOfBirth.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.dateOfBirth,
+            field = MrzField.DATE_OF_BIRTH,
+            position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.dateOfBirthCheckDigit),
+        )
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = MrvAFormatSpec.dateOfExpiry.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.dateOfExpiry,
+            field = MrzField.DATE_OF_EXPIRY,
+            position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.dateOfExpiryCheckDigit),
+        )
+        // MRV-A has neither a per-field check digit on optional data nor a composite check digit
+        // (ICAO Doc 9303 Part 7). No per-field OPTIONAL_DATA or COMPOSITE failures are emitted.
+
+        val rawSex = document.commonFields.rawSex
+        if (rawSex !in VALID_SEX_CHARACTERS) {
+            failures += MrzInvalidSexValue(observed = rawSex, position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.sex))
+        }
+
+        addDateNotInCalendarFailureIfApplicable(
+            into = failures,
+            date = document.commonFields.dateOfBirth,
+            field = MrzField.DATE_OF_BIRTH,
+            position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.dateOfBirth),
+        )
+        addDateNotInCalendarFailureIfApplicable(
+            into = failures,
+            date = document.commonFields.dateOfExpiry,
+            field = MrzField.DATE_OF_EXPIRY,
+            position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.dateOfExpiry),
+        )
+
+        val warnings = mutableListOf<MrzWarning>()
+        addExpiryWarningsIfApplicable(
+            into = warnings,
+            expiryComputedDate = document.commonFields.dateOfExpiry.computedDate,
+            referenceTime = referenceTime,
+        )
+        addBirthAgeWarningIfApplicable(
+            into = warnings,
+            birthDate = document.commonFields.dateOfBirth,
+            referenceTime = referenceTime,
+        )
+        addUnknownDocumentTypeCodeWarningIfApplicable(
+            into = warnings,
+            documentType = document.commonFields.documentType,
+            position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.documentType),
+        )
+        addUnknownCountryCodeWarningIfApplicable(
+            into = warnings,
+            countryCode = document.commonFields.issuingState,
+            field = MrzField.ISSUING_STATE,
+            position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.issuingState),
+        )
+        addUnknownCountryCodeWarningIfApplicable(
+            into = warnings,
+            countryCode = document.commonFields.nationality,
+            field = MrzField.NATIONALITY,
+            position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.nationality),
+        )
+        addNameTruncatedWarningIfApplicable(
+            into = warnings,
+            nameTruncated = document.commonFields.nameTruncated,
+            rawNameField = document.commonFields.rawNameField,
+            position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.rawNameField),
         )
 
         return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
