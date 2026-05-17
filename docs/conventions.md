@@ -216,7 +216,7 @@ The full operational detail — what to bump, how to verify compatibility, how t
 
 Before starting work on each release (`0.2.0`, `0.3.0`, etc.), the project does a brief tech-stack review. This is milestone-driven and complementary to the clock-driven 6-monthly upgrade cadence above: the cadence asks "are we on current stable?"; the pre-release review asks "are our underlying choices still right for what we're about to build?"
 
-The review surfaces: foundational architectural choices that may need revisiting, new dependencies the upcoming subsystem will need (camera lib for `0.2.0`, NFC lib for `0.6.0`, etc.), and API-stability commitments the release would lock in. Output is a brief decision record (an ADR if significant, a recap-style working note otherwise). The 2026-05-17 pre-`0.1.0` recap is the working precedent.
+The review surfaces: foundational architectural choices that may need revisiting, new dependencies the upcoming subsystem will need (camera lib for `0.2.0`, NFC lib for `0.6.0`, etc.), local-machine tooling the build can't auto-provision (platform SDKs, CLIs, test hardware), and API-stability commitments the release would lock in. Output is a brief decision record (an ADR if significant, a recap-style working note otherwise) naming the project's expectations — contributors track their own local installs separately. The 2026-05-17 pre-`0.1.0` recap is the working precedent.
 
 Full operational detail in the "Pre-Release Tech-Stack Review" rule in [`CLAUDE.md`](../CLAUDE.md).
 
