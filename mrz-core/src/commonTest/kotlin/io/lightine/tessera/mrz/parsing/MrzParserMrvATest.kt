@@ -10,12 +10,12 @@ import io.lightine.tessera.domain.vocabulary.MrzFormat
 import io.lightine.tessera.domain.vocabulary.ReadMethod
 import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.model.MrvA
-import kotlinx.datetime.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class MrzParserMrvATest {
     private val ref2026 = Instant.parse("2026-05-04T12:00:00Z")

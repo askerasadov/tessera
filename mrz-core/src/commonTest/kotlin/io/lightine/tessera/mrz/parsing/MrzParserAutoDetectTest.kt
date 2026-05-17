@@ -8,11 +8,11 @@ import io.lightine.tessera.mrz.model.MrvB
 import io.lightine.tessera.mrz.model.TD1
 import io.lightine.tessera.mrz.model.TD2
 import io.lightine.tessera.mrz.model.TD3
-import kotlinx.datetime.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class MrzParserAutoDetectTest {
     private val ref2026 = Instant.parse("2026-05-04T12:00:00Z")

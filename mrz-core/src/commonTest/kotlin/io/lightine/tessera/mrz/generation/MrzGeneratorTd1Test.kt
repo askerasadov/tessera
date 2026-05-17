@@ -6,10 +6,10 @@ import io.lightine.tessera.domain.vocabulary.MrzFormat
 import io.lightine.tessera.mrz.model.TD1
 import io.lightine.tessera.mrz.parsing.MrzParser
 import io.lightine.tessera.mrz.parsing.ParseResult
-import kotlinx.datetime.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.time.Instant
 
 class MrzGeneratorTd1Test {
     private val ref2026 = Instant.parse("2026-05-04T12:00:00Z")

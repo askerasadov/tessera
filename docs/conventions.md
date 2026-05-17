@@ -204,6 +204,14 @@ Two commands cover daily use:
 
 `spotlessCheck` runs as part of the standard `./gradlew check` and `./gradlew build` lifecycle, so style violations break the build by default.
 
+### Dependency Upgrade Cadence
+
+The project bumps the toolchain and dependencies to current stable on a **six-monthly cadence**: next checkpoint **2026-10-01**, then every six months after that. The exact day doesn't matter (±2 weeks is fine); the cadence is the operational rhythm, not a hard deadline.
+
+Each cycle bumps the items pinned in `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `settings.gradle.kts`, and the `jvmToolchain(N)` calls across module `build.gradle.kts` files: Kotlin (and KMP plugin), Gradle, JDK toolchain floor (when LTS situation warrants), dev tooling (Spotless, ktlint), runtime dependencies (kotlinx-datetime), test dependencies (kotest), and Gradle settings plugins (foojay-resolver-convention).
+
+The full operational detail — what to bump, how to verify compatibility, how to split into PRs to keep blast radius small — lives in the "Dependency Upgrade Cadence" rule in [`CLAUDE.md`](../CLAUDE.md).
+
 ### Swift, other languages
 
 Conventions for Swift wrappers and any future languages are added to this document when those source sets are introduced. The same principle applies: idiomatic per-language style, enforced by the language's standard tooling (e.g., SwiftLint for Swift), with configuration committed at the project root.

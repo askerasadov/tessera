@@ -95,6 +95,17 @@ The operational ruleset. Each rule is concrete and triggers on a specific situat
 - **Update `CHANGELOG.md` for every non-trivial PR.** Keep a Changelog format. Entries go under `[Unreleased]`, grouped Added / Changed / Deprecated / Removed / Fixed / Security. Trivial PRs (single-character typo fixes etc.) can skip with a one-line explanation in the PR description. Detail in [`.claude/git-workflow.md`](.claude/git-workflow.md).
 - **Read the relevant ADR before changing established ground.**
 
+### Dependency Upgrade Cadence
+
+The project bumps the toolchain and dependencies to current stable on a **six-monthly cadence**. This keeps the project from accumulating multi-year-stale tooling (which compounds upgrade pain) while not chasing every patch release (which is its own form of churn).
+
+- **Next scheduled check: 2026-10-01.** After that, every six months: 2027-04-01, 2027-10-01, 2028-04-01, etc.
+- The exact day doesn't matter — anything within ±2 weeks of the date is fine. The cadence is the operational rhythm, not a hard deadline.
+- **What to bump each cycle:** Kotlin (and KMP plugin), Gradle wrapper, JDK toolchain floor, dev tooling (Spotless, ktlint), runtime dependencies (kotlinx-datetime, etc.), test dependencies (kotest), and any other plugins pinned in `settings.gradle.kts` (foojay-resolver-convention, etc.). The complete inventory is whatever has a version pinned in `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `settings.gradle.kts`, and the `jvmToolchain(N)` calls across module `build.gradle.kts` files.
+- **How to bump:** verify the latest stable of each via web search at upgrade time (knowledge cutoffs drift); check the compatibility matrix between Kotlin + Gradle + KGP; bump to the highest mutually supported triple. JDK toolchain bump is a separate call — only move when the LTS situation warrants it and the build/test surface is stable.
+- **Split into 2–3 focused PRs per cycle.** The first cycle (2026-05-17) used three PRs: (1) Kotlin + KMP + Gradle + JDK toolchain, (2) dev tooling (Spotless + ktlint) + Gradle wrapper regeneration, (3) runtime + test dependencies + this cadence rule + docs. The split keeps blast radius small if any single bump breaks something.
+- **Cross-reference from [`docs/conventions.md`](docs/conventions.md)** so human contributors see the cadence too.
+
 ### Git and GitHub Workflow
 
 The project uses **GitHub Flow**: `main` is the trunk; feature branches off `main`; PR for every merge. Detail in [`.claude/git-workflow.md`](.claude/git-workflow.md).
