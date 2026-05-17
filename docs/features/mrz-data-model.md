@@ -138,7 +138,7 @@ The class exposes:
 
 An enum: `MALE` (M), `FEMALE` (F), `UNSPECIFIED` (`<` or `X`). The MRZ filler character `<` and the explicit `X` are both treated as unspecified per ICAO Doc 9303 convention.
 
-If the MRZ contains a value outside this enum (an OCR error, a non-conforming document), parsing surfaces this as a validation failure rather than crashing or guessing. The raw character is preserved in the result metadata.
+If the MRZ contains a value outside this enum (an OCR error, a non-conforming document), parsing surfaces this as a validation failure rather than crashing or guessing. The raw character is preserved on `CommonFields.rawSex` so consumers always have access to the verbatim input (per Principle 5 — Transparency), independent of how the `sex` enum field interpreted it.
 
 ### `MrzDate`
 
@@ -226,11 +226,11 @@ Validation, when called explicitly on already-parsed data, returns:
 data class ValidationResult(
     val validationFailures: List<MrzValidationError>,
     val warnings: List<MrzWarning>,
-    val passedChecks: List<ValidationCheckId>
+    val passedChecks: List<ValidationCheckId>  // target shape; not yet shipped
 )
 ```
 
-The list of passed checks is exposed (Principle 5) so consumers can confirm what was actually verified, not just what failed.
+The list of passed checks is exposed (Principle 5) so consumers can confirm what was actually verified, not just what failed. Note: the current shipped `ValidationResult` carries `validationFailures` and `warnings` only; `passedChecks` is documented as the target shape and tracked in [`docs/open-questions.md`](../open-questions.md) "`ValidationResult.passedChecks` shape." The shape of `passedChecks` (typed identifier set vs. plain string list vs. richer record) is itself an open question and will be settled when the validator catalog is broader.
 
 ---
 
@@ -243,14 +243,14 @@ data class ResultMetadata(
     val readMethod: ReadMethod,
     val warnings: List<MrzWarning>,
     val validationFailures: List<MrzValidationError>,
-    val timing: TimingInfo?
+    val timing: TimingInfo?  // target shape; not yet shipped
 )
 ```
 
 - **`readMethod`** — `ReadMethod` enum: `LIVE_CAMERA`, `PRE_CAPTURED_IMAGE`, `MANUAL_ENTRY`, `NFC_CHIP`, `BACKEND_STRING_INPUT`, `MIXED` — see related feature docs for the implications of each
 - **`warnings`** — list of typed warnings (data is valid but anomalous; e.g., `MrzExpiryDatePast`, `MrzNameTruncated`, `MrzAndChipDataMismatch`)
 - **`validationFailures`** — list of typed validation failures (data extracted but does not conform to spec; e.g., `MrzCheckDigitMismatch`, `MrzUnknownCountryCode`)
-- **`timing`** — optional timing breakdown for diagnostic purposes (off by default; opt-in via configuration)
+- **`timing`** — optional timing breakdown for diagnostic purposes (off by default; opt-in via configuration). Not yet shipped: the current `ResultMetadata` does not include this field. It will be added in a future slice when the SDK has timing instrumentation to populate it. Tracked in the Deferred section of `CHANGELOG.md`.
 
 The three-tier model (errors as result variants, validation failures as data, warnings as metadata) is described further in the error taxonomy feature document.
 

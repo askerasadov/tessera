@@ -66,7 +66,7 @@ The validator uses specific thresholds for date plausibility checks (130 years f
 
 **Source:** First validator implementation slice; aligns with `lookup-tables.md` ("Initial Country Code Coverage").
 
-**Resolution:** Resolved — implemented for TD3 in `MrzValidator`. `CountryCode` value class and `CountryCodeTable` landed in `mrz-core` (per [ADR-012](decisions/0012-recognition-types-live-with-tables.md)); `CommonFields.issuingState` and `CommonFields.nationality` changed from `String` to `CountryCode`. The validator emits up to two `MrzUnknownCountryCode` warnings per TD3 document — one for `issuingState` (position 2) and one for `nationality` (position 54) — distinguished by a `field: MrzField` discriminator. The categorical placement (warning, not failure) is the same as `MrzUnknownDocumentTypeCode` per [ADR-013](decisions/0013-recognition-failures-are-warnings.md). The table-completeness question is tracked separately under "Country code table completeness" below.
+**Resolution:** Resolved — implemented for all five formats (TD3, TD2, TD1, MRV-A, MRV-B) in `MrzValidator`. `CountryCode` value class and `CountryCodeTable` landed in `mrz-core` (per [ADR-012](decisions/0012-recognition-types-live-with-tables.md)); `CommonFields.issuingState` and `CommonFields.nationality` changed from `String` to `CountryCode`. The validator emits up to two `MrzUnknownCountryCode` warnings per document — one for `issuingState` (line 1 position 2 on every format) and one for `nationality` (position 54 for TD3 / MRV-A, 46 for TD2 / MRV-B, 45 for TD1) — distinguished by a `field: MrzField` discriminator. The categorical placement (warning, not failure) is the same as `MrzUnknownDocumentTypeCode` per [ADR-013](decisions/0013-recognition-failures-are-warnings.md). The table-completeness question is tracked separately under "Country code table completeness" below.
 
 ### Document type code recognition validation (`MrzUnknownDocumentTypeCode`)
 
@@ -74,7 +74,7 @@ The validator uses specific thresholds for date plausibility checks (130 years f
 
 **Source:** First validator implementation slice.
 
-**Resolution:** Resolved — implemented for TD3 in `MrzValidator`. The categorical placement (warning vs. validation failure) is recorded in [ADR-013](decisions/0013-recognition-failures-are-warnings.md): a recognition-table-derived check that reduces to "this code is not in our table" is a warning, because the SDK's tables are deliberately incomplete and overclaiming non-conformance would violate Principle 1 (Reader, not oracle) and Principle 4 (Honest about what we know). The check runs unconditionally for every TD3 document; the warning carries the verbatim `rawCode` and the field's start position. The table-completeness question is tracked separately under "Document type code table completeness" below. The same categorical placement applies prospectively to `MrzUnknownCountryCode` when the `CountryCode` slice lands.
+**Resolution:** Resolved — implemented for all five formats (TD3, TD2, TD1, MRV-A, MRV-B) in `MrzValidator`. The categorical placement (warning vs. validation failure) is recorded in [ADR-013](decisions/0013-recognition-failures-are-warnings.md): a recognition-table-derived check that reduces to "this code is not in our table" is a warning, because the SDK's tables are deliberately incomplete and overclaiming non-conformance would violate Principle 1 (Reader, not oracle) and Principle 4 (Honest about what we know). The check runs unconditionally for every parsed document; the warning carries the verbatim `rawCode` and the field's start position (always 0 — the document type slot is at line 1 character 1 on every format). The table-completeness question is tracked separately under "Document type code table completeness" below. The same categorical placement applies to `MrzUnknownCountryCode` (resolved above).
 
 ### Date-in-calendar validation (`MrzDateNotInCalendar`)
 
@@ -82,7 +82,7 @@ The validator uses specific thresholds for date plausibility checks (130 years f
 
 **Source:** First validator implementation slice; aligns with `mrz-validation.md` "Layer 3 — Semantic" and `mrz-error-taxonomy.md`.
 
-**Resolution:** Resolved — implemented for TD3 in `MrzValidator` for both `dateOfBirth` and `dateOfExpiry`. The dispatch is signal-driven from a new tri-state property on the model: `MrzDate.componentsFormCalendarDate: Boolean?`. The original `RAW_ONLY` enum value collapsed three distinct failure modes; the new property disambiguates them so the validator can emit `MrzDateNotInCalendar` only for the "components numeric but no calendar date" case, leaving "non-numeric components" (Layer-1 territory) and "calendar-valid but outside the parser's inference window" (a date that IS in the calendar) untouched. See `docs/features/mrz-data-model.md` "MrzDate" and `docs/features/mrz-validation.md` "Status of Implementation."
+**Resolution:** Resolved — implemented for all five formats (TD3, TD2, TD1, MRV-A, MRV-B) in `MrzValidator` for both `dateOfBirth` and `dateOfExpiry`. The dispatch is signal-driven from a new tri-state property on the model: `MrzDate.componentsFormCalendarDate: Boolean?`. The original `RAW_ONLY` enum value collapsed three distinct failure modes; the new property disambiguates them so the validator can emit `MrzDateNotInCalendar` only for the "components numeric but no calendar date" case, leaving "non-numeric components" (Layer-1 territory) and "calendar-valid but outside the parser's inference window" (a date that IS in the calendar) untouched. See `docs/features/mrz-data-model.md` "MrzDate" and `docs/features/mrz-validation.md` "Status of Implementation."
 
 ### Expiry-date warnings (`MrzExpiryDatePast`, `MrzExpiryDateImplausiblyFar`)
 
@@ -90,7 +90,7 @@ The validator uses specific thresholds for date plausibility checks (130 years f
 
 **Source:** First validator implementation slice; aligns with `mrz-validation.md` "Date Range Conventions" and `mrz-error-taxonomy.md`.
 
-**Resolution:** Resolved — both warnings are implemented for TD3 in `MrzValidator`. `MrzValidator.validate(...)` now accepts an explicit `referenceTime` (defaulting to `Clock.System.now()`); `MrzParser.parseTD3` threads its own `referenceTime` through. `MrzExpiryDateImplausiblyFar` carries `thresholdYears` (defaulting to 10) on the warning itself. Configurability of the threshold is its own deferred question — see "Validator options (configurable thresholds)" below.
+**Resolution:** Resolved — both warnings are implemented for all five formats (TD3, TD2, TD1, MRV-A, MRV-B) in `MrzValidator`. `MrzValidator.validate(...)` accepts an explicit `referenceTime` (defaulting to `Clock.System.now()`); each format-specific parser threads its own `referenceTime` through. `MrzExpiryDateImplausiblyFar` carries `thresholdYears` (defaulting to 10) on the warning itself. Configurability of the threshold is its own deferred question — see "Validator options (configurable thresholds)" below.
 
 ### Validator options (configurable thresholds)
 
@@ -106,7 +106,7 @@ The first validator slice handles only TD3. For TD1 inputs, `MrzValidator.valida
 
 **Source:** First validator implementation slice; aligns with the TD1 data-class-only state (PR #1 slice 8).
 
-**Resolution:** Land the TD1 validator path together with the TD1 parser slice, so the two are tested as one end-to-end flow.
+**Resolution:** Resolved — the TD1 parser and validator landed together in the TD1 parser slice. `MrzValidator.validate(...)` dispatches `is TD1` to a real `validateTD1` (replacing the previous empty-result stub) covering per-field check digits, composite check digit, sex range, calendar-date validation, expiry warnings, birth-age warning, recognition warnings, and name truncation — all driven by integration tests through `MrzParser.parseTD1`. See `docs/features/mrz-validation.md` "Status of Implementation" for the table.
 
 ---
 

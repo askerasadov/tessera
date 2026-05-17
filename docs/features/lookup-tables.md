@@ -140,13 +140,24 @@ Recognition is exposed as data on the relevant types, never used as a gate for p
 
 The SDK ships the lookup tables it ships. A few things worth being explicit about:
 
-### Initial Country Code Coverage
+### Current Coverage Is a Starter Set
 
-The initial release includes the full ISO 3166-1 alpha-3 list and the ICAO-specific extensions listed in ICAO Doc 9303 Part 3 Section 5 at the time of the SDK release. Codes that ICAO publishes later are added in subsequent SDK releases.
+The current shipped tables are deliberately incomplete starter sets, not the full coverage described in the "Initial Country Code Coverage" and "Initial Document Type Code Coverage" sections below. The discrepancy is intentional: the architectural pattern (recognition-bearing value class living with its lookup table per [ADR-012](../decisions/0012-recognition-types-live-with-tables.md)) is in place, the API contract is stable, and adding entries is a non-breaking change (see "Updating the Tables" above). The data is added as authoritative ICAO Doc 9303 source material is available to the project. Until then, the `MrzUnknownDocumentTypeCode` and `MrzUnknownCountryCode` warnings will fire frequently in real-world inputs. Tracked in [`docs/open-questions.md`](../open-questions.md) under "Country code table completeness" and "Document type code table completeness."
 
-### Initial Document Type Code Coverage
+The current starter sets:
 
-The initial release includes the full set of single-character and two-character codes documented in current ICAO Doc 9303 editions. Country-specific document type variants (where a state uses a code with locally meaningful interpretation) are not included unless they appear in the official ICAO documentation.
+- **Country codes:** five ISO 3166-1 alpha-3 state codes (`USA`, `GBR`, `DEU`, `FRA`, `JPN`).
+- **Document type codes:** six codes (`P`, `V`, `I` for legacy single-character; `PP`, `PD`, `PS` for current two-character).
+
+Source-file comments on `CountryCodeTable.kt` and `DocumentTypeCodeTable.kt` mark these as starter sets. Tests lock the starter-set coverage so any expansion surfaces explicitly.
+
+### Initial Country Code Coverage (target shape)
+
+The initial release target includes the full ISO 3166-1 alpha-3 list and the ICAO-specific extensions listed in ICAO Doc 9303 Part 3 Section 5 at the time of the SDK release. Codes that ICAO publishes later are added in subsequent SDK releases.
+
+### Initial Document Type Code Coverage (target shape)
+
+The initial release target includes the full set of single-character and two-character codes documented in current ICAO Doc 9303 editions. Country-specific document type variants (where a state uses a code with locally meaningful interpretation) are not included unless they appear in the official ICAO documentation.
 
 ### English Names Only
 

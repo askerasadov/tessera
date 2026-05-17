@@ -38,6 +38,24 @@ What the parser does *not* do:
 
 ---
 
+## Status of Implementation
+
+The parser ships incrementally. The design described in the rest of this document is the target shape; the table below records what is currently implemented versus what is documented but deferred. Each deferred item has a corresponding entry in `docs/open-questions.md` or in the Deferred section of `CHANGELOG.md`.
+
+| Capability | Status |
+|---|---|
+| `MrzParser.parseTD1(input: String, referenceTime: Instant)` and `parseTD1(input: List<String>, referenceTime: Instant)` overloads | Implemented |
+| `MrzParser.parseTD2(input: String, referenceTime: Instant)` and `parseTD2(input: List<String>, referenceTime: Instant)` overloads | Implemented |
+| `MrzParser.parseTD3(input: String, referenceTime: Instant)` and `parseTD3(input: List<String>, referenceTime: Instant)` overloads | Implemented |
+| `MrzParser.parseMRVA(input: String, referenceTime: Instant)` and `parseMRVA(input: List<String>, referenceTime: Instant)` overloads | Implemented |
+| `MrzParser.parseMRVB(input: String, referenceTime: Instant)` and `parseMRVB(input: List<String>, referenceTime: Instant)` overloads | Implemented |
+| `MrzParser.parse(input)` auto-detect entry point | Deferred |
+| `MrzFormatNotDetected` error type (required by auto-detect) | Deferred |
+
+The format-specific methods accept an explicit `referenceTime: Instant` parameter (defaulting to `Clock.System.now()`) so consumers can pass a deterministic reference time for testing, replay, or audit scenarios. The illustrative API shape below omits the `referenceTime` parameter for brevity; the shipped signatures all include it.
+
+---
+
 ## Public API Shape
 
 The parser exposes two patterns for invocation: auto-detect and format-specific. Auto-detect is the friendly default; format-specific is for consumers who know the document type and want strict behavior.
