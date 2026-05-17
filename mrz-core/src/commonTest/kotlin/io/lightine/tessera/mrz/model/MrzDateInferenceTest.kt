@@ -1,10 +1,10 @@
 package io.lightine.tessera.mrz.model
 
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.time.Instant
 
 class MrzDateInferenceTest {
     private val ref2026 = Instant.parse("2026-05-04T12:00:00Z")

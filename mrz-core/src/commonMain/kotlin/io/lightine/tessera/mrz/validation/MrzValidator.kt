@@ -29,13 +29,13 @@ import io.lightine.tessera.mrz.model.TD2
 import io.lightine.tessera.mrz.model.TD3
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 public object MrzValidator {
     private val VALID_SEX_CHARACTERS = setOf('M', 'F', '<', 'X')

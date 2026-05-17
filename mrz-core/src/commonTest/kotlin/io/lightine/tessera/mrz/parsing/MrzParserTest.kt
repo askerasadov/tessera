@@ -13,13 +13,13 @@ import io.lightine.tessera.domain.vocabulary.ReadMethod
 import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.model.MrzDateInferenceMethod
 import io.lightine.tessera.mrz.model.TD3
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.fail
+import kotlin.time.Instant
 
 class MrzParserTest {
     private val ref2026 = Instant.parse("2026-05-04T12:00:00Z")

@@ -13,10 +13,10 @@ import io.lightine.tessera.mrz.parsing.MrzParser
 import io.lightine.tessera.mrz.parsing.ParseResult
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
-import kotlinx.datetime.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.time.Instant
 
 class MrzGeneratorTd3Test {
     private val ref2026 = Instant.parse("2026-05-04T12:00:00Z")

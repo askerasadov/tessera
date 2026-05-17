@@ -19,13 +19,13 @@ import io.lightine.tessera.mrz.model.MrzDateInferenceMethod
 import io.lightine.tessera.mrz.model.TD3
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class MrzValidatorTest {
     private val specimenLine1 = "P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<"
@@ -412,8 +412,8 @@ class MrzValidatorTest {
 
     private fun computedExpiry(date: LocalDate): MrzDate {
         val rawYear = (date.year % 100).toString().padStart(2, '0')
-        val rawMonth = date.monthNumber.toString().padStart(2, '0')
-        val rawDay = date.dayOfMonth.toString().padStart(2, '0')
+        val rawMonth = date.month.toString().padStart(2, '0')
+        val rawDay = date.day.toString().padStart(2, '0')
         return MrzDate(
             rawYear = rawYear,
             rawMonth = rawMonth,
