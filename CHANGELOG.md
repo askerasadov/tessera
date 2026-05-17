@@ -102,6 +102,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - `MrzParser.parseTD2(input: String, referenceTime: Instant)` and `MrzParser.parseTD2(input: List<String>, referenceTime: Instant)` overloads, parallel to `parseTD3`. Same Success / PartialSuccess / Failure semantics. Wired through `MrzValidator.validate(...)`. The shared `parseNameField` helper is reused as-is (format-agnostic)
 - `mrz-core` module: TD2 validator
   - `MrzValidator.validate(...)` dispatch extended to handle `TD2`: per-field check-digit failures for document number, DOB, expiry, and composite (no per-field optional-data digit); sex range, calendar-date, expiry warnings, birth-age warning, document-type/country-code recognition warnings, name-truncated warning — same dispatchers as TD3 with TD2 positions
+- `mrz-core` module: MRV-A format specification
+  - `MrvAFormatSpec` object naming every MRV-A field (per ICAO Doc 9303 Part 7) as a `FieldSpec`: `documentType`, `issuingState`, `rawNameField`, `documentNumber`, `documentNumberCheckDigit`, `nationality`, `dateOfBirth`, `dateOfBirthCheckDigit`, `sex`, `dateOfExpiry`, `dateOfExpiryCheckDigit`, `optionalData`, plus `lineCount = 2`, `lineLength = 44`, and the `globalPositionOf(field): Int` helper. Key deltas from the TD specs: MRV-A has **no composite check digit** (the last 16 characters of line 2 are entirely optional data per Part 7) and **no per-field check digit on optional data**, so the spec carries no `compositeCheckDigit` field and no `compositeInputFields` list
+- `mrz-core` module: MRV-A data class
+  - `MrvA(rawLines, commonFields, optionalData: String)` data class as a sealed-class subclass of `MrzDocument`, parallel to `TD2` (single optional-data field, no per-field check digit). `commonFields.checkDigits.composite` and `commonFields.checkDigits.optionalData` are both `null` for MRV-A. `format` is `MrzFormat.MRV_A`
+- `mrz-core` module: MRV-A parser
+  - `MrzParser.parseMRVA(input: String, referenceTime: Instant)` and `MrzParser.parseMRVA(input: List<String>, referenceTime: Instant)` overloads. Same Success / PartialSuccess / Failure semantics as `parseTD3` / `parseTD2`. Wired through `MrzValidator.validate(...)`. The shared `parseNameField` helper is reused as-is. MRV-A inputs that pass line-shape and character-set validation always produce a `Success` if the document number, DOB, and expiry check digits agree — there is no composite digit to mismatch and no per-field optional-data digit to mismatch
+- `mrz-core` module: MRV-A validator
+  - `MrzValidator.validate(...)` dispatch extended to handle `MrvA`: per-field check-digit failures for document number, DOB, and expiry only; sex range, calendar-date, expiry warnings, birth-age warning, document-type/country-code recognition warnings, name-truncated warning — same dispatchers as TD3/TD2 with MRV-A positions. The composite-digit check and the per-field optional-data check are entirely absent from the MRV-A path (no Part 7 spec coverage)
 
 ### Changed
 
@@ -135,6 +143,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - [`docs/features/mrz-data-model.md`](docs/features/mrz-data-model.md) `DocumentType` section now documents the `rawCode` trimming rule explicitly: trailing MRZ filler `<` is stripped from the two-character document-type slot, so `P<` becomes `rawCode = "P"`, `PP` stays `"PP"`, and `<<` becomes `""`. Leading filler (unspecified by ICAO for this slot) is preserved as-is per Principle 1. Cross-reference added to [`docs/features/mrz-parsing.md`](docs/features/mrz-parsing.md) "Two-Character Document Type Codes" section. The behavior itself is unchanged (shipped since the first parser slice); the rule was previously implicit. Closes audit item 4 from the 2026-05-04 alignment recap.
 - `MrzParser.parseTD3` and `MrzValidator.validateTD3` rewritten to consume `Td3FormatSpec` instead of inline position constants. The parser's `TD3_LINE_COUNT` / `TD3_LINE_LENGTH` private constants and the validator's `TD3_LINE_LENGTH` / `TD3_DOCUMENT_TYPE_POSITION` / `TD3_ISSUING_STATE_POSITION` / `TD3_NAME_FIELD_POSITION` / `TD3_NATIONALITY_LINE2_OFFSET` constants — plus all inline `+ 9` / `+ 13` / `+ 21` / `+ 42` offsets on line 2 — are now sourced from the spec. The validator's previous composite-input concatenation (`line2.substring(0, 10) + line2.substring(13, 20) + line2.substring(21, 43)`) is now `Td3FormatSpec.compositeInputFields.joinToString("") { it.extractFrom(rawLines) }`. No behavior change; the spec's lock tests in `Td3FormatSpecTest` pin the exact positions and `globalPositionOf` arithmetic so any future drift surfaces explicitly.
 - `MrzParser`'s internal line-shape and alphabet validators (`validateLineShape`, `validateAlphabet`) generalized to accept `expectedLineCount` / `expectedLineLength` / `format` parameters rather than reading `Td3FormatSpec` directly, so the same helpers serve both `parseTD3` and `parseTD2`. The post-slice `finalizeParseResult(document, referenceTime)` helper centralizes the Validator dispatch + ResultMetadata wrapping that previously sat inline in `parseTD3`. No behavior change for TD3 (all error shapes and positions are unchanged).
+- `MrzCheckDigits.composite` changed from `Char` to `Char?`. Visas (MRV-A and the forthcoming MRV-B per ICAO Doc 9303 Part 7) have no composite check digit, so `null` is the honest representation — distinct from a literal filler `<` (Principle 1: no inference) and distinct from any real character (Principle 5: transparency). The TD3 and TD2 parser paths continue to populate the field with a real `Char`; only visa paths leave it null. The validator's composite-digit dispatch on the TD3 and TD2 paths is wrapped in a `.let { composite -> ... }` no-op guard to satisfy the type system — the parser invariant (TD3/TD2 always populate composite) is preserved. Pre-0.1.0; no external consumers exist.
 
 ### Removed
 
@@ -152,9 +161,9 @@ These are documented commitments that are explicitly *not* in this `[Unreleased]
 - Generator (`MrzGenerator` and inverse round-trip property)
 - Transliteration system (`TransliterationProfile`, `TransliterationProfileRegistry`)
 - Auto-detect parser entry point (`MrzParser.parse(input)`)
-- Other format parsers (TD1, MRV-A, MRV-B parser methods)
+- Other format parsers (TD1, MRV-B parser methods)
 - Warnings: `MrzPersonalNumberCheckDigitFiller`
-- Name field parsing for non-TD3/non-TD2 formats (TD1, MRV-A, MRV-B); lands with the respective parser slices
+- Name field parsing for non-TD3/non-TD2/non-MRV-A formats (TD1, MRV-B); lands with the respective parser slices
 - Document type code table population beyond the starter set
 - Country code table population beyond the starter set
 - `ResultMetadata.timing: TimingInfo?` field (no timing instrumentation yet)

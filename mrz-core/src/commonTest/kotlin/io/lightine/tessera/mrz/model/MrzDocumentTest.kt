@@ -129,15 +129,22 @@ class MrzDocumentTest {
                 optionalData = "",
             )
         val td3: MrzDocument = specimenTd3
+        val mrvA: MrzDocument =
+            MrvA(
+                rawLines = listOf("", ""),
+                commonFields = specimenCommonFields,
+                optionalData = "",
+            )
 
         val labels =
-            listOf(td1, td2, td3).map { doc ->
+            listOf(td1, td2, td3, mrvA).map { doc ->
                 when (doc) {
                     is TD1 -> "TD1"
                     is TD2 -> "TD2"
                     is TD3 -> "TD3"
+                    is MrvA -> "MrvA"
                 }
             }
-        assertEquals(listOf("TD1", "TD2", "TD3"), labels)
+        assertEquals(listOf("TD1", "TD2", "TD3", "MrvA"), labels)
     }
 }

@@ -175,7 +175,7 @@ The MRZ contains check digits at multiple positions, computed using the algorith
 - **`dateOfBirth`** — `Char` for the birth date's check digit
 - **`dateOfExpiry`** — `Char` for the expiry date's check digit
 - **`optionalData`** — `Char?` for the optional data field's check digit, present in formats that have one
-- **`composite`** — `Char` for the composite (overall) check digit, when defined for the format
+- **`composite`** — `Char?` for the composite (overall) check digit. Non-null for formats that define a composite digit (TD1, TD2, TD3). Null for formats that do not (MRV-A and MRV-B per ICAO Doc 9303 Part 7), distinguishing "no slot in this format" from any literal character value
 
 The check digits are exposed verbatim (the character that appears in the MRZ). Validation of whether they are correct — that is, whether the digit equals the computed value — is a separate concern handled by the validation feature, which produces typed validation failures when mismatches occur.
 

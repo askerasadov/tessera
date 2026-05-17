@@ -5,5 +5,5 @@ public data class MrzCheckDigits(
     val dateOfBirth: Char,
     val dateOfExpiry: Char,
     val optionalData: Char?,
-    val composite: Char,
+    val composite: Char?,
 )
