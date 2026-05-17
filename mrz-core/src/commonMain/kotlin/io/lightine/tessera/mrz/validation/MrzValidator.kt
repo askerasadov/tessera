@@ -13,6 +13,8 @@ import io.lightine.tessera.domain.errors.MrzValidationError
 import io.lightine.tessera.domain.errors.MrzWarning
 import io.lightine.tessera.domain.vocabulary.MrzField
 import io.lightine.tessera.mrz.checkdigit.computeCheckDigit
+import io.lightine.tessera.mrz.formats.Td3FormatSpec
+import io.lightine.tessera.mrz.formats.extractFrom
 import io.lightine.tessera.mrz.model.MrzDate
 import io.lightine.tessera.mrz.model.MrzDocument
 import io.lightine.tessera.mrz.model.TD1
@@ -44,65 +46,63 @@ public object MrzValidator {
         document: TD3,
         referenceTime: Instant,
     ): ValidationResult {
-        val line2 = document.rawLines[1]
-        val line2GlobalOffset = TD3_LINE_LENGTH
-
+        val rawLines = document.rawLines
         val failures = mutableListOf<MrzValidationError>()
 
         addCheckDigitFailureIfMismatch(
             into = failures,
-            input = line2.substring(0, 9),
+            input = Td3FormatSpec.documentNumber.extractFrom(rawLines),
             observed = document.commonFields.checkDigits.documentNumber,
             field = MrzField.DOCUMENT_NUMBER,
-            position = line2GlobalOffset + 9,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.documentNumberCheckDigit),
         )
         addCheckDigitFailureIfMismatch(
             into = failures,
-            input = line2.substring(13, 19),
+            input = Td3FormatSpec.dateOfBirth.extractFrom(rawLines),
             observed = document.commonFields.checkDigits.dateOfBirth,
             field = MrzField.DATE_OF_BIRTH,
-            position = line2GlobalOffset + 19,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.dateOfBirthCheckDigit),
         )
         addCheckDigitFailureIfMismatch(
             into = failures,
-            input = line2.substring(21, 27),
+            input = Td3FormatSpec.dateOfExpiry.extractFrom(rawLines),
             observed = document.commonFields.checkDigits.dateOfExpiry,
             field = MrzField.DATE_OF_EXPIRY,
-            position = line2GlobalOffset + 27,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.dateOfExpiryCheckDigit),
         )
         addCheckDigitFailureIfMismatch(
             into = failures,
-            input = line2.substring(28, 42),
+            input = Td3FormatSpec.personalNumber.extractFrom(rawLines),
             observed = document.personalNumberCheckDigit,
             field = MrzField.OPTIONAL_DATA,
-            position = line2GlobalOffset + 42,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.personalNumberCheckDigit),
         )
 
-        val compositeInput = line2.substring(0, 10) + line2.substring(13, 20) + line2.substring(21, 43)
+        val compositeInput = Td3FormatSpec.compositeInputFields.joinToString("") { it.extractFrom(rawLines) }
         addCheckDigitFailureIfMismatch(
             into = failures,
             input = compositeInput,
             observed = document.commonFields.checkDigits.composite,
             field = MrzField.COMPOSITE,
-            position = line2GlobalOffset + 43,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.compositeCheckDigit),
         )
 
         val rawSex = document.commonFields.rawSex
         if (rawSex !in VALID_SEX_CHARACTERS) {
-            failures += MrzInvalidSexValue(observed = rawSex, position = line2GlobalOffset + 20)
+            failures += MrzInvalidSexValue(observed = rawSex, position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.sex))
         }
 
         addDateNotInCalendarFailureIfApplicable(
             into = failures,
             date = document.commonFields.dateOfBirth,
             field = MrzField.DATE_OF_BIRTH,
-            position = line2GlobalOffset + 13,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.dateOfBirth),
         )
         addDateNotInCalendarFailureIfApplicable(
             into = failures,
             date = document.commonFields.dateOfExpiry,
             field = MrzField.DATE_OF_EXPIRY,
-            position = line2GlobalOffset + 21,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.dateOfExpiry),
         )
 
         val warnings = mutableListOf<MrzWarning>()
@@ -119,25 +119,25 @@ public object MrzValidator {
         addUnknownDocumentTypeCodeWarningIfApplicable(
             into = warnings,
             documentType = document.commonFields.documentType,
-            position = TD3_DOCUMENT_TYPE_POSITION,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.documentType),
         )
         addUnknownCountryCodeWarningIfApplicable(
             into = warnings,
             countryCode = document.commonFields.issuingState,
             field = MrzField.ISSUING_STATE,
-            position = TD3_ISSUING_STATE_POSITION,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.issuingState),
         )
         addUnknownCountryCodeWarningIfApplicable(
             into = warnings,
             countryCode = document.commonFields.nationality,
             field = MrzField.NATIONALITY,
-            position = line2GlobalOffset + TD3_NATIONALITY_LINE2_OFFSET,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.nationality),
         )
         addNameTruncatedWarningIfApplicable(
             into = warnings,
             nameTruncated = document.commonFields.nameTruncated,
             rawNameField = document.commonFields.rawNameField,
-            position = TD3_NAME_FIELD_POSITION,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.rawNameField),
         )
 
         return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
@@ -241,10 +241,4 @@ public object MrzValidator {
                 )
         }
     }
-
-    private const val TD3_LINE_LENGTH = 44
-    private const val TD3_DOCUMENT_TYPE_POSITION = 0
-    private const val TD3_ISSUING_STATE_POSITION = 2
-    private const val TD3_NAME_FIELD_POSITION = 5
-    private const val TD3_NATIONALITY_LINE2_OFFSET = 10
 }
