@@ -64,6 +64,7 @@ The generator never infers which profile to use. The consumer must specify a pro
 ## Related Decisions
 
 - ADR-004 — reader, not oracle. The "never inferred" rule is a direct expression of this stance.
+- [ADR-014](0014-unicode-normalization-strategy.md) — Unicode normalization strategy. The implementation-strategy companion to this ADR: how the SDK handles Unicode equivalence (NFC vs NFD canonical forms) before profile lookup.
 
 ---
 

@@ -20,6 +20,14 @@ The SDK supports this through a profile-based architecture: a profile defines th
 
 ---
 
+## Unicode Normalization Before Profile Lookup
+
+Before a profile's mapping rules are applied, consumer input is normalized to Unicode NFC (Normalization Form Canonical Composition) using the host platform's native Unicode normalizer (`java.text.Normalizer` on JVM/Android, `precomposedStringWithCanonicalMapping` on iOS, `String.prototype.normalize` on JS/Wasm). This ensures that canonically-equivalent inputs — for example, `é` as a single code point versus `e` plus a combining accent — produce the same transliterated output. The post-normalization, pre-transliteration form is exposed to consumers (per Principle 5) so they can inspect the normalization the SDK applied.
+
+The reasoning is recorded in [ADR-014](../decisions/0014-unicode-normalization-strategy.md). The normalization step is invoked once at the entry to transliteration; profiles operate on normalized strings.
+
+---
+
 ## Profile-Based Architecture
 
 A `TransliterationProfile` is a named, documented set of character-mapping rules. Each profile knows how to transform a string with arbitrary characters into a string using only the MRZ alphabet.
@@ -202,3 +210,5 @@ The profile identifier and any human-readable description are English. As with c
 - `mrz-data-model.md` — name fields and their transliteration state
 - `lookup-tables.md` — country codes used as profile identifiers
 - `conventions.md` — procedure for adding new profiles
+- [ADR-009](../decisions/0009-transliteration-profiles.md) — the architectural decision for per-state profiles
+- [ADR-014](../decisions/0014-unicode-normalization-strategy.md) — the implementation strategy for Unicode normalization before profile lookup
