@@ -40,12 +40,27 @@ public object MrzParser {
     ): ParseResult {
         val detected = detectFormat(input)
         return when (detected) {
-            MrzFormat.TD1 -> parseTD1(input, referenceTime)
-            MrzFormat.TD2 -> parseTD2(input, referenceTime)
-            MrzFormat.TD3 -> parseTD3(input, referenceTime)
-            MrzFormat.MRV_A -> parseMRVA(input, referenceTime)
-            MrzFormat.MRV_B -> parseMRVB(input, referenceTime)
-            null ->
+            MrzFormat.TD1 -> {
+                parseTD1(input, referenceTime)
+            }
+
+            MrzFormat.TD2 -> {
+                parseTD2(input, referenceTime)
+            }
+
+            MrzFormat.TD3 -> {
+                parseTD3(input, referenceTime)
+            }
+
+            MrzFormat.MRV_A -> {
+                parseMRVA(input, referenceTime)
+            }
+
+            MrzFormat.MRV_B -> {
+                parseMRVB(input, referenceTime)
+            }
+
+            null -> {
                 ParseResult.Failure(
                     error =
                         MrzFormatNotDetected(
@@ -60,6 +75,7 @@ public object MrzParser {
                             validationFailures = emptyList(),
                         ),
                 )
+            }
         }
     }
 
@@ -77,12 +93,21 @@ public object MrzParser {
         val lineCount = input.size
         val lineLengths = input.map { it.length }
         return when {
-            lineCount == Td1FormatSpec.lineCount && lineLengths.all { it == Td1FormatSpec.lineLength } -> MrzFormat.TD1
-            lineCount == Td2FormatSpec.lineCount && lineLengths.all { it == Td2FormatSpec.lineLength } ->
+            lineCount == Td1FormatSpec.lineCount && lineLengths.all { it == Td1FormatSpec.lineLength } -> {
+                MrzFormat.TD1
+            }
+
+            lineCount == Td2FormatSpec.lineCount && lineLengths.all { it == Td2FormatSpec.lineLength } -> {
                 if (startsWithVisaPrefix(input[0])) MrzFormat.MRV_B else MrzFormat.TD2
-            lineCount == Td3FormatSpec.lineCount && lineLengths.all { it == Td3FormatSpec.lineLength } ->
+            }
+
+            lineCount == Td3FormatSpec.lineCount && lineLengths.all { it == Td3FormatSpec.lineLength } -> {
                 if (startsWithVisaPrefix(input[0])) MrzFormat.MRV_A else MrzFormat.TD3
-            else -> null
+            }
+
+            else -> {
+                null
+            }
         }
     }
 
