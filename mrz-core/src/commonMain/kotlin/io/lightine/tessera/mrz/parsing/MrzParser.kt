@@ -1,6 +1,7 @@
 package io.lightine.tessera.mrz.parsing
 
 import io.lightine.tessera.domain.errors.MrzCharacterSetViolation
+import io.lightine.tessera.domain.errors.MrzFormatNotDetected
 import io.lightine.tessera.domain.errors.MrzInvalidLength
 import io.lightine.tessera.domain.vocabulary.MrzFormat
 import io.lightine.tessera.domain.vocabulary.ReadMethod
@@ -28,6 +29,65 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 public object MrzParser {
+    public fun parse(
+        input: String,
+        referenceTime: Instant = Clock.System.now(),
+    ): ParseResult = parse(splitLines(input), referenceTime)
+
+    public fun parse(
+        input: List<String>,
+        referenceTime: Instant = Clock.System.now(),
+    ): ParseResult {
+        val detected = detectFormat(input)
+        return when (detected) {
+            MrzFormat.TD1 -> parseTD1(input, referenceTime)
+            MrzFormat.TD2 -> parseTD2(input, referenceTime)
+            MrzFormat.TD3 -> parseTD3(input, referenceTime)
+            MrzFormat.MRV_A -> parseMRVA(input, referenceTime)
+            MrzFormat.MRV_B -> parseMRVB(input, referenceTime)
+            null ->
+                ParseResult.Failure(
+                    error =
+                        MrzFormatNotDetected(
+                            observedLineCount = input.size,
+                            observedLineLengths = input.map { it.length },
+                        ),
+                    rawInput = input.joinToString("\n"),
+                    metadata =
+                        ResultMetadata(
+                            readMethod = ReadMethod.BACKEND_STRING_INPUT,
+                            warnings = emptyList(),
+                            validationFailures = emptyList(),
+                        ),
+                )
+        }
+    }
+
+    // Auto-detect dispatches by line count + per-line length + leading character of line 1
+    // (per docs/features/mrz-parsing.md "Auto-Detect Behavior"). Inputs whose shape does not
+    // match any supported format produce MrzFormatNotDetected; the caller can then choose to
+    // surface the failure or retry through a format-specific entry point with a corrected input.
+    // Conservative by design: when shape plausibly fits multiple formats and the leading
+    // character does not disambiguate, Visa codes (V*) take MRV-A / MRV-B; every other leading
+    // character takes TD3 / TD2 — there is no "ambiguous" return path because the leading
+    // character is always defined for inputs whose shape passed the line-count and -length
+    // checks (Principle 1: when in doubt, do not invent — every shipped MRZ has a first character
+    // and the dispatch on V vs non-V is total).
+    private fun detectFormat(input: List<String>): MrzFormat? {
+        val lineCount = input.size
+        val lineLengths = input.map { it.length }
+        return when {
+            lineCount == Td1FormatSpec.lineCount && lineLengths.all { it == Td1FormatSpec.lineLength } -> MrzFormat.TD1
+            lineCount == Td2FormatSpec.lineCount && lineLengths.all { it == Td2FormatSpec.lineLength } ->
+                if (startsWithVisaPrefix(input[0])) MrzFormat.MRV_B else MrzFormat.TD2
+            lineCount == Td3FormatSpec.lineCount && lineLengths.all { it == Td3FormatSpec.lineLength } ->
+                if (startsWithVisaPrefix(input[0])) MrzFormat.MRV_A else MrzFormat.TD3
+            else -> null
+        }
+    }
+
+    private fun startsWithVisaPrefix(line: String): Boolean = line.isNotEmpty() && line[0] == 'V'
+
     public fun parseTD3(
         input: String,
         referenceTime: Instant = Clock.System.now(),

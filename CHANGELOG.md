@@ -124,6 +124,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - `MrzParser.parseTD1(input: String, referenceTime: Instant)` and `MrzParser.parseTD1(input: List<String>, referenceTime: Instant)` overloads, parallel to the other format parsers. Wired through `MrzValidator.validate(...)`. The shared `parseNameField` helper is reused as-is (it operates on the raw name-field string, format-agnostic)
 - `mrz-core` module: TD1 validator
   - `MrzValidator.validate(...)` dispatch for `TD1` replaces the previous empty-result stub. Per-field check-digit failures for document number, DOB, expiry, and composite (no per-field optional-data digit per Part 5); sex range, calendar-date, expiry warnings, birth-age warning, document-type/country-code recognition warnings, name-truncated warning — same dispatchers as TD3/TD2 with TD1 positions. The name-truncation warning's position is now `60` (line 3 start) for TD1, vs. `5` for the 2-line formats
+- `domain` module: `MrzFormatNotDetected` error type
+  - Concrete `MrzParseError` variant carrying `observedLineCount: Int` and `observedLineLengths: List<Int>`. Surfaced by `MrzParser.parse(input)` when the input shape does not match any of the five supported format shapes (3×30 for TD1; 2×36 for TD2/MRV-B; 2×44 for TD3/MRV-A). The `description` property names the observed shape alongside the expected shapes. Documented in `docs/features/mrz-error-taxonomy.md` (which referenced the type but the type was deferred until the auto-detect entry point landed)
+- `mrz-core` module: auto-detect parser entry point
+  - `MrzParser.parse(input: String, referenceTime: Instant)` and `MrzParser.parse(input: List<String>, referenceTime: Instant)` overloads. The friendly default per [`docs/features/mrz-parsing.md`](docs/features/mrz-parsing.md): a consumer reading an unknown MRZ calls `parse(input)` and the SDK identifies the format from structural cues (line count + per-line length + leading character of line 1). Auto-detect dispatches by:
+    - 3 lines × 30 chars → `parseTD1`
+    - 2 lines × 36 chars, leading character `V` → `parseMRVB`; otherwise → `parseTD2`
+    - 2 lines × 44 chars, leading character `V` → `parseMRVA`; otherwise → `parseTD3`
+    - Anything else → `ParseResult.Failure(MrzFormatNotDetected(observedLineCount, observedLineLengths))`
+  - Once the format is detected, the result is whatever the format-specific parser produces (`Success` / `PartialSuccess` / `Failure`), so auto-detect inherits the format-specific parser's behavior verbatim (character-set violations, check-digit warnings, calendar-date failures, etc., all surface through the same channels as if the consumer had called the format-specific method directly). Closes the last item under the original Option E slice plan from the 2026-05-06 handoff. Closes part of recap finding B2 by landing `MrzFormatNotDetected` as a real type
 
 ### Changed
 
@@ -180,7 +189,6 @@ These are documented commitments that are explicitly *not* in this `[Unreleased]
 - Validator options surface (`ValidationOptions`-style configurable thresholds); current slice ships `MrzExpiryDateImplausiblyFar`'s 10-year threshold as a private constant
 - Generator (`MrzGenerator` and inverse round-trip property)
 - Transliteration system (`TransliterationProfile`, `TransliterationProfileRegistry`)
-- Auto-detect parser entry point (`MrzParser.parse(input)`) — all five format-specific parsers (`parseTD1`, `parseTD2`, `parseTD3`, `parseMRVA`, `parseMRVB`) now exist; the auto-detect dispatcher is the natural next slice
 - Warnings: `MrzPersonalNumberCheckDigitFiller`
 - Document type code table population beyond the starter set
 - Country code table population beyond the starter set

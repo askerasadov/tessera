@@ -49,8 +49,8 @@ The parser ships incrementally. The design described in the rest of this documen
 | `MrzParser.parseTD3(input: String, referenceTime: Instant)` and `parseTD3(input: List<String>, referenceTime: Instant)` overloads | Implemented |
 | `MrzParser.parseMRVA(input: String, referenceTime: Instant)` and `parseMRVA(input: List<String>, referenceTime: Instant)` overloads | Implemented |
 | `MrzParser.parseMRVB(input: String, referenceTime: Instant)` and `parseMRVB(input: List<String>, referenceTime: Instant)` overloads | Implemented |
-| `MrzParser.parse(input)` auto-detect entry point | Deferred |
-| `MrzFormatNotDetected` error type (required by auto-detect) | Deferred |
+| `MrzParser.parse(input: String, referenceTime: Instant)` and `parse(input: List<String>, referenceTime: Instant)` overloads (auto-detect) | Implemented |
+| `MrzFormatNotDetected` error type (surfaced by auto-detect when input shape matches no supported format) | Implemented |
 
 The format-specific methods accept an explicit `referenceTime: Instant` parameter (defaulting to `Clock.System.now()`) so consumers can pass a deterministic reference time for testing, replay, or audit scenarios. The illustrative API shape below omits the `referenceTime` parameter for brevity; the shipped signatures all include it.
 
