@@ -218,7 +218,7 @@ Several significant decisions made during design (Kotlin Multiplatform choice, n
 
 **Source:** Implicit; conventions document the ADR format but no ADRs exist yet.
 
-**Resolution:** Resolved — eleven ADRs exist in `docs/decisions/`. Additional ADRs may be added in the future as new significant decisions are made.
+**Resolution:** Resolved — fifteen ADRs exist in `docs/decisions/` as of the `0.1.0` tag. See [`docs/decisions/README.md`](decisions/README.md) for the current index. Additional ADRs may be added in the future as new significant decisions are made.
 
 ### README
 
@@ -242,6 +242,36 @@ A document specifically structured to help AI assistants (Claude Code in particu
 
 These questions cannot be settled by us alone — they depend on documentation, decisions, or developments outside the project.
 
+### External spec data licensing strategy
+
+ICAO Doc 9303 (Machine Readable Travel Documents) is freely downloadable as PDFs from `icao.int` in six languages — see the [Doc 9303 page](https://www.icao.int/publications/doc-series/doc-9303). All 13 parts are accessible without payment or registration. The technical content the SDK needs is in:
+
+- **Part 3** — common specs: document type codes (Section 4), country codes (Section 5), transliteration tables (Section 6 / Annex G), MRZ alphabet, check digit algorithm
+- **Part 4** — TD3 (passports), including the canonical sex character set (§4.1)
+- **Parts 5–7** — TD1, TD2, MRV-A, MRV-B specifics
+
+**Reading the spec is unambiguously fine.** The SDK's algorithms (check digit, alphabet, format layouts) were implemented from the spec's technical descriptions — algorithms are not copyrightable.
+
+**Embedding the spec's data tables verbatim is the open question.** ICAO's stated copyright position (per the site copyright notice) is restrictive: *"None of the materials provided on this web site may be used, reproduced or transmitted, in whole or in part, in any form or by any means... without permission in writing from ICAO."* Whether technical tables qualify as facts (uncopyrightable in many jurisdictions) versus creative compilations (copyrightable) is a legal question the project has not yet resolved. The conservative path for an Apache-2.0 open-source project is to avoid verbatim ICAO content until the question is settled.
+
+This is the umbrella entry for four related downstream questions on which it bears directly:
+
+- **Sex value canonical set per ICAO Doc 9303** — answerable by reading Part 4 §4.1; no redistribution involved.
+- **Document type code table completeness** — full enumeration in Part 3 Section 4; redistribution is the question.
+- **Country code table completeness** — Part 3 Section 5 + ISO 3166-1 alpha-3; redistribution is the question. An alternative path exists: ISO 3166-1 codes are available via community-maintained datasets (e.g., the Debian `iso-codes` package, GPL-2.0+ licensed) where the data is widely treated as facts.
+- **Transliteration profile coverage completeness** — full tables in Part 3 Section 6 (Annex G), including Cyrillic, Greek, Arabic scripts the current starter set omits; redistribution is the question.
+
+**Source:** Pre-`0.1.0`-tag recap (2026-05-18) — the audit established that the spec is accessible and corrected a prior framing in this document ("no authoritative copy on hand") that was incorrect.
+
+**Resolution:** Decide before public release (`1.0.0`). Possible paths, non-exclusive:
+
+1. **Request permission from ICAO** for redistribution of the relevant tables in the SDK, citing Apache 2.0 license terms and the open-source distribution model.
+2. **Use alternative data sources** where permitted — for country codes, ISO 3166-1 alpha-3 via a permissively licensed community dataset; for sex characters and check digit math, derive from the spec text (algorithm, not data).
+3. **Defer to consumer-provided data** — keep the SDK's tables minimal and document the extension points so consumers can register additional codes / profiles from their own authoritative sources.
+4. **Rely on facts-not-copyrightable** — embed the data citing legal precedent, with legal counsel review before public release.
+
+Each downstream entry below cross-references this one for the licensing question; their own resolutions cover only the spec-reading side.
+
 ### Specific document type implementations
 
 Some document types are in scope but their specific format details require documentation that may not be currently public. The architecture supports them; implementation is added when documentation becomes available.
@@ -252,31 +282,31 @@ Some document types are in scope but their specific format details require docum
 
 ### Sex value canonical set per ICAO Doc 9303
 
-`mrz-error-taxonomy.md` lists the valid sex characters as `M`, `F`, `<`, or `X`. The first validator slice uses this set as the allowed characters for `MrzInvalidSexValue`. ICAO Doc 9303 Part 4 §4.1 historically lists `M`, `F`, `<`; later guidance is reported to permit `X` for non-binary documents, and some issuing states use it. The project does not currently have an authoritative copy of the relevant ICAO publication at hand to confirm which set is canonical.
+`mrz-error-taxonomy.md` lists the valid sex characters as `M`, `F`, `<`, or `X`. The first validator slice uses this set as the allowed characters for `MrzInvalidSexValue`. ICAO Doc 9303 Part 4 §4.1 historically lists `M`, `F`, `<`; later guidance is reported to permit `X` for non-binary documents, and some issuing states use it. The canonical text is in Part 4 §4.1; the spec is freely downloadable from `icao.int` (see "External spec data licensing strategy" above) — confirming the canonical set is a reading task, not a licensing question.
 
 **Source:** First validator implementation slice; aligns with `mrz-error-taxonomy.md` representative-examples list.
 
-**Resolution:** Confirm the canonical valid set against ICAO Doc 9303 primary source. If `X` is canonical, no code change is needed (the validator already permits it). If `X` is not canonical, narrow the validator's set, update `mrz-error-taxonomy.md`, and add a test for the change.
+**Resolution:** Read Part 4 §4.1 from the canonical Doc 9303 publication. If `X` is canonical, no code change is needed (the validator already permits it). If `X` is not canonical, narrow the validator's set, update `mrz-error-taxonomy.md`, and add a test for the change.
 
 ### Document type code table completeness
 
-The `DocumentTypeCodeTable` in `mrz-core` ships with a deliberate starter set of well-known codes (`P`, `V`, `I`, `PP`, `PD`, `PS`) — not the complete enumeration committed to in `docs/features/lookup-tables.md` ("Initial Document Type Code Coverage"). The complete list comes from ICAO Doc 9303 Part 3 Section 4, which the project does not currently have at hand.
+The `DocumentTypeCodeTable` in `mrz-core` ships with a deliberate starter set of well-known codes (`P`, `V`, `I`, `PP`, `PD`, `PS`) — not the complete enumeration committed to in `docs/features/lookup-tables.md` ("Initial Document Type Code Coverage"). The complete list is in ICAO Doc 9303 Part 3 Section 4, freely downloadable from `icao.int`; whether the full table can be embedded verbatim under the SDK's Apache-2.0 license is gated by the umbrella "External spec data licensing strategy" entry above.
 
 The architectural pattern (recognition-bearing value class living next to its lookup table per ADR-012) is in place; the data is intentionally partial. The starter set is documented as such in `DocumentTypeCodeTable.kt` (file-level comment), and the table is structured so that adding entries is a non-breaking change (per `lookup-tables.md` "Updating the Tables"). A test (`DocumentTypeCodeTableTest.by_category_residence_permit_returns_empty_list_in_starter_set`) locks the current coverage so any expansion surfaces explicitly.
 
 **Source:** First implementation slice for `DocumentType` (2026-05-04 session); aligns with `lookup-tables.md` coverage commitment.
 
-**Resolution:** Populate the table from current ICAO Doc 9303 Part 3 Section 4 when an authoritative copy of the publication is available. Update tests to match the full set. Remove this entry once the table matches the spec.
+**Resolution:** Resolve the licensing question (see "External spec data licensing strategy" above), then populate the table from current ICAO Doc 9303 Part 3 Section 4 via the chosen path. Update tests to match the full set. Remove this entry once the table matches the spec.
 
 ### Country code table completeness
 
-The `CountryCodeTable` in `mrz-core` ships with a deliberate starter set of five ISO 3166-1 alpha-3 state codes (`USA`, `GBR`, `DEU`, `FRA`, `JPN`) — not the complete enumeration committed to in `docs/features/lookup-tables.md` ("Initial Country Code Coverage"). The complete list combines all of ISO 3166-1 alpha-3, ICAO Doc 9303 Part 3 Section 5 extensions (organizations, stateless persons, refugees, and historical states), and the canonical ICAO Doc 9303 publication that the project does not currently have at hand.
+The `CountryCodeTable` in `mrz-core` ships with a deliberate starter set of five ISO 3166-1 alpha-3 state codes (`USA`, `GBR`, `DEU`, `FRA`, `JPN`) — not the complete enumeration committed to in `docs/features/lookup-tables.md` ("Initial Country Code Coverage"). The complete list combines all of ISO 3166-1 alpha-3 and ICAO Doc 9303 Part 3 Section 5 extensions (organizations, stateless persons, refugees, and historical states). Both source documents are accessible; whether the data can be embedded verbatim under the SDK's Apache-2.0 license is gated by the umbrella "External spec data licensing strategy" entry above. For the ISO 3166-1 portion specifically, community-maintained datasets (e.g., the Debian `iso-codes` package, GPL-2.0+ licensed) offer an alternative path noted in that entry.
 
 The architectural pattern (recognition-bearing value class living next to its lookup table per ADR-012) is in place; the data is intentionally partial. Same shape as the `DocumentTypeCodeTable` starter-set incompleteness above. The starter set is documented as such in `CountryCodeTable.kt` (file-level comment), and the table is structured so that adding entries is a non-breaking change (per `lookup-tables.md` "Updating the Tables"). Four tests (`CountryCodeTableTest.by_category_organization_returns_empty_list_in_starter_set` and the three sibling category-empty tests) lock the current coverage so any expansion surfaces explicitly. The `MrzUnknownCountryCode` warning will fire frequently in real-world inputs because of this until the table is populated.
 
 **Source:** First implementation slice for `CountryCode` (2026-05-06 session); aligns with `lookup-tables.md` coverage commitment.
 
-**Resolution:** Populate the table from ISO 3166-1 alpha-3 plus ICAO Doc 9303 Part 3 Section 5 extensions when authoritative copies of the publications are available. Update tests to match the full set. Remove this entry once the table matches the spec.
+**Resolution:** Resolve the licensing question (see "External spec data licensing strategy" above), then populate the table from ISO 3166-1 alpha-3 plus ICAO Doc 9303 Part 3 Section 5 extensions via the chosen path. Update tests to match the full set. Remove this entry once the table matches the spec.
 
 ### Transliteration profile coverage completeness
 
@@ -288,7 +318,7 @@ Same shape as the `DocumentTypeCodeTable` and `CountryCodeTable` starter-set inc
 
 **Source:** First implementation slice for `TransliterationProfile` (2026-05-17 session); aligns with `docs/features/transliteration.md` ("The ICAO Default Profile", "Country-Specific Profiles") and ADR-009.
 
-**Resolution:** Populate the table from current ICAO Doc 9303 Part 3 Section 6 (Annex G) when an authoritative copy of the publication is available. Update tests to match the full set. Consider whether non-Latin scripts (Cyrillic, Greek, Arabic) belong in the default profile or in separate per-script profiles selected explicitly. Country-specific profile expansions (additional overrides or additional profiles for other issuing states) ship per consumer demand. Remove this entry once the shared table matches the canonical set and each shipped profile's overrides are confirmed against observed practice.
+**Resolution:** Resolve the licensing question (see "External spec data licensing strategy" above), then populate the table from current ICAO Doc 9303 Part 3 Section 6 (Annex G) via the chosen path. Update tests to match the full set. Consider whether non-Latin scripts (Cyrillic, Greek, Arabic) belong in the default profile or in separate per-script profiles selected explicitly. Country-specific profile expansions (additional overrides or additional profiles for other issuing states) ship per consumer demand. Remove this entry once the shared table matches the canonical set and each shipped profile's overrides are confirmed against observed practice.
 
 ### Driver's license format choice (mDoc vs proprietary)
 
@@ -407,6 +437,8 @@ GitHub recognizes a top-level `CONTRIBUTING.md` and surfaces it on PR creation. 
 The project commits to Keep a Changelog format (see `docs/versioning.md`). The actual `CHANGELOG.md` file does not yet exist. It will be created with the first internal release entry.
 
 **Trigger:** Before tagging 0.1.0.
+
+**Resolution:** Resolved — `CHANGELOG.md` exists at project root in Keep a Changelog format. The initial `[0.1.0]` entry is populated by the tag commit; the `[Unreleased]` section above it accumulates entries for the next release per the conventions in `docs/versioning.md`.
 
 ---
 
