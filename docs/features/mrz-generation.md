@@ -22,12 +22,12 @@ The generator ships incrementally, format by format, per the phased addition pro
 | `MrzGenerator.generate(document: TD1): GenerationResult` | Implemented |
 | `MrzGenerator.generate(document: MrvA): GenerationResult` | Implemented |
 | `MrzGenerator.generate(document: MrvB): GenerationResult` | Implemented |
-| Per-format primitive-input methods (`generateTD3(documentType, issuingState, ...)` etc.) | Deferred (all five formats) — current slice ships the `MrzDocument`-input overloads only |
+| Per-format primitive-input methods (`generateTD3(documentType, issuingState, ...)` etc.) | Implemented for all five formats; each accepts an optional `transliteration: TransliterationProfile? = null` parameter |
 | `MrzGenerationFieldOverflow` error type | Implemented |
 | `MrzGenerationMissingRequiredField` error type | Implemented (the type exists; surfaces when the primitive-input methods land and have required fields to enforce) |
-| `MrzGenerationUnsupportedCharacters` error type | Deferred (lands with transliteration, which is itself deferred) |
+| `MrzGenerationUnsupportedCharacters` error type | Implemented; returned by both `generate(document)` (when text fields contain non-MRZ characters and the consumer has not pre-transliterated) and by the primitive-input methods (when a profile is provided but cannot map all characters) |
 | Long document number extension (TD3) | Deferred — `>9`-character document numbers currently fail with `MrzGenerationFieldOverflow` rather than spilling into the personal-number field |
-| Transliteration via `TransliterationProfile` parameter | Deferred (the transliteration subsystem is not yet implemented) |
+| Transliteration via `TransliterationProfile` parameter | Implemented on the primitive-input methods. Profiles are applied to primary and secondary identifiers; the post-normalization and post-transliteration forms are exposed on `ResultMetadata.transliterationDetails` per Principle 5 ([ADR-014](../decisions/0014-unicode-normalization-strategy.md)) |
 | Round-trip property tests (`parse ∘ generate = identity` on raw fields) | Implemented for all five formats. TD3 has the most thorough coverage (custom-date variant, two-character document type code, sex character verbatim round-trip); TD1/TD2/MRV-A/MRV-B share the canonical Anna Eriksson specimen pattern with per-format edge cases |
 
 The generator's wiring into the parser is implicit: a `MrzGenerator.generate(document)` followed by the matching `MrzParser.parseXXX(generated.mrz)` round-trips the raw fields verbatim. The polymorphic `generate(MrzDocument)` overload pairs cleanly with the auto-detect parser entry point: `MrzGenerator.generate(MrzParser.parse(input).document)` is a typed end-to-end round-trip. Check digits are recomputed by the generator from the field data on every call — the check-digit values on the input `MrzDocument` are not used (strict ICAO conformance per Principle 7 over faithful round-trip of bad inputs).
