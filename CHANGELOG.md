@@ -6,8 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-05-18
+
+The first internal release. Pure parsing, generation, and validation for all five ICAO Doc 9303 MRZ formats (TD1, TD2, TD3, MRV-A, MRV-B), the error taxonomy, the lookup-table machinery, transliteration profiles (ICAO default + AZE country-specific), and the pluggable telemetry interface (contract-only at this release; first emitters in 0.2.0 and 0.6.0). JVM target enabled; additional targets activate per-release as the corresponding reading methods land. 516 tests.
+
+Per [ADR-007](docs/decisions/0007-strict-backward-compat-from-0x.md), the public API committed in this release is held to strict backward compatibility across the `0.x` line.
+
 ### Changed
 
+- Pre-`0.1.0`-tag documentation correction in [`docs/open-questions.md`](docs/open-questions.md): four "deferred pending external information" entries (sex value canonical set, document type code table completeness, country code table completeness, transliteration profile coverage completeness) previously framed the deferral as "the project does not currently have an authoritative copy of the relevant ICAO publication at hand." Verified during the pre-tag recap that ICAO Doc 9303 is freely downloadable from `icao.int` in six languages, all 13 parts. The real constraint is licensing (ICAO's stated terms restrict redistribution; whether technical tables qualify as facts vs. creative compilations is an unresolved legal question for an Apache-2.0 project). New umbrella entry "External spec data licensing strategy" consolidates the licensing question and lists possible paths (request ICAO permission, use alternative sources like ISO 3166-1 community datasets, defer to consumer-provided data, rely on facts-not-copyrightable with legal review). The four downstream entries cross-reference it. Trigger for the resolution is before public release (`1.0.0`). Also resolved two stale items in the same document: the "Architecture Decision Records" count (corrected from 11 to 15) and the "CHANGELOG.md initial entry" trigger (satisfied as of the tag commit)
 - Pre-`0.1.0`-tag documentation pass: added KDoc to every public type in the `domain` and `mrz-core` modules that previously lacked it, and converted substantive `//` block comments on public types to `/** */` KDoc so they appear in IDE tooltips and generated docs. Coverage spans 64 files across `domain/errors`, `domain/vocabulary`, `mrz-core/checkdigit`, `mrz-core/formats`, `mrz-core/model`, `mrz-core/recognition`, `mrz-core/parsing` (result types + entry-point object), `mrz-core/validation` (result type + entry-point object), `mrz-core/generation` (result type + entry-point object), and `mrz-core/transliteration`. No behavior changes, no API changes — every edit adds documentation. Established the documentation pattern for the period after `0.1.0` ships: every new public type is expected to land with KDoc. Output of the audit findings catalogued during the pre-tag review; the gap was the only finding the review deemed worth blocking the tag on (per the audit report)
 
 ### Added
