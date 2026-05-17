@@ -7,6 +7,7 @@ import io.lightine.tessera.domain.vocabulary.ReadMethod
 import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.formats.MrvAFormatSpec
 import io.lightine.tessera.mrz.formats.MrvBFormatSpec
+import io.lightine.tessera.mrz.formats.Td1FormatSpec
 import io.lightine.tessera.mrz.formats.Td2FormatSpec
 import io.lightine.tessera.mrz.formats.Td3FormatSpec
 import io.lightine.tessera.mrz.formats.extractCharFrom
@@ -17,6 +18,7 @@ import io.lightine.tessera.mrz.model.MrvB
 import io.lightine.tessera.mrz.model.MrzCheckDigits
 import io.lightine.tessera.mrz.model.MrzDate
 import io.lightine.tessera.mrz.model.MrzDocument
+import io.lightine.tessera.mrz.model.TD1
 import io.lightine.tessera.mrz.model.TD2
 import io.lightine.tessera.mrz.model.TD3
 import io.lightine.tessera.mrz.recognition.CountryCode
@@ -156,6 +158,39 @@ public object MrzParser {
 
         val mrvB = sliceMrvBFields(input, referenceTime)
         return finalizeParseResult(mrvB, referenceTime)
+    }
+
+    public fun parseTD1(
+        input: String,
+        referenceTime: Instant = Clock.System.now(),
+    ): ParseResult = parseTD1(splitLines(input), referenceTime)
+
+    public fun parseTD1(
+        input: List<String>,
+        referenceTime: Instant = Clock.System.now(),
+    ): ParseResult {
+        val emptyMetadata =
+            ResultMetadata(
+                readMethod = ReadMethod.BACKEND_STRING_INPUT,
+                warnings = emptyList(),
+                validationFailures = emptyList(),
+            )
+
+        validateLineShape(
+            input = input,
+            format = MrzFormat.TD1,
+            expectedLineCount = Td1FormatSpec.lineCount,
+            expectedLineLength = Td1FormatSpec.lineLength,
+        )?.let { error ->
+            return ParseResult.Failure(error = error, rawInput = input.joinToString("\n"), metadata = emptyMetadata)
+        }
+
+        validateAlphabet(input, lineLength = Td1FormatSpec.lineLength)?.let { violation ->
+            return ParseResult.Failure(error = violation, rawInput = input.joinToString("\n"), metadata = emptyMetadata)
+        }
+
+        val td1 = sliceTd1Fields(input, referenceTime)
+        return finalizeParseResult(td1, referenceTime)
     }
 
     private fun finalizeParseResult(
@@ -527,6 +562,90 @@ public object MrzParser {
             rawLines = input,
             commonFields = commonFields,
             optionalData = optionalData,
+        )
+    }
+
+    private fun sliceTd1Fields(
+        input: List<String>,
+        referenceTime: Instant,
+    ): TD1 {
+        val documentTypeCode = Td1FormatSpec.documentType.extractFrom(input).trimEnd('<')
+        val issuingState = Td1FormatSpec.issuingState.extractFrom(input)
+
+        val documentNumber = Td1FormatSpec.documentNumber.extractFrom(input)
+        val docNumberCheckDigit = Td1FormatSpec.documentNumberCheckDigit.extractCharFrom(input)
+        val optionalData1 = Td1FormatSpec.optionalData1.extractFrom(input)
+
+        val rawDob = Td1FormatSpec.dateOfBirth.extractFrom(input)
+        val dobCheckDigit = Td1FormatSpec.dateOfBirthCheckDigit.extractCharFrom(input)
+        val sexChar = Td1FormatSpec.sex.extractCharFrom(input)
+        val rawExpiry = Td1FormatSpec.dateOfExpiry.extractFrom(input)
+        val expiryCheckDigit = Td1FormatSpec.dateOfExpiryCheckDigit.extractCharFrom(input)
+        val nationality = Td1FormatSpec.nationality.extractFrom(input)
+        val optionalData2 = Td1FormatSpec.optionalData2.extractFrom(input)
+        val compositeCheckDigit = Td1FormatSpec.compositeCheckDigit.extractCharFrom(input)
+
+        val rawNameField = Td1FormatSpec.rawNameField.extractFrom(input)
+
+        val sex =
+            when (sexChar) {
+                'M' -> Sex.MALE
+                'F' -> Sex.FEMALE
+                else -> Sex.UNSPECIFIED
+            }
+
+        val dateOfBirth =
+            MrzDate.parseBirth(
+                rawYear = rawDob.substring(0, 2),
+                rawMonth = rawDob.substring(2, 4),
+                rawDay = rawDob.substring(4, 6),
+                referenceTime = referenceTime,
+            )
+
+        val dateOfExpiry =
+            MrzDate.parseExpiry(
+                rawYear = rawExpiry.substring(0, 2),
+                rawMonth = rawExpiry.substring(2, 4),
+                rawDay = rawExpiry.substring(4, 6),
+                referenceTime = referenceTime,
+            )
+
+        // TD1 has no per-field check digit on optional data (neither optional data 1 nor optional
+        // data 2 has its own digit per ICAO Doc 9303 Part 5). Both optional slots are covered by
+        // the composite check digit only.
+        val checkDigits =
+            MrzCheckDigits(
+                documentNumber = docNumberCheckDigit,
+                dateOfBirth = dobCheckDigit,
+                dateOfExpiry = expiryCheckDigit,
+                optionalData = null,
+                composite = compositeCheckDigit,
+            )
+
+        val nameFields = parseNameField(rawNameField)
+
+        val commonFields =
+            CommonFields(
+                documentType = DocumentType(documentTypeCode),
+                issuingState = CountryCode(issuingState),
+                primaryIdentifier = nameFields.primaryIdentifier,
+                secondaryIdentifier = nameFields.secondaryIdentifier,
+                nameTruncated = nameFields.nameTruncated,
+                rawNameField = rawNameField,
+                documentNumber = documentNumber,
+                nationality = CountryCode(nationality),
+                dateOfBirth = dateOfBirth,
+                sex = sex,
+                rawSex = sexChar,
+                dateOfExpiry = dateOfExpiry,
+                checkDigits = checkDigits,
+            )
+
+        return TD1(
+            rawLines = input,
+            commonFields = commonFields,
+            optionalData1 = optionalData1,
+            optionalData2 = optionalData2,
         )
     }
 
