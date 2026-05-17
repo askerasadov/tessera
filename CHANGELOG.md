@@ -110,6 +110,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - `MrzParser.parseMRVA(input: String, referenceTime: Instant)` and `MrzParser.parseMRVA(input: List<String>, referenceTime: Instant)` overloads. Same Success / PartialSuccess / Failure semantics as `parseTD3` / `parseTD2`. Wired through `MrzValidator.validate(...)`. The shared `parseNameField` helper is reused as-is. MRV-A inputs that pass line-shape and character-set validation always produce a `Success` if the document number, DOB, and expiry check digits agree — there is no composite digit to mismatch and no per-field optional-data digit to mismatch
 - `mrz-core` module: MRV-A validator
   - `MrzValidator.validate(...)` dispatch extended to handle `MrvA`: per-field check-digit failures for document number, DOB, and expiry only; sex range, calendar-date, expiry warnings, birth-age warning, document-type/country-code recognition warnings, name-truncated warning — same dispatchers as TD3/TD2 with MRV-A positions. The composite-digit check and the per-field optional-data check are entirely absent from the MRV-A path (no Part 7 spec coverage)
+- `mrz-core` module: MRV-B format specification
+  - `MrvBFormatSpec` object naming every MRV-B field (per ICAO Doc 9303 Part 7) as a `FieldSpec`: same field set as `MrvAFormatSpec`, with `lineCount = 2`, `lineLength = 36`, and an 8-character `optionalData` slot ([28, 36)) replacing MRV-A's 16-character one. Like MRV-A, no `compositeCheckDigit` field and no `compositeInputFields` list — the visa rule "no composite digit" is uniform across both visa sub-formats per Part 7
+- `mrz-core` module: MRV-B data class
+  - `MrvB(rawLines, commonFields, optionalData: String)` data class as a sealed-class subclass of `MrzDocument`, identical in shape to `MrvA` and `TD2`. `commonFields.checkDigits.composite` and `commonFields.checkDigits.optionalData` are both `null` for MRV-B. `format` is `MrzFormat.MRV_B`
+- `mrz-core` module: MRV-B parser
+  - `MrzParser.parseMRVB(input: String, referenceTime: Instant)` and `MrzParser.parseMRVB(input: List<String>, referenceTime: Instant)` overloads, parallel to `parseMRVA`. Wired through `MrzValidator.validate(...)`
+- `mrz-core` module: MRV-B validator
+  - `MrzValidator.validate(...)` dispatch extended to handle `MrvB`: same dispatchers and behavior as `validateMrvA`, with MRV-B positions. Per-field check-digit failures for document number, DOB, and expiry only; no composite or per-field optional-data digit checks (Part 7)
 
 ### Changed
 
@@ -161,9 +169,9 @@ These are documented commitments that are explicitly *not* in this `[Unreleased]
 - Generator (`MrzGenerator` and inverse round-trip property)
 - Transliteration system (`TransliterationProfile`, `TransliterationProfileRegistry`)
 - Auto-detect parser entry point (`MrzParser.parse(input)`)
-- Other format parsers (TD1, MRV-B parser methods)
+- Other format parsers (TD1 parser method)
 - Warnings: `MrzPersonalNumberCheckDigitFiller`
-- Name field parsing for non-TD3/non-TD2/non-MRV-A formats (TD1, MRV-B); lands with the respective parser slices
+- Name field parsing for TD1 (the only remaining format without name-field parsing); lands with the TD1 parser slice
 - Document type code table population beyond the starter set
 - Country code table population beyond the starter set
 - `ResultMetadata.timing: TimingInfo?` field (no timing instrumentation yet)

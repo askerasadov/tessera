@@ -14,10 +14,12 @@ import io.lightine.tessera.domain.errors.MrzWarning
 import io.lightine.tessera.domain.vocabulary.MrzField
 import io.lightine.tessera.mrz.checkdigit.computeCheckDigit
 import io.lightine.tessera.mrz.formats.MrvAFormatSpec
+import io.lightine.tessera.mrz.formats.MrvBFormatSpec
 import io.lightine.tessera.mrz.formats.Td2FormatSpec
 import io.lightine.tessera.mrz.formats.Td3FormatSpec
 import io.lightine.tessera.mrz.formats.extractFrom
 import io.lightine.tessera.mrz.model.MrvA
+import io.lightine.tessera.mrz.model.MrvB
 import io.lightine.tessera.mrz.model.MrzDate
 import io.lightine.tessera.mrz.model.MrzDocument
 import io.lightine.tessera.mrz.model.TD1
@@ -45,6 +47,7 @@ public object MrzValidator {
             is TD3 -> validateTD3(document, referenceTime)
             is TD2 -> validateTD2(document, referenceTime)
             is MrvA -> validateMrvA(document, referenceTime)
+            is MrvB -> validateMrvB(document, referenceTime)
             is TD1 -> ValidationResult(validationFailures = emptyList(), warnings = emptyList())
         }
 
@@ -335,6 +338,93 @@ public object MrzValidator {
             nameTruncated = document.commonFields.nameTruncated,
             rawNameField = document.commonFields.rawNameField,
             position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.rawNameField),
+        )
+
+        return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
+    }
+
+    private fun validateMrvB(
+        document: MrvB,
+        referenceTime: Instant,
+    ): ValidationResult {
+        val rawLines = document.rawLines
+        val failures = mutableListOf<MrzValidationError>()
+
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = MrvBFormatSpec.documentNumber.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.documentNumber,
+            field = MrzField.DOCUMENT_NUMBER,
+            position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.documentNumberCheckDigit),
+        )
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = MrvBFormatSpec.dateOfBirth.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.dateOfBirth,
+            field = MrzField.DATE_OF_BIRTH,
+            position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.dateOfBirthCheckDigit),
+        )
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = MrvBFormatSpec.dateOfExpiry.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.dateOfExpiry,
+            field = MrzField.DATE_OF_EXPIRY,
+            position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.dateOfExpiryCheckDigit),
+        )
+        // MRV-B has neither a per-field check digit on optional data nor a composite check digit
+        // (ICAO Doc 9303 Part 7). No per-field OPTIONAL_DATA or COMPOSITE failures are emitted.
+
+        val rawSex = document.commonFields.rawSex
+        if (rawSex !in VALID_SEX_CHARACTERS) {
+            failures += MrzInvalidSexValue(observed = rawSex, position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.sex))
+        }
+
+        addDateNotInCalendarFailureIfApplicable(
+            into = failures,
+            date = document.commonFields.dateOfBirth,
+            field = MrzField.DATE_OF_BIRTH,
+            position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.dateOfBirth),
+        )
+        addDateNotInCalendarFailureIfApplicable(
+            into = failures,
+            date = document.commonFields.dateOfExpiry,
+            field = MrzField.DATE_OF_EXPIRY,
+            position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.dateOfExpiry),
+        )
+
+        val warnings = mutableListOf<MrzWarning>()
+        addExpiryWarningsIfApplicable(
+            into = warnings,
+            expiryComputedDate = document.commonFields.dateOfExpiry.computedDate,
+            referenceTime = referenceTime,
+        )
+        addBirthAgeWarningIfApplicable(
+            into = warnings,
+            birthDate = document.commonFields.dateOfBirth,
+            referenceTime = referenceTime,
+        )
+        addUnknownDocumentTypeCodeWarningIfApplicable(
+            into = warnings,
+            documentType = document.commonFields.documentType,
+            position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.documentType),
+        )
+        addUnknownCountryCodeWarningIfApplicable(
+            into = warnings,
+            countryCode = document.commonFields.issuingState,
+            field = MrzField.ISSUING_STATE,
+            position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.issuingState),
+        )
+        addUnknownCountryCodeWarningIfApplicable(
+            into = warnings,
+            countryCode = document.commonFields.nationality,
+            field = MrzField.NATIONALITY,
+            position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.nationality),
+        )
+        addNameTruncatedWarningIfApplicable(
+            into = warnings,
+            nameTruncated = document.commonFields.nameTruncated,
+            rawNameField = document.commonFields.rawNameField,
+            position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.rawNameField),
         )
 
         return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())

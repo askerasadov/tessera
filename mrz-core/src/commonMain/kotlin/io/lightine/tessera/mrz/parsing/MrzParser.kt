@@ -6,12 +6,14 @@ import io.lightine.tessera.domain.vocabulary.MrzFormat
 import io.lightine.tessera.domain.vocabulary.ReadMethod
 import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.formats.MrvAFormatSpec
+import io.lightine.tessera.mrz.formats.MrvBFormatSpec
 import io.lightine.tessera.mrz.formats.Td2FormatSpec
 import io.lightine.tessera.mrz.formats.Td3FormatSpec
 import io.lightine.tessera.mrz.formats.extractCharFrom
 import io.lightine.tessera.mrz.formats.extractFrom
 import io.lightine.tessera.mrz.model.CommonFields
 import io.lightine.tessera.mrz.model.MrvA
+import io.lightine.tessera.mrz.model.MrvB
 import io.lightine.tessera.mrz.model.MrzCheckDigits
 import io.lightine.tessera.mrz.model.MrzDate
 import io.lightine.tessera.mrz.model.MrzDocument
@@ -121,6 +123,39 @@ public object MrzParser {
 
         val mrvA = sliceMrvAFields(input, referenceTime)
         return finalizeParseResult(mrvA, referenceTime)
+    }
+
+    public fun parseMRVB(
+        input: String,
+        referenceTime: Instant = Clock.System.now(),
+    ): ParseResult = parseMRVB(splitLines(input), referenceTime)
+
+    public fun parseMRVB(
+        input: List<String>,
+        referenceTime: Instant = Clock.System.now(),
+    ): ParseResult {
+        val emptyMetadata =
+            ResultMetadata(
+                readMethod = ReadMethod.BACKEND_STRING_INPUT,
+                warnings = emptyList(),
+                validationFailures = emptyList(),
+            )
+
+        validateLineShape(
+            input = input,
+            format = MrzFormat.MRV_B,
+            expectedLineCount = MrvBFormatSpec.lineCount,
+            expectedLineLength = MrvBFormatSpec.lineLength,
+        )?.let { error ->
+            return ParseResult.Failure(error = error, rawInput = input.joinToString("\n"), metadata = emptyMetadata)
+        }
+
+        validateAlphabet(input, lineLength = MrvBFormatSpec.lineLength)?.let { violation ->
+            return ParseResult.Failure(error = violation, rawInput = input.joinToString("\n"), metadata = emptyMetadata)
+        }
+
+        val mrvB = sliceMrvBFields(input, referenceTime)
+        return finalizeParseResult(mrvB, referenceTime)
     }
 
     private fun finalizeParseResult(
@@ -411,6 +446,84 @@ public object MrzParser {
             )
 
         return MrvA(
+            rawLines = input,
+            commonFields = commonFields,
+            optionalData = optionalData,
+        )
+    }
+
+    private fun sliceMrvBFields(
+        input: List<String>,
+        referenceTime: Instant,
+    ): MrvB {
+        val documentTypeCode = MrvBFormatSpec.documentType.extractFrom(input).trimEnd('<')
+        val issuingState = MrvBFormatSpec.issuingState.extractFrom(input)
+        val rawNameField = MrvBFormatSpec.rawNameField.extractFrom(input)
+
+        val documentNumber = MrvBFormatSpec.documentNumber.extractFrom(input)
+        val docNumberCheckDigit = MrvBFormatSpec.documentNumberCheckDigit.extractCharFrom(input)
+        val nationality = MrvBFormatSpec.nationality.extractFrom(input)
+        val rawDob = MrvBFormatSpec.dateOfBirth.extractFrom(input)
+        val dobCheckDigit = MrvBFormatSpec.dateOfBirthCheckDigit.extractCharFrom(input)
+        val sexChar = MrvBFormatSpec.sex.extractCharFrom(input)
+        val rawExpiry = MrvBFormatSpec.dateOfExpiry.extractFrom(input)
+        val expiryCheckDigit = MrvBFormatSpec.dateOfExpiryCheckDigit.extractCharFrom(input)
+        val optionalData = MrvBFormatSpec.optionalData.extractFrom(input)
+
+        val sex =
+            when (sexChar) {
+                'M' -> Sex.MALE
+                'F' -> Sex.FEMALE
+                else -> Sex.UNSPECIFIED
+            }
+
+        val dateOfBirth =
+            MrzDate.parseBirth(
+                rawYear = rawDob.substring(0, 2),
+                rawMonth = rawDob.substring(2, 4),
+                rawDay = rawDob.substring(4, 6),
+                referenceTime = referenceTime,
+            )
+
+        val dateOfExpiry =
+            MrzDate.parseExpiry(
+                rawYear = rawExpiry.substring(0, 2),
+                rawMonth = rawExpiry.substring(2, 4),
+                rawDay = rawExpiry.substring(4, 6),
+                referenceTime = referenceTime,
+            )
+
+        // MRV-B has neither a per-field check digit on optional data nor a composite check digit
+        // (ICAO Doc 9303 Part 7). Both `optionalData` and `composite` in MrzCheckDigits are null.
+        val checkDigits =
+            MrzCheckDigits(
+                documentNumber = docNumberCheckDigit,
+                dateOfBirth = dobCheckDigit,
+                dateOfExpiry = expiryCheckDigit,
+                optionalData = null,
+                composite = null,
+            )
+
+        val nameFields = parseNameField(rawNameField)
+
+        val commonFields =
+            CommonFields(
+                documentType = DocumentType(documentTypeCode),
+                issuingState = CountryCode(issuingState),
+                primaryIdentifier = nameFields.primaryIdentifier,
+                secondaryIdentifier = nameFields.secondaryIdentifier,
+                nameTruncated = nameFields.nameTruncated,
+                rawNameField = rawNameField,
+                documentNumber = documentNumber,
+                nationality = CountryCode(nationality),
+                dateOfBirth = dateOfBirth,
+                sex = sex,
+                rawSex = sexChar,
+                dateOfExpiry = dateOfExpiry,
+                checkDigits = checkDigits,
+            )
+
+        return MrvB(
             rawLines = input,
             commonFields = commonFields,
             optionalData = optionalData,
