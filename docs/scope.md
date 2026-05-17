@@ -120,18 +120,20 @@ The risk profile of each method — what it can guarantee and what it cannot —
 
 ## Supported Platforms
 
-The project is target-agnostic in design. Initial releases focus on mobile platforms, but the core logic is portable to any target the project's technology stack supports.
+The project is target-agnostic in design. The core logic is target-portable common Kotlin; specific Kotlin Multiplatform targets are enabled per the release that requires them, not all at once. The JVM target is enabled in `0.1.0` because the core MRZ logic is pure (no platform I/O) and JVM is the fastest target for development, testing, and backend consumers. Mobile targets activate in `0.2.0` when camera reading lands and platform APIs become necessary; see the release roadmap below.
 
-### Initial Targets
+### Committed Platform Coverage
+
+The SDK commits to supporting these platforms across the initial release wave. Activation timing per release is described above.
 
 - **Android** — minimum API level 26 (Android 8.0). This is the working minimum for initial releases and may be raised if specific features require a higher level. The minimum is documented per release.
 - **iOS** — minimum iOS 15.0. This is the working minimum for initial releases and may be raised if specific features require a higher version. The minimum is documented per release.
 
-### Future Targets
+### Architecturally Supported Targets
 
-The architecture supports the following targets, which are not part of initial releases but can be activated when there is a use case:
+The architecture supports the following additional targets, which can be activated when a use case justifies the work:
 
-- **JVM backend** — server-side parsing, validation, and generation; useful for batch processing, document issuance flows, and admin tools.
+- **JVM backend** — server-side parsing, validation, and generation; useful for batch processing, document issuance flows, and admin tools. The JVM target is already enabled today for development; this entry refers to committing to backend use as a first-class product offering.
 - **Web (JS/Wasm)** — browser-side validation and generation for web-based forms or online tools.
 - **Desktop (JVM and native)** — desktop applications using the SDK for parsing, with optional desktop-appropriate I/O bridges (for example, USB document readers).
 
@@ -204,7 +206,9 @@ The project ships in a sequence of releases. The roadmap below is a current work
 
 ### 0.1.0 — Core MRZ Logic
 
-The foundation. Pure parsing, generation, and validation for all ICAO Doc 9303 MRZ formats. Includes lookup tables, transliteration profiles, error taxonomy, and pluggable telemetry. No camera, no NFC, no UI. Usable on any target the core technology stack supports — including backend services for validation pipelines.
+The foundation. Pure parsing, generation, and validation for all ICAO Doc 9303 MRZ formats. Includes lookup tables, transliteration profiles, error taxonomy, and pluggable telemetry. No camera, no NFC, no UI. The release enables the JVM target; the core logic is target-portable common Kotlin, with additional targets activating in subsequent releases per their reading methods.
+
+**Pre-release tech-stack review (2026-05-17):** Reviewed against the Pre-Release Tech-Stack Review rule in [`CLAUDE.md`](../CLAUDE.md). Foundation work — parsing/validation/generation triad for all five MRZ formats, error taxonomy, lookup-table machinery — ships in this release. Two subsystems remain before tag: transliteration profiles and the pluggable telemetry interface. Transliteration triggers its own focused review (Unicode strategy is the key open question) before its code work begins. Full lookup-table data population and mobile target enablement are tracked separately in [`open-questions.md`](open-questions.md) and are not 0.1.0 blockers.
 
 ### 0.2.0 — Live Camera Reading
 
