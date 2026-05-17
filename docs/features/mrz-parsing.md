@@ -193,7 +193,7 @@ The MRZ has rules for truncating names that exceed the available width, with a s
 
 ### Two-Character Document Type Codes
 
-Recent ICAO Doc 9303 editions introduce two-character document type codes (`PP`, `PD`, `PS`, etc.) alongside the older single-character codes (`P` for passport). The parser accepts both. The `DocumentType` value class exposes the raw code, with recognition flagged separately.
+Recent ICAO Doc 9303 editions introduce two-character document type codes (`PP`, `PD`, `PS`, etc.) alongside the older single-character codes (`P` for passport). The parser accepts both. The parser strips trailing MRZ filler `<` from the two-character document-type slot before wrapping in `DocumentType` — a single-character code `P` paired with filler in the second position becomes `DocumentType("P")`, not `DocumentType("P<")`. See the `DocumentType` section of [`mrz-data-model.md`](mrz-data-model.md) for the full rule including edge cases (empty slot, malformed leading filler). The `DocumentType` value class exposes this `rawCode`, with recognition flagged separately.
 
 ---
 
