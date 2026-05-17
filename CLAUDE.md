@@ -106,6 +106,16 @@ The project bumps the toolchain and dependencies to current stable on a **six-mo
 - **Split into 2–3 focused PRs per cycle.** The first cycle (2026-05-17) used three PRs: (1) Kotlin + KMP + Gradle + JDK toolchain, (2) dev tooling (Spotless + ktlint) + Gradle wrapper regeneration, (3) runtime + test dependencies + this cadence rule + docs. The split keeps blast radius small if any single bump breaks something.
 - **Cross-reference from [`docs/conventions.md`](docs/conventions.md)** so human contributors see the cadence too.
 
+### Pre-Release Tech-Stack Review
+
+Before starting work on each `0.x` (or later `x.0` / `x.y` minor) release, the project does an explicit tech-stack review. The review is milestone-driven and complementary to the clock-driven Dependency Upgrade Cadence above. Where the cadence asks "are we on current stable?", the review asks "are our underlying choices still right for what we're about to build?"
+
+- **Trigger: before any code is written for the next release.** Not before tagging — pre-tag is "verify we shipped what we said" (the recap pattern). Pre-start is when the discussion has maximum leverage; once code is being written, retroactive tech-stack changes are expensive.
+- **Scope of the review:** revisit foundational architectural choices (KMP, native UI per platform, sealed type hierarchies, etc.) against the upcoming release's actual demands; identify new dependencies the upcoming subsystem will need (e.g., camera library for 0.2.0, NFC library for 0.6.0, transliteration approach for 0.1.0); flag any API-stability commitments the release would lock in that should be reconsidered first; surface tech-stack drift that the 6-monthly cadence didn't catch (e.g., a foundational tool reaching end-of-life).
+- **Output:** a brief decision record (could be a new ADR if significant, or a recap-style working note if smaller). At minimum, name what was reviewed and what was decided. The 2026-05-17 pre-0.1.0 recap is the working precedent for this format.
+- **What this is not:** not a full design review of the upcoming release. The release's own design lives in the relevant feature docs and gets developed slice-by-slice as usual. The tech-stack review is the narrow architectural-fit pass that gates the start of release work.
+- **Cross-reference from [`docs/conventions.md`](docs/conventions.md)** so human contributors see the convention too.
+
 ### Git and GitHub Workflow
 
 The project uses **GitHub Flow**: `main` is the trunk; feature branches off `main`; PR for every merge. Detail in [`.claude/git-workflow.md`](.claude/git-workflow.md).
