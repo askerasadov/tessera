@@ -138,13 +138,15 @@ public object MrzParser {
                 composite = compositeCheckDigit,
             )
 
+        val nameFields = parseNameField(rawNameField)
+
         val commonFields =
             CommonFields(
                 documentType = DocumentType(documentTypeCode),
                 issuingState = CountryCode(issuingState),
-                primaryIdentifier = "",
-                secondaryIdentifier = "",
-                nameTruncated = false,
+                primaryIdentifier = nameFields.primaryIdentifier,
+                secondaryIdentifier = nameFields.secondaryIdentifier,
+                nameTruncated = nameFields.nameTruncated,
                 rawNameField = rawNameField,
                 documentNumber = documentNumber,
                 nationality = CountryCode(nationality),
