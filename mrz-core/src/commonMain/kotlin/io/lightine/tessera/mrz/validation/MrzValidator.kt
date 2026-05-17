@@ -13,11 +13,13 @@ import io.lightine.tessera.domain.errors.MrzValidationError
 import io.lightine.tessera.domain.errors.MrzWarning
 import io.lightine.tessera.domain.vocabulary.MrzField
 import io.lightine.tessera.mrz.checkdigit.computeCheckDigit
+import io.lightine.tessera.mrz.formats.Td2FormatSpec
 import io.lightine.tessera.mrz.formats.Td3FormatSpec
 import io.lightine.tessera.mrz.formats.extractFrom
 import io.lightine.tessera.mrz.model.MrzDate
 import io.lightine.tessera.mrz.model.MrzDocument
 import io.lightine.tessera.mrz.model.TD1
+import io.lightine.tessera.mrz.model.TD2
 import io.lightine.tessera.mrz.model.TD3
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
@@ -39,6 +41,7 @@ public object MrzValidator {
     ): ValidationResult =
         when (document) {
             is TD3 -> validateTD3(document, referenceTime)
+            is TD2 -> validateTD2(document, referenceTime)
             is TD1 -> ValidationResult(validationFailures = emptyList(), warnings = emptyList())
         }
 
@@ -138,6 +141,102 @@ public object MrzValidator {
             nameTruncated = document.commonFields.nameTruncated,
             rawNameField = document.commonFields.rawNameField,
             position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.rawNameField),
+        )
+
+        return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
+    }
+
+    private fun validateTD2(
+        document: TD2,
+        referenceTime: Instant,
+    ): ValidationResult {
+        val rawLines = document.rawLines
+        val failures = mutableListOf<MrzValidationError>()
+
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = Td2FormatSpec.documentNumber.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.documentNumber,
+            field = MrzField.DOCUMENT_NUMBER,
+            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.documentNumberCheckDigit),
+        )
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = Td2FormatSpec.dateOfBirth.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.dateOfBirth,
+            field = MrzField.DATE_OF_BIRTH,
+            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.dateOfBirthCheckDigit),
+        )
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = Td2FormatSpec.dateOfExpiry.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.dateOfExpiry,
+            field = MrzField.DATE_OF_EXPIRY,
+            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.dateOfExpiryCheckDigit),
+        )
+        // TD2 has no per-field check digit on optional data (ICAO Doc 9303 Part 6); only the
+        // composite digit covers it.
+
+        val compositeInput = Td2FormatSpec.compositeInputFields.joinToString("") { it.extractFrom(rawLines) }
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = compositeInput,
+            observed = document.commonFields.checkDigits.composite,
+            field = MrzField.COMPOSITE,
+            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.compositeCheckDigit),
+        )
+
+        val rawSex = document.commonFields.rawSex
+        if (rawSex !in VALID_SEX_CHARACTERS) {
+            failures += MrzInvalidSexValue(observed = rawSex, position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.sex))
+        }
+
+        addDateNotInCalendarFailureIfApplicable(
+            into = failures,
+            date = document.commonFields.dateOfBirth,
+            field = MrzField.DATE_OF_BIRTH,
+            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.dateOfBirth),
+        )
+        addDateNotInCalendarFailureIfApplicable(
+            into = failures,
+            date = document.commonFields.dateOfExpiry,
+            field = MrzField.DATE_OF_EXPIRY,
+            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.dateOfExpiry),
+        )
+
+        val warnings = mutableListOf<MrzWarning>()
+        addExpiryWarningsIfApplicable(
+            into = warnings,
+            expiryComputedDate = document.commonFields.dateOfExpiry.computedDate,
+            referenceTime = referenceTime,
+        )
+        addBirthAgeWarningIfApplicable(
+            into = warnings,
+            birthDate = document.commonFields.dateOfBirth,
+            referenceTime = referenceTime,
+        )
+        addUnknownDocumentTypeCodeWarningIfApplicable(
+            into = warnings,
+            documentType = document.commonFields.documentType,
+            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.documentType),
+        )
+        addUnknownCountryCodeWarningIfApplicable(
+            into = warnings,
+            countryCode = document.commonFields.issuingState,
+            field = MrzField.ISSUING_STATE,
+            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.issuingState),
+        )
+        addUnknownCountryCodeWarningIfApplicable(
+            into = warnings,
+            countryCode = document.commonFields.nationality,
+            field = MrzField.NATIONALITY,
+            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.nationality),
+        )
+        addNameTruncatedWarningIfApplicable(
+            into = warnings,
+            nameTruncated = document.commonFields.nameTruncated,
+            rawNameField = document.commonFields.rawNameField,
+            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.rawNameField),
         )
 
         return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
