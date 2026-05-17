@@ -220,6 +220,14 @@ The review surfaces: foundational architectural choices that may need revisiting
 
 Full operational detail in the "Pre-Release Tech-Stack Review" rule in [`CLAUDE.md`](../CLAUDE.md).
 
+### Pre-commitment alignment check
+
+When making a foundational decision — tech-stack choices, scope-defining wording, architectural commitments, anything ADR-007 backward-compatibility will lock at `0.1.0` — verify alignment with the primary docs (`scope.md`, ADRs, `open-questions.md`, feature docs) before committing. Derived sources (recaps, summaries, prior interpretations) can drift from the primary over time; acting on a drifted derived source propagates the drift forward into new decisions.
+
+This is not "verify everything." Most decisions are routine and the project's documentation system can be trusted by default. The check applies when the cost of being wrong is high: pre-release tech-stack reviews, scope or principle adjustments, anything that 0.x backward-compatibility will lock. The working example is the pre-`0.1.0` recap drift caught by [PR #33](https://github.com/askerasadov/tessera/pull/33), where `scope.md`'s actual wording about per-release target activation had been over-stated by a derived recap; the check would have prevented carrying that drift into 0.1.0 path decisions.
+
+Full operational detail in the "Pre-commitment alignment check" rule in [`CLAUDE.md`](../CLAUDE.md) and the full working pattern in [`.claude/working-patterns.md`](../.claude/working-patterns.md).
+
 ### Swift, other languages
 
 Conventions for Swift wrappers and any future languages are added to this document when those source sets are introduced. The same principle applies: idiomatic per-language style, enforced by the language's standard tooling (e.g., SwiftLint for Swift), with configuration committed at the project root.
