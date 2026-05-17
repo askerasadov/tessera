@@ -15,6 +15,7 @@ import io.lightine.tessera.domain.vocabulary.MrzField
 import io.lightine.tessera.mrz.checkdigit.computeCheckDigit
 import io.lightine.tessera.mrz.formats.MrvAFormatSpec
 import io.lightine.tessera.mrz.formats.MrvBFormatSpec
+import io.lightine.tessera.mrz.formats.Td1FormatSpec
 import io.lightine.tessera.mrz.formats.Td2FormatSpec
 import io.lightine.tessera.mrz.formats.Td3FormatSpec
 import io.lightine.tessera.mrz.formats.extractFrom
@@ -48,7 +49,7 @@ public object MrzValidator {
             is TD2 -> validateTD2(document, referenceTime)
             is MrvA -> validateMrvA(document, referenceTime)
             is MrvB -> validateMrvB(document, referenceTime)
-            is TD1 -> ValidationResult(validationFailures = emptyList(), warnings = emptyList())
+            is TD1 -> validateTD1(document, referenceTime)
         }
 
     private fun validateTD3(
@@ -338,6 +339,106 @@ public object MrzValidator {
             nameTruncated = document.commonFields.nameTruncated,
             rawNameField = document.commonFields.rawNameField,
             position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.rawNameField),
+        )
+
+        return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())
+    }
+
+    private fun validateTD1(
+        document: TD1,
+        referenceTime: Instant,
+    ): ValidationResult {
+        val rawLines = document.rawLines
+        val failures = mutableListOf<MrzValidationError>()
+
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = Td1FormatSpec.documentNumber.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.documentNumber,
+            field = MrzField.DOCUMENT_NUMBER,
+            position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.documentNumberCheckDigit),
+        )
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = Td1FormatSpec.dateOfBirth.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.dateOfBirth,
+            field = MrzField.DATE_OF_BIRTH,
+            position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.dateOfBirthCheckDigit),
+        )
+        addCheckDigitFailureIfMismatch(
+            into = failures,
+            input = Td1FormatSpec.dateOfExpiry.extractFrom(rawLines),
+            observed = document.commonFields.checkDigits.dateOfExpiry,
+            field = MrzField.DATE_OF_EXPIRY,
+            position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.dateOfExpiryCheckDigit),
+        )
+        // TD1 has no per-field check digit on optional data 1 or optional data 2 (ICAO Doc 9303
+        // Part 5); the composite digit covers both optional slots.
+
+        // TD1 always carries a composite check digit per ICAO Doc 9303 Part 5; the parser
+        // populates it unconditionally, so the model-level `Char?` is structurally non-null here.
+        val compositeInput = Td1FormatSpec.compositeInputFields.joinToString("") { it.extractFrom(rawLines) }
+        document.commonFields.checkDigits.composite?.let { composite ->
+            addCheckDigitFailureIfMismatch(
+                into = failures,
+                input = compositeInput,
+                observed = composite,
+                field = MrzField.COMPOSITE,
+                position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.compositeCheckDigit),
+            )
+        }
+
+        val rawSex = document.commonFields.rawSex
+        if (rawSex !in VALID_SEX_CHARACTERS) {
+            failures += MrzInvalidSexValue(observed = rawSex, position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.sex))
+        }
+
+        addDateNotInCalendarFailureIfApplicable(
+            into = failures,
+            date = document.commonFields.dateOfBirth,
+            field = MrzField.DATE_OF_BIRTH,
+            position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.dateOfBirth),
+        )
+        addDateNotInCalendarFailureIfApplicable(
+            into = failures,
+            date = document.commonFields.dateOfExpiry,
+            field = MrzField.DATE_OF_EXPIRY,
+            position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.dateOfExpiry),
+        )
+
+        val warnings = mutableListOf<MrzWarning>()
+        addExpiryWarningsIfApplicable(
+            into = warnings,
+            expiryComputedDate = document.commonFields.dateOfExpiry.computedDate,
+            referenceTime = referenceTime,
+        )
+        addBirthAgeWarningIfApplicable(
+            into = warnings,
+            birthDate = document.commonFields.dateOfBirth,
+            referenceTime = referenceTime,
+        )
+        addUnknownDocumentTypeCodeWarningIfApplicable(
+            into = warnings,
+            documentType = document.commonFields.documentType,
+            position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.documentType),
+        )
+        addUnknownCountryCodeWarningIfApplicable(
+            into = warnings,
+            countryCode = document.commonFields.issuingState,
+            field = MrzField.ISSUING_STATE,
+            position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.issuingState),
+        )
+        addUnknownCountryCodeWarningIfApplicable(
+            into = warnings,
+            countryCode = document.commonFields.nationality,
+            field = MrzField.NATIONALITY,
+            position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.nationality),
+        )
+        addNameTruncatedWarningIfApplicable(
+            into = warnings,
+            nameTruncated = document.commonFields.nameTruncated,
+            rawNameField = document.commonFields.rawNameField,
+            position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.rawNameField),
         )
 
         return ValidationResult(validationFailures = failures.toList(), warnings = warnings.toList())

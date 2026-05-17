@@ -25,11 +25,11 @@ class TD1Test {
             dateOfExpiry = MrzDate(rawYear = "30", rawMonth = "08", rawDay = "06"),
             checkDigits =
                 MrzCheckDigits(
-                    documentNumber = '0',
+                    documentNumber = '3',
                     dateOfBirth = '1',
-                    dateOfExpiry = '0',
+                    dateOfExpiry = '3',
                     optionalData = null,
-                    composite = '0',
+                    composite = '2',
                 ),
         )
 
@@ -37,8 +37,8 @@ class TD1Test {
         TD1(
             rawLines =
                 listOf(
-                    "I<UTOL898902C<0<<<<<<<<<<<<<<<",
-                    "6908061F3008060UTO<<<<<<<<<<<0",
+                    "I<UTOL898902C<3<<<<<<<<<<<<<<<",
+                    "6908061F3008063UTO<<<<<<<<<<<2",
                     "ERIKSSON<<ANNA<MARIA<<<<<<<<<<",
                 ),
             commonFields = syntheticCommonFields,
@@ -78,8 +78,8 @@ class TD1Test {
     fun td1_raw_lines_round_trip_unchanged() {
         assertEquals(
             listOf(
-                "I<UTOL898902C<0<<<<<<<<<<<<<<<",
-                "6908061F3008060UTO<<<<<<<<<<<0",
+                "I<UTOL898902C<3<<<<<<<<<<<<<<<",
+                "6908061F3008063UTO<<<<<<<<<<<2",
                 "ERIKSSON<<ANNA<MARIA<<<<<<<<<<",
             ),
             syntheticTd1.rawLines,

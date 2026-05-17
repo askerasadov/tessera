@@ -10,13 +10,11 @@ import io.lightine.tessera.domain.errors.MrzNameTruncated
 import io.lightine.tessera.domain.errors.MrzUnknownCountryCode
 import io.lightine.tessera.domain.errors.MrzUnknownDocumentTypeCode
 import io.lightine.tessera.domain.vocabulary.MrzField
-import io.lightine.tessera.domain.vocabulary.MrzFormat
 import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.model.CommonFields
 import io.lightine.tessera.mrz.model.MrzCheckDigits
 import io.lightine.tessera.mrz.model.MrzDate
 import io.lightine.tessera.mrz.model.MrzDateInferenceMethod
-import io.lightine.tessera.mrz.model.TD1
 import io.lightine.tessera.mrz.model.TD3
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
@@ -876,25 +874,5 @@ class MrzValidatorTest {
         )
     }
 
-    // --- TD1 (deferred path) ---
-
-    @Test
-    fun td1_validation_returns_empty_result_pending_td1_validator_implementation() {
-        val td1 =
-            TD1(
-                rawLines =
-                    listOf(
-                        "I<UTOL898902C<0<<<<<<<<<<<<<<<",
-                        "6908061F3008060UTO<<<<<<<<<<<0",
-                        "ERIKSSON<<ANNA<MARIA<<<<<<<<<<",
-                    ),
-                commonFields = specimenCommonFields(),
-                optionalData1 = "<<<<<<<<<<<<<<<",
-                optionalData2 = "<<<<<<<<<<<",
-            )
-        val result = MrzValidator.validate(td1)
-        assertEquals(MrzFormat.TD1, td1.format)
-        assertTrue(result.validationFailures.isEmpty())
-        assertTrue(result.warnings.isEmpty())
-    }
+    // TD1 validator coverage moved to MrzValidatorTd1Test once the TD1 parser slice landed.
 }

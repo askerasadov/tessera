@@ -118,6 +118,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - `MrzParser.parseMRVB(input: String, referenceTime: Instant)` and `MrzParser.parseMRVB(input: List<String>, referenceTime: Instant)` overloads, parallel to `parseMRVA`. Wired through `MrzValidator.validate(...)`
 - `mrz-core` module: MRV-B validator
   - `MrzValidator.validate(...)` dispatch extended to handle `MrvB`: same dispatchers and behavior as `validateMrvA`, with MRV-B positions. Per-field check-digit failures for document number, DOB, and expiry only; no composite or per-field optional-data digit checks (Part 7)
+- `mrz-core` module: TD1 format specification
+  - `Td1FormatSpec` object naming every TD1 field (per ICAO Doc 9303 Part 5) as a `FieldSpec`, with `lineCount = 3` and `lineLength = 30`. Key shape differences from the 2-line formats: (a) the name field is on line 3 (full 30 chars), not line 1; (b) the document number lives on line 1 (with optional data 1 trailing it), not line 2; (c) the composite check digit input spans BOTH data lines (line 1 [5, 30) + line 2 [0, 7), [8, 15), [18, 29)) per ICAO Doc 9303 Part 5 — four ranges, vs. three for TD3/TD2
+- `mrz-core` module: TD1 parser
+  - `MrzParser.parseTD1(input: String, referenceTime: Instant)` and `MrzParser.parseTD1(input: List<String>, referenceTime: Instant)` overloads, parallel to the other format parsers. Wired through `MrzValidator.validate(...)`. The shared `parseNameField` helper is reused as-is (it operates on the raw name-field string, format-agnostic)
+- `mrz-core` module: TD1 validator
+  - `MrzValidator.validate(...)` dispatch for `TD1` replaces the previous empty-result stub. Per-field check-digit failures for document number, DOB, expiry, and composite (no per-field optional-data digit per Part 5); sex range, calendar-date, expiry warnings, birth-age warning, document-type/country-code recognition warnings, name-truncated warning — same dispatchers as TD3/TD2 with TD1 positions. The name-truncation warning's position is now `60` (line 3 start) for TD1, vs. `5` for the 2-line formats
 
 ### Changed
 
@@ -164,14 +170,11 @@ These are documented commitments that are explicitly *not* in this `[Unreleased]
 
 - Validator standalone string-input overloads (`MrzValidator.validate(input: String / List<String> / String, format)`); current slice ships `validate(MrzDocument)` only
 - `ValidationResult.passedChecks` transparency surface (current `ValidationResult` exposes `validationFailures` + `warnings` only)
-- TD1 validator path (validator currently returns an empty `ValidationResult` for TD1 inputs; lands with the TD1 parser slice)
 - Validator options surface (`ValidationOptions`-style configurable thresholds); current slice ships `MrzExpiryDateImplausiblyFar`'s 10-year threshold as a private constant
 - Generator (`MrzGenerator` and inverse round-trip property)
 - Transliteration system (`TransliterationProfile`, `TransliterationProfileRegistry`)
-- Auto-detect parser entry point (`MrzParser.parse(input)`)
-- Other format parsers (TD1 parser method)
+- Auto-detect parser entry point (`MrzParser.parse(input)`) — all five format-specific parsers (`parseTD1`, `parseTD2`, `parseTD3`, `parseMRVA`, `parseMRVB`) now exist; the auto-detect dispatcher is the natural next slice
 - Warnings: `MrzPersonalNumberCheckDigitFiller`
-- Name field parsing for TD1 (the only remaining format without name-field parsing); lands with the TD1 parser slice
 - Document type code table population beyond the starter set
 - Country code table population beyond the starter set
 - `ResultMetadata.timing: TimingInfo?` field (no timing instrumentation yet)
