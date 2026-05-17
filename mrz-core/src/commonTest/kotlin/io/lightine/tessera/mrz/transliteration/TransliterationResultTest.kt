@@ -1,5 +1,6 @@
 package io.lightine.tessera.mrz.transliteration
 
+import io.lightine.tessera.domain.vocabulary.UnmappedCharacter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals

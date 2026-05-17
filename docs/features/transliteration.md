@@ -26,6 +26,13 @@ Before a profile's mapping rules are applied, consumer input is normalized to Un
 
 The reasoning is recorded in [ADR-014](../decisions/0014-unicode-normalization-strategy.md). The normalization step is invoked once at the entry to transliteration; profiles operate on normalized strings.
 
+Two surfaces expose the post-normalization form:
+
+- **Standalone**: `TransliterationProfile.transliterate(input)` (an extension function on the profile interface) returns a `TransliterationOutcome` carrying the profile identifier, the original input, the post-normalization form, and the underlying `TransliterationResult` (`Success(output)` or `Failure(unmappedCharacters)`).
+- **Generator-attached**: when a primitive-input generator method (e.g., `MrzGenerator.generateTD3(...)`) is called with a `TransliterationProfile`, the generation result's `ResultMetadata.transliterationDetails` carries a `TransliterationDetails` struct listing every field the profile rewrote, each with its original input, post-normalization form, and post-transliteration output.
+
+Both surfaces are stable as of `0.1.0` and locked under [ADR-007](../decisions/0007-strict-backward-compat-from-0x.md).
+
 ---
 
 ## Profile-Based Architecture
