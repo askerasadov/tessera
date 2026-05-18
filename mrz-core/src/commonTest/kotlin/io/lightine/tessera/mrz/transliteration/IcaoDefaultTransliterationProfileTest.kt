@@ -86,16 +86,74 @@ class IcaoDefaultTransliterationProfileTest {
     }
 
     @Test
-    fun schwa_maps_to_E_per_icao_default() {
-        // ADR-009 explicitly calls out the schwa example: ICAO defaults to E,
-        // while at least one issuing state uses A instead.
+    fun schwa_falls_through_to_filler_per_icao_annex_g_absence() {
+        // ICAO Doc 9303 Part 3 Annex G's Latin table covers U+00C0-00DE,
+        // U+0100-017D, and U+1E9E. The Latin schwa (U+018F / U+0259) is in
+        // Latin Extended-B (U+0180-024F), entirely outside Annex G's scope.
+        // The ICAO default profile therefore falls through to filler.
+        // Country-specific profiles (e.g., AzeTransliterationProfile) apply
+        // their own override per ADR-009.
         assertEquals(
-            TransliterationResult.Success("E"),
+            TransliterationResult.Success("<"),
             IcaoDefaultTransliterationProfile.toMrzAlphabet("Ə"),
         )
         assertEquals(
-            TransliterationResult.Success("E"),
+            TransliterationResult.Success("<"),
             IcaoDefaultTransliterationProfile.toMrzAlphabet("ə"),
+        )
+    }
+
+    @Test
+    fun apostrophe_is_omitted_per_icao_part_3_section_4_6() {
+        // Spec: "Apostrophe: This shall be omitted; name components separated by
+        // the apostrophe shall be combined, and no filler character shall be
+        // inserted in its place in the MRZ. Example VIZ: D'ARTAGNAN MRZ: DARTAGNAN."
+        assertEquals(
+            TransliterationResult.Success("DARTAGNAN"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("D'ARTAGNAN"),
+        )
+        assertEquals(
+            TransliterationResult.Success("OCONNOR"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("O'CONNOR"),
+        )
+        // Right single quotation mark (U+2019) — commonly typed apostrophe variant.
+        assertEquals(
+            TransliterationResult.Success("DARTAGNAN"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("D’ARTAGNAN"),
+        )
+    }
+
+    @Test
+    fun common_punctuation_is_omitted_per_icao_part_3_section_4_6() {
+        // Spec: "All other punctuation characters shall be omitted from the MRZ
+        // (no filler character shall be inserted in their place in the MRZ)."
+        assertEquals(
+            TransliterationResult.Success("ABC"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("A.B,C"),
+        )
+        assertEquals(
+            TransliterationResult.Success("AB"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("A!B?"),
+        )
+        assertEquals(
+            TransliterationResult.Success("AB"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("A(B)"),
+        )
+    }
+
+    @Test
+    fun hyphen_falls_through_to_filler_per_icao_part_3_section_4_6() {
+        // Spec: "Where a hyphen appears between two name components, it shall
+        // be represented in the MRZ by a single filler character (<)."
+        // Hyphen is intentionally NOT in the punctuation-omitted set; it uses
+        // the unmapped-character fallback to filler.
+        assertEquals(
+            TransliterationResult.Success("MARIE<ELISE"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("MARIE-ELISE"),
+        )
+        assertEquals(
+            TransliterationResult.Success("SMITH<JONES"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("SMITH-JONES"),
         )
     }
 

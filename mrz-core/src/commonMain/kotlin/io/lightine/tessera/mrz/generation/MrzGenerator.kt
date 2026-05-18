@@ -1,6 +1,7 @@
 package io.lightine.tessera.mrz.generation
 
 import io.lightine.tessera.domain.errors.MrzGenerationFieldOverflow
+import io.lightine.tessera.domain.errors.MrzGenerationNumericInNameField
 import io.lightine.tessera.domain.errors.MrzGenerationUnsupportedCharacters
 import io.lightine.tessera.domain.vocabulary.MrzField
 import io.lightine.tessera.domain.vocabulary.MrzFormat
@@ -768,6 +769,11 @@ public object MrzGenerator {
         secondary: String,
         profile: TransliterationProfile?,
     ): IdentifierProcessing {
+        // Per ICAO Doc 9303 Part 3 §4.6: "Numeric characters shall not be used in the
+        // name fields of the MRZ." Reject before applying any profile so the error
+        // references the consumer's original input rather than a transliterated form.
+        rejectIfNameFieldContainsDigits(format, primary)?.let { return IdentifierProcessing.Failure(it) }
+        rejectIfNameFieldContainsDigits(format, secondary)?.let { return IdentifierProcessing.Failure(it) }
         if (profile == null) {
             return IdentifierProcessing.Success(primary, secondary, details = null)
         }
@@ -788,6 +794,23 @@ public object MrzGenerator {
                 transliteratedFields = fields,
             )
         return IdentifierProcessing.Success(processedPrimary, processedSecondary, details)
+    }
+
+    private fun rejectIfNameFieldContainsDigits(
+        format: MrzFormat,
+        value: String,
+    ): GenerationResult.Failure? {
+        val digits = value.filter { it.isDigit() }
+        if (digits.isEmpty()) return null
+        return GenerationResult.Failure(
+            error =
+                MrzGenerationNumericInNameField(
+                    format = format,
+                    observedValue = value,
+                    numericCharacters = digits.toList(),
+                ),
+            metadata = emptyMetadata(),
+        )
     }
 
     private sealed class TransliterationApply {

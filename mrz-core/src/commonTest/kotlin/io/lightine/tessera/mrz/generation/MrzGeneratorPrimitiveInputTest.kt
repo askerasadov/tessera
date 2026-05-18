@@ -1,5 +1,6 @@
 package io.lightine.tessera.mrz.generation
 
+import io.lightine.tessera.domain.errors.MrzGenerationNumericInNameField
 import io.lightine.tessera.domain.errors.MrzGenerationUnsupportedCharacters
 import io.lightine.tessera.domain.vocabulary.MrzField
 import io.lightine.tessera.domain.vocabulary.MrzFormat
@@ -399,6 +400,95 @@ class MrzGeneratorPrimitiveInputTest {
         val success = assertIs<GenerationResult.Success>(result)
         // Document number field is fully filler.
         assertEquals("<<<<<<<<<", success.mrz[1].substring(0, 9))
+    }
+
+    @Test
+    fun digit_in_primary_identifier_returns_numeric_in_name_field_error() {
+        val result =
+            MrzGenerator.generateTD3(
+                documentType = "P",
+                issuingState = "UTO",
+                documentNumber = "L898902C<",
+                primaryIdentifier = "SMITH2",
+                secondaryIdentifier = "ANNA",
+                nationality = "UTO",
+                dateOfBirth = dob,
+                sex = Sex.FEMALE,
+                dateOfExpiry = doe,
+                personalNumber = "",
+            )
+        val failure = assertIs<GenerationResult.Failure>(result)
+        val error = assertIs<MrzGenerationNumericInNameField>(failure.error)
+        assertEquals(MrzFormat.TD3, error.format)
+        assertEquals("SMITH2", error.observedValue)
+        assertEquals(listOf('2'), error.numericCharacters)
+    }
+
+    @Test
+    fun digit_in_secondary_identifier_returns_numeric_in_name_field_error() {
+        val result =
+            MrzGenerator.generateTD3(
+                documentType = "P",
+                issuingState = "UTO",
+                documentNumber = "L898902C<",
+                primaryIdentifier = "ERIKSSON",
+                secondaryIdentifier = "ANNA M4RIA",
+                nationality = "UTO",
+                dateOfBirth = dob,
+                sex = Sex.FEMALE,
+                dateOfExpiry = doe,
+                personalNumber = "",
+            )
+        val failure = assertIs<GenerationResult.Failure>(result)
+        val error = assertIs<MrzGenerationNumericInNameField>(failure.error)
+        assertEquals(MrzFormat.TD3, error.format)
+        assertEquals("ANNA M4RIA", error.observedValue)
+        assertEquals(listOf('4'), error.numericCharacters)
+    }
+
+    @Test
+    fun digit_check_runs_before_profile_so_error_references_original_input() {
+        val result =
+            MrzGenerator.generateTD3(
+                documentType = "P",
+                issuingState = "UTO",
+                documentNumber = "L898902C<",
+                primaryIdentifier = "MÜLLER9",
+                secondaryIdentifier = "ANNA",
+                nationality = "UTO",
+                dateOfBirth = dob,
+                sex = Sex.FEMALE,
+                dateOfExpiry = doe,
+                personalNumber = "",
+                transliteration = IcaoDefaultTransliterationProfile,
+            )
+        val failure = assertIs<GenerationResult.Failure>(result)
+        val error = assertIs<MrzGenerationNumericInNameField>(failure.error)
+        // observedValue is the consumer's original input, not the transliterated form.
+        assertEquals("MÜLLER9", error.observedValue)
+        assertEquals(listOf('9'), error.numericCharacters)
+    }
+
+    @Test
+    fun multiple_digits_in_name_field_are_all_reported() {
+        val result =
+            MrzGenerator.generateTD1(
+                documentType = "I",
+                issuingState = "UTO",
+                documentNumber = "X1234567<",
+                primaryIdentifier = "SMITH",
+                secondaryIdentifier = "1A2B3C",
+                nationality = "UTO",
+                dateOfBirth = dob,
+                sex = Sex.MALE,
+                dateOfExpiry = doe,
+                optionalData1 = "",
+                optionalData2 = "",
+            )
+        val failure = assertIs<GenerationResult.Failure>(result)
+        val error = assertIs<MrzGenerationNumericInNameField>(failure.error)
+        assertEquals(MrzFormat.TD1, error.format)
+        assertEquals(listOf('1', '2', '3'), error.numericCharacters)
     }
 
     @Test

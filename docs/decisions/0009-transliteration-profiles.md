@@ -8,7 +8,14 @@
 
 The MRZ alphabet is restricted (uppercase A-Z, digits, filler character). Real-world names contain characters outside this set: diacritics, characters from non-Latin scripts, ligatures, and so on. Generating an MRZ from such names requires transliteration — converting these characters into MRZ-compatible representations.
 
-ICAO Doc 9303 Part 3 Section 6 provides default transliteration recommendations. However, issuing states often define their own conventions, and the same character is transliterated differently depending on which state issued the document. The Latin schwa character (`Ə` / `ə`) is the clearest example: ICAO defaults to `E`, but at least one issuing state where this character is common uses `A` instead.
+ICAO Doc 9303 Part 3 Section 6 (Annex G) provides default transliteration recommendations covering Latin-1 Supplement (U+00C0-00DE), Latin Extended-A (U+0100-017D), and U+1E9E. Issuing states often define their own conventions for characters outside this coverage, and the same character may be transliterated differently depending on the state.
+
+The Latin schwa character (`Ə` U+018F / `ə` U+0259) is the clearest example. Schwa lives in Latin Extended-B (U+0180-024F) and is **not in Annex G's table at all** — Annex G provides no recommendation for it. Each issuing state that needs to encode schwa in an MRZ therefore makes its own choice. The convention for the issuing state with ISO 3166-1 alpha-3 code `AZE` is `Ə → A`, derivable via a two-step chain of authoritative standards:
+
+1. **BGN/PCGN 1993 Agreement** (UK government romanization system for the AZE alphabet, 2022 revision) Note 1: *"The special letter Ə, ə known as schwa, should be reproduced in that form whenever encountered. In those instances when it cannot be reproduced, however, the letter Ä ä may be substituted for it."* In the MRZ alphabet, schwa cannot be reproduced.
+2. **ICAO Doc 9303 Part 3 Annex G** under the no-expansion convention: `Ä → A`.
+
+Chained: `Ə → Ä (BGN/PCGN fallback) → A (ICAO no-expansion)`. This matches observed practice in AZE-issued passports. The SDK's `AzeTransliterationProfile` applies this override; the ICAO default profile (`IcaoDefaultTransliterationProfile`) does not include schwa at all, matching Annex G's actual scope (schwa falls through to the filler character `<` in the ICAO default).
 
 A decision was needed about how the SDK handles this divergence:
 

@@ -25,9 +25,11 @@ class AzeTransliterationProfileTest {
     }
 
     @Test
-    fun schwa_maps_to_A_diverging_from_icao() {
-        // The load-bearing divergence from the ICAO default — same input,
-        // different output by design.
+    fun schwa_maps_to_A_via_bgn_pcgn_and_icao_chain() {
+        // The load-bearing override per ADR-009 + Phase 4 verification:
+        // BGN/PCGN 1993 Agreement (UK govt, 2022) Note 1 says schwa's fallback
+        // when unreproducible is Ä; ICAO Annex G under no-expansion maps Ä → A.
+        // The chained substitution Ə → Ä → A matches observed AZE practice.
         assertEquals(
             TransliterationResult.Success("A"),
             AzeTransliterationProfile.toMrzAlphabet("Ə"),
@@ -36,8 +38,10 @@ class AzeTransliterationProfileTest {
             TransliterationResult.Success("A"),
             AzeTransliterationProfile.toMrzAlphabet("ə"),
         )
+        // ICAO default has no schwa entry — falls through to filler (see
+        // IcaoDefaultTransliterationProfileTest for full reasoning).
         assertEquals(
-            TransliterationResult.Success("E"),
+            TransliterationResult.Success("<"),
             IcaoDefaultTransliterationProfile.toMrzAlphabet("Ə"),
         )
     }

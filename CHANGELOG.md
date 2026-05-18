@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `domain/errors/MrzGenerationNumericInNameField` — new generation error type emitted by the primitive-input methods of `MrzGenerator` when the `primaryIdentifier` or `secondaryIdentifier` argument contains numeric characters. Per ICAO Doc 9303 Part 3 §4.6: "Numeric characters shall not be used in the name fields of the MRZ." The SDK does not strip digits silently (Principle 1 — reader, not oracle); the error carries the consumer's original input and the list of numeric characters encountered so the consumer can decide how to handle them. Pre-tag conformance-verification finding (F4) — see [`CONFORMANCE-NOTES`](CONFORMANCE-NOTES-2026-05-18.md) for the full audit context
+
+### Changed
+
+- Transliteration profiles (`IcaoDefaultTransliterationProfile`, `AzeTransliterationProfile`) now comply with ICAO Doc 9303 Part 3 §4.6 punctuation rules:
+  - Apostrophes (U+0027 `'`, U+2018 `'`, U+2019 `'`, U+00B4 `´`, U+0060 `` ` ``) are omitted with no filler character inserted (was: replaced with filler `<`). Example: `D'ARTAGNAN → DARTAGNAN` (was `D<ARTAGNAN`).
+  - Other Western punctuation (`. , ; : ? ! " ( ) [ ] { } * & @ # $ % + = ~ _ / \ | ^ " "`) is omitted with no filler (was: replaced with filler `<`). Hyphen `-` is intentionally NOT in this set — per §4.6 hyphens convert to filler `<`, which is handled by the unmapped-character fallback.
+  - Pre-tag conformance-verification findings (F1, F3)
+- `IcaoDefaultTransliterationProfile` no longer maps the Latin schwa `Ə` / `ə` to `E`. Per ICAO Doc 9303 Part 3 Annex G, the schwa (Latin Extended-B U+018F / U+0259) is **not in the canonical Latin transliteration table at all** — Annex G covers U+00C0-00DE, U+0100-017D, and U+1E9E only. The ICAO default profile now falls schwa through to the filler character `<` (matching Annex G's actual scope). Country-specific profiles that need to map schwa (such as `AzeTransliterationProfile`, which maps `Ə → A`) continue to apply their own override on top of the base. Pre-tag conformance-verification finding (F2)
+- `AzeTransliterationProfile` KDoc reframed to explain the `Ə → A` rule via the standards-grounded chain: BGN/PCGN 1993 Agreement (UK government, 2022) recommends `Ä` as the fallback when schwa cannot be reproduced; ICAO Annex G under no-expansion maps `Ä → A`. The chained substitution `Ə → Ä (BGN/PCGN) → A (ICAO)` matches observed practice in AZE-issued passports. Pre-tag conformance-verification finding (F22)
+- [ADR-009](docs/decisions/0009-transliteration-profiles.md) Context section reframed to correctly state that schwa is absent from ICAO Annex G (not "ICAO defaults to E"), and to add the BGN/PCGN + ICAO chain reasoning that supports the AZE profile's `Ə → A` override
+- `docs/features/mrz-error-taxonomy.md` updated to list `MrzGenerationNumericInNameField` alongside the other generation error types
+
 ## [0.1.0] - 2026-05-18
 
 The first internal release. Pure parsing, generation, and validation for all five ICAO Doc 9303 MRZ formats (TD1, TD2, TD3, MRV-A, MRV-B), the error taxonomy, the lookup-table machinery, transliteration profiles (ICAO default + AZE country-specific), and the pluggable telemetry interface (contract-only at this release; first emitters in 0.2.0 and 0.6.0). JVM target enabled; additional targets activate per-release as the corresponding reading methods land. 516 tests.
