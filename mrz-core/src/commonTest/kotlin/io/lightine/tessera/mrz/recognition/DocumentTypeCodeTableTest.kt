@@ -21,7 +21,79 @@ class DocumentTypeCodeTableTest {
     fun lookup_returns_entry_for_current_diplomatic_passport_code_pd() {
         val entry = DocumentTypeCodeTable.lookup("PD")
         assertNotNull(entry)
+        assertEquals("Diplomatic passport", entry.displayName)
         assertEquals(DocumentCategory.PASSPORT, entry.category)
+        assertEquals(DocumentTypeGeneration.CURRENT_TWO_CHARACTER, entry.generation)
+    }
+
+    @Test
+    fun lookup_returns_stateless_passport_for_ps_per_part4_4_4() {
+        // Per ICAO Doc 9303 Part 4 §4.4: PS is "Stateless passport", NOT "Service passport".
+        // The latter is code PO ("Official/service passport").
+        val entry = DocumentTypeCodeTable.lookup("PS")
+        assertNotNull(entry)
+        assertEquals("Stateless passport", entry.displayName)
+        assertEquals(DocumentCategory.PASSPORT, entry.category)
+        assertEquals(DocumentTypeGeneration.CURRENT_TWO_CHARACTER, entry.generation)
+    }
+
+    @Test
+    fun lookup_returns_official_service_passport_for_po_per_part4_4_4() {
+        val entry = DocumentTypeCodeTable.lookup("PO")
+        assertNotNull(entry)
+        assertEquals("Official/service passport", entry.displayName)
+        assertEquals(DocumentCategory.PASSPORT, entry.category)
+        assertEquals(DocumentTypeGeneration.CURRENT_TWO_CHARACTER, entry.generation)
+    }
+
+    @Test
+    fun lookup_returns_emergency_passport_for_pe_per_part4_4_4() {
+        val entry = DocumentTypeCodeTable.lookup("PE")
+        assertNotNull(entry)
+        assertEquals("Emergency passport", entry.displayName)
+        assertEquals(DocumentCategory.PASSPORT, entry.category)
+    }
+
+    @Test
+    fun lookup_returns_refugee_passport_for_pr_per_part4_4_4() {
+        val entry = DocumentTypeCodeTable.lookup("PR")
+        assertNotNull(entry)
+        assertEquals("Refugee passport", entry.displayName)
+        assertEquals(DocumentCategory.PASSPORT, entry.category)
+    }
+
+    @Test
+    fun lookup_returns_alien_non_citizen_passport_for_pt_per_part4_4_4() {
+        val entry = DocumentTypeCodeTable.lookup("PT")
+        assertNotNull(entry)
+        assertEquals("Alien/Non-citizen passport", entry.displayName)
+        assertEquals(DocumentCategory.PASSPORT, entry.category)
+    }
+
+    @Test
+    fun lookup_returns_laissez_passer_passport_for_pl_per_part4_4_4() {
+        val entry = DocumentTypeCodeTable.lookup("PL")
+        assertNotNull(entry)
+        assertEquals("Laissez-passer passport", entry.displayName)
+        assertEquals(DocumentCategory.PASSPORT, entry.category)
+    }
+
+    @Test
+    fun lookup_returns_military_passport_for_pm_per_part4_4_4() {
+        val entry = DocumentTypeCodeTable.lookup("PM")
+        assertNotNull(entry)
+        assertEquals("Military passport", entry.displayName)
+        assertEquals(DocumentCategory.PASSPORT, entry.category)
+    }
+
+    @Test
+    fun lookup_returns_crew_member_certificate_for_ac_per_part5_appendix_b() {
+        // Per ICAO Doc 9303 Part 5 Appendix B: AC is reserved for Crew Member Certificates.
+        // Category OTHER because it doesn't fit PASSPORT / IDENTITY_CARD / RESIDENCE_PERMIT / VISA.
+        val entry = DocumentTypeCodeTable.lookup("AC")
+        assertNotNull(entry)
+        assertEquals("Crew Member Certificate", entry.displayName)
+        assertEquals(DocumentCategory.OTHER, entry.category)
         assertEquals(DocumentTypeGeneration.CURRENT_TWO_CHARACTER, entry.generation)
     }
 
@@ -38,14 +110,24 @@ class DocumentTypeCodeTableTest {
 
     @Test
     fun all_returns_every_entry_in_the_starter_set() {
+        // Legacy single-character: P, V, I.
+        // Current two-character P-prefix per Part 4 §4.4: PP, PE, PD, PO, PR, PT, PS, PL, PM.
+        // TD1 special: AC (Crew Member Certificate per Part 5 Appendix B).
+        // TD1/TD2 state-specific A-/C-/I-prefix variants are intentionally not enumerated.
         val codes = DocumentTypeCodeTable.all().map { it.code }.toSet()
-        assertEquals(setOf("P", "V", "I", "PP", "PD", "PS"), codes)
+        assertEquals(
+            setOf("P", "V", "I", "PP", "PE", "PD", "PO", "PR", "PT", "PS", "PL", "PM", "AC"),
+            codes,
+        )
     }
 
     @Test
     fun by_category_passport_returns_all_passport_entries() {
         val passportCodes = DocumentTypeCodeTable.byCategory(DocumentCategory.PASSPORT).map { it.code }.toSet()
-        assertEquals(setOf("P", "PP", "PD", "PS"), passportCodes)
+        assertEquals(
+            setOf("P", "PP", "PE", "PD", "PO", "PR", "PT", "PS", "PL", "PM"),
+            passportCodes,
+        )
     }
 
     @Test
@@ -63,8 +145,15 @@ class DocumentTypeCodeTableTest {
     }
 
     @Test
+    fun by_category_other_returns_crew_member_certificate() {
+        val otherEntries = DocumentTypeCodeTable.byCategory(DocumentCategory.OTHER)
+        assertEquals(1, otherEntries.size)
+        assertEquals("AC", otherEntries.single().code)
+    }
+
+    @Test
     fun by_category_residence_permit_returns_empty_list_in_starter_set() {
-        // Starter set has no residence permit codes; this lock surfaces explicitly when the set is expanded.
+        // Starter set still has no residence permit codes; this lock surfaces explicitly when the set is expanded.
         assertTrue(DocumentTypeCodeTable.byCategory(DocumentCategory.RESIDENCE_PERMIT).isEmpty())
     }
 }

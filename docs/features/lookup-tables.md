@@ -49,7 +49,7 @@ The lookup table is exposed publicly, not just used internally. Consumers can it
 The first character or two of the MRZ identifies the document type. ICAO Doc 9303 defines two generations of these codes:
 
 - **Single-character codes** — the original system. `P` for passport, `V` for visa, `I` / `A` / `C` for various ID-card-like documents
-- **Two-character codes** — the current system, in active use as of recent ICAO Doc 9303 editions. `PP` for ordinary passport, `PD` for diplomatic, `PS` for service, `PE` for emergency, and so on
+- **Two-character codes** — the current system, in active use as of recent ICAO Doc 9303 editions. Part 4 §4.4 defines the harmonized `P`-prefix set: `PP` for ordinary passport, `PE` for emergency, `PD` for diplomatic, `PO` for official/service, `PR` for refugee, `PT` for alien/non-citizen, `PS` for stateless, `PL` for laissez-passer, `PM` for military. Part 4 mandates the harmonized set for new issuances from 1 January 2026 and for all MRPs from 1 January 2028
 
 The SDK ships a lookup table containing both generations. Each entry contains:
 

@@ -8,10 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- `DocumentTypeCodeTable` populated with the full `P`-prefix harmonized set per ICAO Doc 9303 Part 4 §4.4 ("Document Codes"): `PE` (Emergency passport), `PO` (Official/service passport), `PR` (Refugee passport), `PT` (Alien/Non-citizen passport), `PL` (Laissez-passer passport), `PM` (Military passport). Part 4 §4.4 mandates the harmonized set for new MRPs from 1 January 2026 (already in effect at tag) and for all MRPs from 1 January 2028. Pre-tag conformance-verification finding (F15)
+- `DocumentTypeCodeTable.AC` — TD1 Crew Member Certificate code per ICAO Doc 9303 Part 5 Appendix B. Categorized as `DocumentCategory.OTHER` since it does not fit any of the more specific categories. Pre-tag conformance-verification finding (F17)
 - `domain/errors/MrzGenerationNumericInNameField` — new generation error type emitted by the primitive-input methods of `MrzGenerator` when the `primaryIdentifier` or `secondaryIdentifier` argument contains numeric characters. Per ICAO Doc 9303 Part 3 §4.6: "Numeric characters shall not be used in the name fields of the MRZ." The SDK does not strip digits silently (Principle 1 — reader, not oracle); the error carries the consumer's original input and the list of numeric characters encountered so the consumer can decide how to handle them. Pre-tag conformance-verification finding (F4) — see [`CONFORMANCE-NOTES`](CONFORMANCE-NOTES-2026-05-18.md) for the full audit context
 
 ### Changed
 
+- `DocumentTypeCodeTable` entry for code `PS` corrected: was `"Service passport"`, now `"Stateless passport"` per ICAO Doc 9303 Part 4 §4.4. The "service passport" type is actually code `PO` (Official/service passport), now added separately under F15 above. Pre-tag conformance-verification finding (F14) — bug correction
+- `docs/features/lookup-tables.md` corrected to reflect the actual Part 4 §4.4 code definitions (`PS` is stateless, `PE` is emergency, etc.) and to name the full harmonized `P`-prefix set
 - Transliteration profiles (`IcaoDefaultTransliterationProfile`, `AzeTransliterationProfile`) now comply with ICAO Doc 9303 Part 3 §4.6 punctuation rules:
   - Apostrophes (U+0027 `'`, U+2018 `'`, U+2019 `'`, U+00B4 `´`, U+0060 `` ` ``) are omitted with no filler character inserted (was: replaced with filler `<`). Example: `D'ARTAGNAN → DARTAGNAN` (was `D<ARTAGNAN`).
   - Other Western punctuation (`. , ; : ? ! " ( ) [ ] { } * & @ # $ % + = ~ _ / \ | ^ " "`) is omitted with no filler (was: replaced with filler `<`). Hyphen `-` is intentionally NOT in this set — per §4.6 hyphens convert to filler `<`, which is handled by the unmapped-character fallback.
