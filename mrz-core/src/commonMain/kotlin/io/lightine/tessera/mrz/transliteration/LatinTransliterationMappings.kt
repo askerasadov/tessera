@@ -9,6 +9,15 @@ package io.lightine.tessera.mrz.transliteration
 // build a copy and apply their own overrides; profiles whose conventions are
 // not Latin-aligned do not use this helper at all.
 //
+// Annex G coverage: this builder ships every codepoint in §6.A (Latin-1
+// Supplement U+00C0-00DE plus Latin Extended-A U+0100-017D plus the capital
+// sharp s U+1E9E), both cases, verified during the 2026-05-18 pre-tag
+// conformance pass (see CONFORMANCE-NOTES-2026-05-18.md, finding F5). Where
+// Annex G permits multiple recommended transliterations (Ä → "AE or A",
+// Å → "AA or A", Ñ → "N or NXX", Ö → "OE or O", Ü → "UE or UXX or U"),
+// the no-expansion variant is chosen and applied consistently — the choice
+// is recorded in IcaoDefaultTransliterationProfile's KDoc.
+//
 // Punctuation handling: per ICAO Doc 9303 Part 3 §4.6, apostrophes shall be
 // omitted (no filler), hyphens shall be converted to the filler character
 // (handled implicitly via the unmapped-character fallback), and "all other
@@ -23,6 +32,10 @@ package io.lightine.tessera.mrz.transliteration
 // schwa (e.g., AzeTransliterationProfile) apply their own override on top of
 // this base; the rationale chain (BGN/PCGN 1993 Agreement → ICAO Annex G
 // no-expansion) is documented on the AZE profile.
+//
+// Eth vs D-stroke: Annex G has both U+00D0 (Ð "Eth", Icelandic) and U+0110
+// (Đ "D stroke", Croatian/Vietnamese/Sami) mapping to D. These are
+// visually similar but distinct codepoints — both are explicitly handled.
 internal fun buildIcaoLatinMappings(): MutableMap<Char, String> {
     val map = mutableMapOf<Char, String>()
 
@@ -38,7 +51,7 @@ internal fun buildIcaoLatinMappings(): MutableMap<Char, String> {
     addAll(map, "Ĵĵ", "J")
     addAll(map, "Ķķ", "K")
     addAll(map, "ĹĻĽĿŁĺļľŀł", "L")
-    addAll(map, "ÑŃŅŇñńņň", "N")
+    addAll(map, "ÑŃŅŇŊñńņňŋ", "N")
     addAll(map, "ÒÓÔÕÖØŌŎŐòóôõöøōŏő", "O")
     addAll(map, "ŔŖŘŕŗř", "R")
     addAll(map, "ŚŜŞŠśŝşš", "S")
@@ -50,7 +63,7 @@ internal fun buildIcaoLatinMappings(): MutableMap<Char, String> {
 
     addAll(map, "Ææ", "AE")
     addAll(map, "Œœ", "OE")
-    addAll(map, "ß", "SS")
+    addAll(map, "ẞß", "SS")
     addAll(map, "Þþ", "TH")
     addAll(map, "Ðð", "D")
     addAll(map, "Ĳĳ", "IJ")
