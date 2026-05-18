@@ -140,16 +140,14 @@ Recognition is exposed as data on the relevant types, never used as a gate for p
 
 The SDK ships the lookup tables it ships. A few things worth being explicit about:
 
-### Current Coverage Is a Starter Set
+### Current Coverage
 
-The current shipped tables are deliberately incomplete starter sets, not the full coverage described in the "Initial Country Code Coverage" and "Initial Document Type Code Coverage" sections below. The discrepancy is intentional: the architectural pattern (recognition-bearing value class living with its lookup table per [ADR-012](../decisions/0012-recognition-types-live-with-tables.md)) is in place, the API contract is stable, and adding entries is a non-breaking change (see "Updating the Tables" above). The data is added as authoritative ICAO Doc 9303 source material is available to the project. Until then, the `MrzUnknownDocumentTypeCode` and `MrzUnknownCountryCode` warnings will fire frequently in real-world inputs. Tracked in [`docs/open-questions.md`](../open-questions.md) under "Country code table completeness" and "Document type code table completeness."
+The 2026-05-18 pre-tag conformance pass populated both tables from ICAO Doc 9303 against the actually-downloaded spec text (`CONFORMANCE-NOTES-2026-05-18.md`, findings F7 and F15):
 
-The current starter sets:
+- **Country codes:** all currently-assigned ISO 3166-1 alpha-3 codes (~249 entries) plus the ICAO Doc 9303 Part 3 §5 extensions (Parts A through H — British nationality classes, EU, UN documents, INTERPOL / OECS / PAM / Order of Malta / SADC, stateless/refugee codes, the deprecated Netherlands Antilles and Neutral Zone, the `UTO` specimen code, and ICAO's own `IAO` code). ~272 entries total.
+- **Document type codes:** legacy single-character codes (`P`, `V`, `I`), the full Part 4 §4.4 `P`-prefix harmonized set (`PP`, `PE`, `PD`, `PO`, `PR`, `PT`, `PS`, `PL`, `PM`), and the Part 5 Appendix B `AC` Crew Member Certificate code. ~13 entries total.
 
-- **Country codes:** five ISO 3166-1 alpha-3 state codes (`USA`, `GBR`, `DEU`, `FRA`, `JPN`).
-- **Document type codes:** six codes (`P`, `V`, `I` for legacy single-character; `PP`, `PD`, `PS` for current two-character).
-
-Source-file comments on `CountryCodeTable.kt` and `DocumentTypeCodeTable.kt` mark these as starter sets. Tests lock the starter-set coverage so any expansion surfaces explicitly.
+State-specific second-character TD1 / TD2 document codes (Parts 5/6 specify only that the first character must be `A`, `C`, or `I` with the second left to the state's discretion) are intentionally not enumerated — they are open-ended. Source-file comments on `CountryCodeTable.kt` and `DocumentTypeCodeTable.kt` document the coverage and cite the spec sections.
 
 ### Initial Country Code Coverage (target shape)
 

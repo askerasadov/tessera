@@ -94,16 +94,17 @@ class MrzParserTest {
 
     @Test
     fun success_metadata_has_no_validation_failures_for_clean_specimen() {
-        // The ICAO specimen uses fictional country code "UTO" (Utopia). Since "UTO" is not in
-        // the SDK's deliberate starter set of recognized country codes, the validator emits two
-        // MrzUnknownCountryCode warnings (one for issuingState, one for nationality). Warnings
-        // do not downgrade Success to PartialSuccess; only validationFailures do.
+        // The ICAO specimen uses code UTO (Utopia) per Doc 9303 Part 3 §5 Part G;
+        // recognized as OTHER category after the country-code table expansion. Clean
+        // specimen produces no validation failures and no MrzUnknownCountryCode warnings.
         val result = MrzParser.parseTD3(specimenLines, referenceTime = ref2026)
         val success = assertIs<ParseResult.Success>(result)
         assertTrue(success.metadata.validationFailures.isEmpty())
         val unknownCountryWarnings = success.metadata.warnings.filterIsInstance<MrzUnknownCountryCode>()
-        assertEquals(2, unknownCountryWarnings.size, "Expected two MrzUnknownCountryCode warnings; got ${success.metadata.warnings}")
-        assertEquals(setOf(MrzField.ISSUING_STATE, MrzField.NATIONALITY), unknownCountryWarnings.map { it.field }.toSet())
+        assertTrue(
+            unknownCountryWarnings.isEmpty(),
+            "UTO is in Part G of ICAO §5; expected no MrzUnknownCountryCode warnings, got $unknownCountryWarnings",
+        )
     }
 
     @Test

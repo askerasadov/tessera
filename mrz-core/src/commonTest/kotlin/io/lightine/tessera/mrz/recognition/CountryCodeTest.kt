@@ -32,7 +32,16 @@ class CountryCodeTest {
 
     @Test
     fun is_recognized_is_false_for_code_outside_starter_set() {
-        assertTrue(!CountryCode("UTO").isRecognized)
+        // XYZ is unassigned by ISO 3166-1 and not in any ICAO §5 part.
+        assertTrue(!CountryCode("XYZ").isRecognized)
+    }
+
+    @Test
+    fun is_recognized_is_true_for_icao_specimen_code_uto() {
+        // UTO ("Utopia") is the ICAO Doc 9303 Part 3 §5 Part G specimen code;
+        // categorized as OTHER (not a real country) but recognized.
+        assertTrue(CountryCode("UTO").isRecognized)
+        assertEquals(CountryCodeCategory.OTHER, CountryCode("UTO").category)
     }
 
     @Test
@@ -42,7 +51,7 @@ class CountryCodeTest {
 
     @Test
     fun display_name_is_null_for_unrecognized_code() {
-        assertNull(CountryCode("UTO").displayName)
+        assertNull(CountryCode("XYZ").displayName)
     }
 
     @Test
@@ -52,6 +61,6 @@ class CountryCodeTest {
 
     @Test
     fun category_is_null_for_unrecognized_code() {
-        assertNull(CountryCode("UTO").category)
+        assertNull(CountryCode("XYZ").category)
     }
 }

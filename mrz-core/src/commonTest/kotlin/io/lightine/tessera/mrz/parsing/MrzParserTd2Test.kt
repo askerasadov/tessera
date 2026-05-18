@@ -85,9 +85,10 @@ class MrzParserTd2Test {
         val result = MrzParser.parseTD2(specimenLines, referenceTime = ref2026)
         val success = assertIs<ParseResult.Success>(result)
         assertTrue(success.metadata.validationFailures.isEmpty())
+        // UTO ("Utopia") is recognized as ICAO §5 Part G specimen code (category OTHER)
+        // — no MrzUnknownCountryCode warnings expected for clean specimen.
         val unknownCountryWarnings = success.metadata.warnings.filterIsInstance<MrzUnknownCountryCode>()
-        assertEquals(2, unknownCountryWarnings.size)
-        assertEquals(setOf(MrzField.ISSUING_STATE, MrzField.NATIONALITY), unknownCountryWarnings.map { it.field }.toSet())
+        assertTrue(unknownCountryWarnings.isEmpty(), "Expected no warnings; got $unknownCountryWarnings")
     }
 
     @Test
