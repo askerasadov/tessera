@@ -177,6 +177,66 @@ class IcaoDefaultTransliterationProfileTest {
     }
 
     @Test
+    fun eng_maps_to_N_per_annex_g_uppercase_and_lowercase() {
+        // Annex G entry: 014A Ŋ Eng → N. Verifies the gap closed in the
+        // 2026-05-18 pre-tag conformance pass (F5).
+        assertEquals(
+            TransliterationResult.Success("N"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("Ŋ"),
+        )
+        assertEquals(
+            TransliterationResult.Success("N"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("ŋ"),
+        )
+    }
+
+    @Test
+    fun capital_sharp_s_maps_to_SS_per_annex_g() {
+        // Annex G entry: 1E9E ẞ double s (Germany) → SS. The lowercase ß was
+        // already handled; the uppercase variant U+1E9E was the gap closed
+        // in the 2026-05-18 pre-tag conformance pass (F5).
+        assertEquals(
+            TransliterationResult.Success("SS"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("ẞ"),
+        )
+        assertEquals(
+            TransliterationResult.Success("SS"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("ß"),
+        )
+        // STRAẞE (uppercase) should produce STRASSE.
+        assertEquals(
+            TransliterationResult.Success("STRASSE"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("STRAẞE"),
+        )
+    }
+
+    @Test
+    fun eth_u00d0_and_d_stroke_u0110_both_map_to_D() {
+        // Annex G has both 00D0 (Ð "Eth", Icelandic) and 0110 (Đ "D stroke",
+        // Croatian/Vietnamese/Sami) mapping to D. These look visually similar
+        // but are distinct Unicode codepoints. F13 verifies both are handled.
+        // ASCII-cast to make the codepoint difference explicit.
+        assertEquals('Ð', 'Ð')
+        assertEquals('Đ', 'Đ')
+        assertEquals(
+            TransliterationResult.Success("D"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("Ð"),
+        )
+        assertEquals(
+            TransliterationResult.Success("D"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("Đ"),
+        )
+        assertEquals(
+            TransliterationResult.Success("D"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("ð"),
+        )
+        assertEquals(
+            TransliterationResult.Success("D"),
+            IcaoDefaultTransliterationProfile.toMrzAlphabet("đ"),
+        )
+    }
+
+    @Test
     fun mixed_diacritic_and_expansion_in_one_input() {
         val result = IcaoDefaultTransliterationProfile.toMrzAlphabet("Müßig")
         assertEquals(TransliterationResult.Success("MUSSIG"), result)

@@ -47,6 +47,35 @@ class AzeTransliterationProfileTest {
     }
 
     @Test
+    fun aze_alphabet_letters_each_map_per_icao_or_aze_override() {
+        // Per BGN/PCGN 1993 Agreement Note 4 (UK government, 2022 revision),
+        // the AZE Latin alphabet uses these letters beyond basic ASCII A-Z:
+        // Ç Ğ İ ı Ö Ş Ü (covered by ICAO Annex G under no-expansion) and
+        // Ə (covered by the AZE schwa override per the BGN/PCGN + ICAO chain).
+        //
+        // Phase 4 finding F24: verify each maps correctly after the PR 4
+        // Latin expansion. Covered character-by-character to lock the
+        // expected behaviour against any future table change.
+        assertEquals(TransliterationResult.Success("C"), AzeTransliterationProfile.toMrzAlphabet("Ç"))
+        assertEquals(TransliterationResult.Success("C"), AzeTransliterationProfile.toMrzAlphabet("ç"))
+        assertEquals(TransliterationResult.Success("G"), AzeTransliterationProfile.toMrzAlphabet("Ğ"))
+        assertEquals(TransliterationResult.Success("G"), AzeTransliterationProfile.toMrzAlphabet("ğ"))
+        assertEquals(TransliterationResult.Success("I"), AzeTransliterationProfile.toMrzAlphabet("İ"))
+        assertEquals(TransliterationResult.Success("I"), AzeTransliterationProfile.toMrzAlphabet("ı"))
+        assertEquals(TransliterationResult.Success("O"), AzeTransliterationProfile.toMrzAlphabet("Ö"))
+        assertEquals(TransliterationResult.Success("O"), AzeTransliterationProfile.toMrzAlphabet("ö"))
+        assertEquals(TransliterationResult.Success("S"), AzeTransliterationProfile.toMrzAlphabet("Ş"))
+        assertEquals(TransliterationResult.Success("S"), AzeTransliterationProfile.toMrzAlphabet("ş"))
+        assertEquals(TransliterationResult.Success("U"), AzeTransliterationProfile.toMrzAlphabet("Ü"))
+        assertEquals(TransliterationResult.Success("U"), AzeTransliterationProfile.toMrzAlphabet("ü"))
+        assertEquals(TransliterationResult.Success("A"), AzeTransliterationProfile.toMrzAlphabet("Ə"))
+        assertEquals(TransliterationResult.Success("A"), AzeTransliterationProfile.toMrzAlphabet("ə"))
+        // Q and X are basic ASCII and pass through unchanged.
+        assertEquals(TransliterationResult.Success("Q"), AzeTransliterationProfile.toMrzAlphabet("Q"))
+        assertEquals(TransliterationResult.Success("X"), AzeTransliterationProfile.toMrzAlphabet("X"))
+    }
+
+    @Test
     fun non_schwa_latin_diacritics_match_icao_behavior() {
         // Everything except schwa should produce the same output as ICAO default.
         val sample = "Müller café Straße Æther Œuvre Þórr"
