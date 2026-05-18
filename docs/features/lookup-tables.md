@@ -26,6 +26,8 @@ Centralizing this reference data in dedicated lookup tables keeps it consistent 
 
 The MRZ uses three-letter codes to identify the issuing state and the holder's nationality. These codes follow ISO 3166-1 alpha-3 with extensions defined in ICAO Doc 9303 Part 3 Section 5.
 
+ICAO Doc 9303 Part 3 §5 is not a verbatim country-code table — its opening clause refers to the ISO 3166 maintenance agency as the authoritative source for the underlying three-letter codes, and the section then enumerates a small set of additions ICAO defines on top: organizational codes for entities that issue travel documents but are not states, stateless and refugee codes, designated specimen codes, and a handful of deprecated codes retained for documents still in circulation. The SDK's lookup table is the union of both sources — most entries derive from ISO 3166-1, with the smaller §5 set layered on.
+
 The SDK ships a lookup table containing:
 
 - All ISO 3166-1 alpha-3 codes
