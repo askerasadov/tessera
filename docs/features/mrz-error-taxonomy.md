@@ -120,7 +120,7 @@ sealed class MrzParseError : MrzError()
 sealed class MrzGenerationError : MrzError()
 ```
 
-Concrete error types extend the appropriate sub-root: `MrzInvalidLength`, `MrzCharacterSetViolation`, and `MrzFormatNotDetected` extend `MrzParseError`; `MrzGenerationFieldOverflow`, `MrzGenerationMissingRequiredField`, and `MrzGenerationUnsupportedCharacters` extend `MrzGenerationError`.
+Concrete error types extend the appropriate sub-root: `MrzInvalidLength`, `MrzCharacterSetViolation`, and `MrzFormatNotDetected` extend `MrzParseError`; `MrzGenerationFieldOverflow`, `MrzGenerationMissingRequiredField`, `MrzGenerationUnsupportedCharacters`, and `MrzGenerationNumericInNameField` extend `MrzGenerationError`.
 
 This sub-categorization makes result types typesafe per operation: `ParseResult.Failure.error: MrzParseError` and `GenerationResult.Failure.error: MrzGenerationError`. A consumer handling parse failures cannot accidentally receive a generation error and vice versa.
 
@@ -172,6 +172,7 @@ The following examples illustrate the kinds of types each category contains. Thi
 - `MrzGenerationFieldOverflow` — input data does not fit within the field widths of the requested format
 - `MrzGenerationMissingRequiredField` — input data lacks fields required by the requested format
 - `MrzGenerationUnsupportedCharacters` — input data contains characters outside the MRZ alphabet and no transliteration profile resolved them; carries the format, the offending field, the list of unmapped characters with positions, and the observed value
+- `MrzGenerationNumericInNameField` — input data (primary or secondary identifier) contains numeric characters, which ICAO Doc 9303 Part 3 §4.6 forbids in MRZ name fields; carries the format, the observed value, and the list of numeric characters encountered
 
 ### Validation Failures (data extracted but does not conform)
 
