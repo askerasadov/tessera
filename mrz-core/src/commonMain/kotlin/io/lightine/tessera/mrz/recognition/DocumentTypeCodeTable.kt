@@ -5,9 +5,19 @@ import io.lightine.tessera.domain.vocabulary.DocumentCategory
 /**
  * The SDK's recognized document type codes for MRZ document type fields.
  *
- * **Deliberate starter set.** This table is intentionally incomplete relative to the
- * canonical source (ICAO Doc 9303 Part 3 Section 4). Adding entries is a non-breaking
- * change. See
+ * Includes the legacy single-character codes (`P`, `V`, `I`) and the current
+ * two-character `P`-prefix codes per ICAO Doc 9303 Part 4 §4.4 ("Document Codes"),
+ * plus the `AC` Crew Member Certificate code per Part 5 Appendix B for TD1 documents.
+ *
+ * Part 4 §4.4 specifies that **as of 1 January 2026, MRPs issued with a secondary
+ * document code shall use the codes listed below**; from 1 January 2028 all MRPs
+ * shall do so. This table covers every secondary code Part 4 §4.4 names.
+ *
+ * **Deliberate starter set on the non-`P` side.** TD1 / TD2 document codes per Parts
+ * 5 / 6 are required to start with `A`, `C`, or `I` with the second character left to
+ * the issuing state's discretion. This table ships only the unambiguously-defined
+ * codes (`I`, `AC`) on that side; state-specific second characters are not
+ * enumerable. Adding entries is a non-breaking change. See
  * [`docs/features/lookup-tables.md`](https://github.com/askerasadov/Tessera/blob/main/docs/features/lookup-tables.md)
  * for the design and `docs/open-questions.md` for tracking ("Document type code table
  * completeness").
@@ -20,6 +30,7 @@ import io.lightine.tessera.domain.vocabulary.DocumentCategory
 public object DocumentTypeCodeTable {
     private val entries: List<DocumentTypeCodeEntry> =
         listOf(
+            // Legacy single-character codes (per ICAO Doc 9303 Part 3 historical convention).
             DocumentTypeCodeEntry(
                 code = "P",
                 displayName = "Passport",
@@ -38,9 +49,18 @@ public object DocumentTypeCodeTable {
                 category = DocumentCategory.IDENTITY_CARD,
                 generation = DocumentTypeGeneration.LEGACY_SINGLE_CHARACTER,
             ),
+            // Current two-character codes per ICAO Doc 9303 Part 4 §4.4 (TD3 passports).
+            // Effective 1 January 2026 for new MRPs that use a secondary document code;
+            // effective 1 January 2028 for all MRPs.
             DocumentTypeCodeEntry(
                 code = "PP",
                 displayName = "Ordinary passport",
+                category = DocumentCategory.PASSPORT,
+                generation = DocumentTypeGeneration.CURRENT_TWO_CHARACTER,
+            ),
+            DocumentTypeCodeEntry(
+                code = "PE",
+                displayName = "Emergency passport",
                 category = DocumentCategory.PASSPORT,
                 generation = DocumentTypeGeneration.CURRENT_TWO_CHARACTER,
             ),
@@ -51,9 +71,47 @@ public object DocumentTypeCodeTable {
                 generation = DocumentTypeGeneration.CURRENT_TWO_CHARACTER,
             ),
             DocumentTypeCodeEntry(
-                code = "PS",
-                displayName = "Service passport",
+                code = "PO",
+                displayName = "Official/service passport",
                 category = DocumentCategory.PASSPORT,
+                generation = DocumentTypeGeneration.CURRENT_TWO_CHARACTER,
+            ),
+            DocumentTypeCodeEntry(
+                code = "PR",
+                displayName = "Refugee passport",
+                category = DocumentCategory.PASSPORT,
+                generation = DocumentTypeGeneration.CURRENT_TWO_CHARACTER,
+            ),
+            DocumentTypeCodeEntry(
+                code = "PT",
+                displayName = "Alien/Non-citizen passport",
+                category = DocumentCategory.PASSPORT,
+                generation = DocumentTypeGeneration.CURRENT_TWO_CHARACTER,
+            ),
+            DocumentTypeCodeEntry(
+                code = "PS",
+                displayName = "Stateless passport",
+                category = DocumentCategory.PASSPORT,
+                generation = DocumentTypeGeneration.CURRENT_TWO_CHARACTER,
+            ),
+            DocumentTypeCodeEntry(
+                code = "PL",
+                displayName = "Laissez-passer passport",
+                category = DocumentCategory.PASSPORT,
+                generation = DocumentTypeGeneration.CURRENT_TWO_CHARACTER,
+            ),
+            DocumentTypeCodeEntry(
+                code = "PM",
+                displayName = "Military passport",
+                category = DocumentCategory.PASSPORT,
+                generation = DocumentTypeGeneration.CURRENT_TWO_CHARACTER,
+            ),
+            // TD1 special-case: per ICAO Doc 9303 Part 5 Appendix B, the document code
+            // "AC" is reserved for Crew Member Certificates.
+            DocumentTypeCodeEntry(
+                code = "AC",
+                displayName = "Crew Member Certificate",
+                category = DocumentCategory.OTHER,
                 generation = DocumentTypeGeneration.CURRENT_TWO_CHARACTER,
             ),
         )
