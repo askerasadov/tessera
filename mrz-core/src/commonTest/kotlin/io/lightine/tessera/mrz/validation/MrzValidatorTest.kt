@@ -8,6 +8,7 @@ import io.lightine.tessera.domain.errors.MrzExpiryDatePast
 import io.lightine.tessera.domain.errors.MrzInvalidSexValue
 import io.lightine.tessera.domain.errors.MrzNameTruncated
 import io.lightine.tessera.domain.errors.MrzPersonalNumberCheckDigitFiller
+import io.lightine.tessera.domain.errors.MrzSexCharacterX
 import io.lightine.tessera.domain.errors.MrzUnknownCountryCode
 import io.lightine.tessera.domain.errors.MrzUnknownDocumentTypeCode
 import io.lightine.tessera.domain.vocabulary.MrzField
@@ -406,6 +407,39 @@ class MrzValidatorTest {
             )
         assertEquals('Q', invalid.observed)
         assertEquals(64, invalid.position)
+    }
+
+    @Test
+    fun reports_sex_character_x_as_warning_not_failure() {
+        // Per ICAO Doc 9303 Part 4 §4.2.2.2, the canonical MRZ sex characters are F/M/<
+        // only — X is for the VIZ per Note p. Real-world practice uses X in the MRZ for
+        // non-binary or unspecified documents; the SDK accepts the deviation but emits
+        // the warning so consumers can identify it.
+        val td3 = specimenTd3(commonFields = specimenCommonFields(rawSex = 'X', sex = Sex.UNSPECIFIED))
+        val result = MrzValidator.validate(td3)
+        assertTrue(
+            result.validationFailures.none { it is MrzInvalidSexValue },
+            "Sex 'X' should not produce a validation failure; got ${result.validationFailures}",
+        )
+        val warning =
+            assertIs<MrzSexCharacterX>(
+                result.warnings.first { it is MrzSexCharacterX },
+            )
+        assertEquals('X', warning.observed)
+        assertEquals(64, warning.position)
+    }
+
+    @Test
+    fun canonical_sex_characters_do_not_produce_x_warning() {
+        // F, M, < — none of these should produce MrzSexCharacterX.
+        for (canonicalSex in listOf('M', 'F', '<')) {
+            val td3 = specimenTd3(commonFields = specimenCommonFields(rawSex = canonicalSex))
+            val result = MrzValidator.validate(td3)
+            assertTrue(
+                result.warnings.none { it is MrzSexCharacterX },
+                "Sex '$canonicalSex' should not produce MrzSexCharacterX; got ${result.warnings}",
+            )
+        }
     }
 
     // --- Expiry warnings ---

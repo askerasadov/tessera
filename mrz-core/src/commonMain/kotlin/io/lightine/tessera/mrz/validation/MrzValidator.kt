@@ -8,6 +8,7 @@ import io.lightine.tessera.domain.errors.MrzExpiryDatePast
 import io.lightine.tessera.domain.errors.MrzInvalidSexValue
 import io.lightine.tessera.domain.errors.MrzNameTruncated
 import io.lightine.tessera.domain.errors.MrzPersonalNumberCheckDigitFiller
+import io.lightine.tessera.domain.errors.MrzSexCharacterX
 import io.lightine.tessera.domain.errors.MrzUnknownCountryCode
 import io.lightine.tessera.domain.errors.MrzUnknownDocumentTypeCode
 import io.lightine.tessera.domain.errors.MrzValidationError
@@ -149,10 +150,12 @@ public object MrzValidator {
             )
         }
 
-        val rawSex = document.commonFields.rawSex
-        if (rawSex !in VALID_SEX_CHARACTERS) {
-            failures += MrzInvalidSexValue(observed = rawSex, position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.sex))
-        }
+        checkSexCharacter(
+            rawSex = document.commonFields.rawSex,
+            position = Td3FormatSpec.globalPositionOf(Td3FormatSpec.sex),
+            failures = failures,
+            warnings = warnings,
+        )
 
         addDateNotInCalendarFailureIfApplicable(
             into = failures,
@@ -210,6 +213,7 @@ public object MrzValidator {
     ): ValidationResult {
         val rawLines = document.rawLines
         val failures = mutableListOf<MrzValidationError>()
+        val warnings = mutableListOf<MrzWarning>()
 
         addCheckDigitFailureIfMismatch(
             into = failures,
@@ -248,10 +252,12 @@ public object MrzValidator {
             )
         }
 
-        val rawSex = document.commonFields.rawSex
-        if (rawSex !in VALID_SEX_CHARACTERS) {
-            failures += MrzInvalidSexValue(observed = rawSex, position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.sex))
-        }
+        checkSexCharacter(
+            rawSex = document.commonFields.rawSex,
+            position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.sex),
+            failures = failures,
+            warnings = warnings,
+        )
 
         addDateNotInCalendarFailureIfApplicable(
             into = failures,
@@ -266,7 +272,6 @@ public object MrzValidator {
             position = Td2FormatSpec.globalPositionOf(Td2FormatSpec.dateOfExpiry),
         )
 
-        val warnings = mutableListOf<MrzWarning>()
         addExpiryWarningsIfApplicable(
             into = warnings,
             expiryComputedDate = document.commonFields.dateOfExpiry.computedDate,
@@ -310,6 +315,7 @@ public object MrzValidator {
     ): ValidationResult {
         val rawLines = document.rawLines
         val failures = mutableListOf<MrzValidationError>()
+        val warnings = mutableListOf<MrzWarning>()
 
         addCheckDigitFailureIfMismatch(
             into = failures,
@@ -335,10 +341,12 @@ public object MrzValidator {
         // MRV-A has neither a per-field check digit on optional data nor a composite check digit
         // (ICAO Doc 9303 Part 7). No per-field OPTIONAL_DATA or COMPOSITE failures are emitted.
 
-        val rawSex = document.commonFields.rawSex
-        if (rawSex !in VALID_SEX_CHARACTERS) {
-            failures += MrzInvalidSexValue(observed = rawSex, position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.sex))
-        }
+        checkSexCharacter(
+            rawSex = document.commonFields.rawSex,
+            position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.sex),
+            failures = failures,
+            warnings = warnings,
+        )
 
         addDateNotInCalendarFailureIfApplicable(
             into = failures,
@@ -353,7 +361,6 @@ public object MrzValidator {
             position = MrvAFormatSpec.globalPositionOf(MrvAFormatSpec.dateOfExpiry),
         )
 
-        val warnings = mutableListOf<MrzWarning>()
         addExpiryWarningsIfApplicable(
             into = warnings,
             expiryComputedDate = document.commonFields.dateOfExpiry.computedDate,
@@ -397,6 +404,7 @@ public object MrzValidator {
     ): ValidationResult {
         val rawLines = document.rawLines
         val failures = mutableListOf<MrzValidationError>()
+        val warnings = mutableListOf<MrzWarning>()
 
         addCheckDigitFailureIfMismatch(
             into = failures,
@@ -435,10 +443,12 @@ public object MrzValidator {
             )
         }
 
-        val rawSex = document.commonFields.rawSex
-        if (rawSex !in VALID_SEX_CHARACTERS) {
-            failures += MrzInvalidSexValue(observed = rawSex, position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.sex))
-        }
+        checkSexCharacter(
+            rawSex = document.commonFields.rawSex,
+            position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.sex),
+            failures = failures,
+            warnings = warnings,
+        )
 
         addDateNotInCalendarFailureIfApplicable(
             into = failures,
@@ -453,7 +463,6 @@ public object MrzValidator {
             position = Td1FormatSpec.globalPositionOf(Td1FormatSpec.dateOfExpiry),
         )
 
-        val warnings = mutableListOf<MrzWarning>()
         addExpiryWarningsIfApplicable(
             into = warnings,
             expiryComputedDate = document.commonFields.dateOfExpiry.computedDate,
@@ -497,6 +506,7 @@ public object MrzValidator {
     ): ValidationResult {
         val rawLines = document.rawLines
         val failures = mutableListOf<MrzValidationError>()
+        val warnings = mutableListOf<MrzWarning>()
 
         addCheckDigitFailureIfMismatch(
             into = failures,
@@ -522,10 +532,12 @@ public object MrzValidator {
         // MRV-B has neither a per-field check digit on optional data nor a composite check digit
         // (ICAO Doc 9303 Part 7). No per-field OPTIONAL_DATA or COMPOSITE failures are emitted.
 
-        val rawSex = document.commonFields.rawSex
-        if (rawSex !in VALID_SEX_CHARACTERS) {
-            failures += MrzInvalidSexValue(observed = rawSex, position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.sex))
-        }
+        checkSexCharacter(
+            rawSex = document.commonFields.rawSex,
+            position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.sex),
+            failures = failures,
+            warnings = warnings,
+        )
 
         addDateNotInCalendarFailureIfApplicable(
             into = failures,
@@ -540,7 +552,6 @@ public object MrzValidator {
             position = MrvBFormatSpec.globalPositionOf(MrvBFormatSpec.dateOfExpiry),
         )
 
-        val warnings = mutableListOf<MrzWarning>()
         addExpiryWarningsIfApplicable(
             into = warnings,
             expiryComputedDate = document.commonFields.dateOfExpiry.computedDate,
@@ -639,6 +650,23 @@ public object MrzValidator {
                     rawDay = date.rawDay,
                     position = position,
                 )
+        }
+    }
+
+    private fun checkSexCharacter(
+        rawSex: Char,
+        position: Int,
+        failures: MutableList<MrzValidationError>,
+        warnings: MutableList<MrzWarning>,
+    ) {
+        if (rawSex !in VALID_SEX_CHARACTERS) {
+            failures += MrzInvalidSexValue(observed = rawSex, position = position)
+        } else if (rawSex == 'X') {
+            // Per ICAO Doc 9303 Part 4 §4.2.2.2 (and Parts 5/6/7 equivalents), the MRZ
+            // sex character is canonically F / M / < only — X is for the VIZ per Note p/f.
+            // We accept X (real-world practice on some non-binary / unspecified-sex
+            // documents) but surface the deviation. See MrzSexCharacterX.
+            warnings += MrzSexCharacterX(observed = rawSex, position = position)
         }
     }
 

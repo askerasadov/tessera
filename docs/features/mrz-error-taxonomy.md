@@ -178,7 +178,7 @@ The following examples illustrate the kinds of types each category contains. Thi
 
 - `MrzCheckDigitMismatch` — a check digit does not match the computed value, with field identifier and observed/expected values
 - `MrzDateNotInCalendar` — date is structurally well-formed but does not represent a real calendar date
-- `MrzInvalidSexValue` — sex field contains a character other than `M`, `F`, `<`, or `X`
+- `MrzInvalidSexValue` — sex field contains a character outside the SDK's accepted set (`M`, `F`, `<`, `X`). The ICAO Doc 9303 2021 Eighth Edition lists the canonical MRZ sex characters as `M`, `F`, `<` only (Part 4 §4.2.2.2 and equivalents); the SDK accepts `X` as a documented real-world deviation and surfaces `MrzSexCharacterX` as a warning rather than emitting this failure for it
 
 ### Warnings (data is valid but anomalous)
 
@@ -189,6 +189,7 @@ The following examples illustrate the kinds of types each category contains. Thi
 - `MrzUnknownDocumentTypeCode` — document type code is not in the SDK's recognized lookup tables (warning rather than failure per [ADR-013](../decisions/0013-recognition-failures-are-warnings.md))
 - `MrzNameTruncated` — name field shows the truncation indicator per ICAO Doc 9303
 - `MrzPersonalNumberCheckDigitFiller` — the personal number check digit is the filler character `<`, which some issuing states use even when the personal number is populated
+- `MrzSexCharacterX` — sex field contains the character `X`. ICAO Doc 9303 2021 Eighth Edition lists the canonical MRZ sex characters as `M`, `F`, `<` only (Part 4 §4.2.2.2 and equivalents) — `X` is reserved for the VIZ per the spec's Notes p/f. Real-world practice has nonetheless adopted `X` in the MRZ for non-binary or unspecified documents. Surfaced as a warning rather than a validation failure so consumers can decide whether to treat the deviation as disqualifying
 
 ---
 
