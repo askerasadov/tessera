@@ -78,10 +78,10 @@ class MrzValidatorTest {
     fun specimen_passes_all_check_digits_and_sex_validation() {
         val result = MrzValidator.validate(specimenTd3())
         assertTrue(result.validationFailures.isEmpty(), "Expected no failures; got ${result.validationFailures}")
-        // Specimen uses fictional ICAO test code "UTO" (Utopia), intentionally not in the SDK starter set.
-        // Two MrzUnknownCountryCode warnings are expected (issuingState + nationality); no others.
-        val nonCountryWarnings = result.warnings.filterNot { it is MrzUnknownCountryCode }
-        assertTrue(nonCountryWarnings.isEmpty(), "Expected no warnings beyond MrzUnknownCountryCode; got $nonCountryWarnings")
+        // Specimen uses code "UTO" (Utopia) per ICAO §5 Part G — now recognized as the
+        // specimen code (category OTHER) after the country-code table expansion. Clean
+        // specimen produces no warnings of any kind.
+        assertTrue(result.warnings.isEmpty(), "Expected no warnings; got ${result.warnings}")
     }
 
     // --- Per-field check digit failures ---
@@ -960,14 +960,23 @@ class MrzValidatorTest {
 
     @Test
     fun both_country_code_fields_emit_independent_warnings_when_both_unrecognized() {
-        // Specimen has UTO for both fields by default; both warnings should fire.
-        val result = MrzValidator.validate(specimenTd3())
+        // Use a code that's not in any ISO 3166-1 alpha-3 nor any ICAO §5 part.
+        // XYZ is unassigned and a safe choice for testing the unrecognized-code path.
+        val td3 =
+            specimenTd3(
+                commonFields =
+                    specimenCommonFields().copy(
+                        issuingState = CountryCode("XYZ"),
+                        nationality = CountryCode("XYZ"),
+                    ),
+            )
+        val result = MrzValidator.validate(td3)
         val warnings = result.warnings.filterIsInstance<MrzUnknownCountryCode>()
         assertEquals(
             setOf(MrzField.ISSUING_STATE, MrzField.NATIONALITY),
             warnings.map { it.field }.toSet(),
         )
-        assertTrue(warnings.all { it.rawCode == "UTO" })
+        assertTrue(warnings.all { it.rawCode == "XYZ" })
     }
 
     @Test
