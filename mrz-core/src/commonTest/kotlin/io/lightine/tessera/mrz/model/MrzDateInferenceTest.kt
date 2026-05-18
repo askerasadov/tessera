@@ -289,4 +289,67 @@ class MrzDateInferenceTest {
         assertEquals(true, date.componentsFormCalendarDate)
         assertNull(date.componentsExceedBirthAgeLimit)
     }
+
+    // --- Partial-unknown-date components (filler `<` per Part 3 §4.8) ---
+    //
+    // ICAO Doc 9303 Part 3 §4.8: "If all or part of the date of birth is unknown, the relevant
+    // character positions shall be completed with filler characters (`<`)." These tests verify
+    // that filler-character components route to RAW_ONLY without crashing, alongside the
+    // existing non-digit-component coverage above. Behaviorally identical (toIntOrNull returns
+    // null for both `<<` and alphabetic input), but the spec specifically names the filler form.
+
+    @Test
+    fun parse_birth_returns_raw_only_for_unknown_year_filler() {
+        val date = MrzDate.parseBirth(rawYear = "<<", rawMonth = "08", rawDay = "06", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
+        assertNull(date.computedYear)
+        assertNull(date.computedDate)
+        assertNull(date.componentsFormCalendarDate)
+        assertNull(date.componentsExceedBirthAgeLimit)
+        assertEquals("<<", date.rawYear)
+    }
+
+    @Test
+    fun parse_birth_returns_raw_only_for_unknown_month_filler() {
+        val date = MrzDate.parseBirth(rawYear = "69", rawMonth = "<<", rawDay = "06", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
+        assertNull(date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_birth_returns_raw_only_for_unknown_day_filler() {
+        val date = MrzDate.parseBirth(rawYear = "69", rawMonth = "08", rawDay = "<<", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
+        assertNull(date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_birth_returns_raw_only_for_all_components_unknown_filler() {
+        val date = MrzDate.parseBirth(rawYear = "<<", rawMonth = "<<", rawDay = "<<", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
+        assertNull(date.componentsFormCalendarDate)
+        assertNull(date.componentsExceedBirthAgeLimit)
+    }
+
+    @Test
+    fun parse_expiry_returns_raw_only_for_unknown_year_filler() {
+        val date = MrzDate.parseExpiry(rawYear = "<<", rawMonth = "06", rawDay = "01", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
+        assertNull(date.computedYear)
+        assertNull(date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_expiry_returns_raw_only_for_unknown_month_filler() {
+        val date = MrzDate.parseExpiry(rawYear = "30", rawMonth = "<<", rawDay = "01", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
+        assertNull(date.componentsFormCalendarDate)
+    }
+
+    @Test
+    fun parse_expiry_returns_raw_only_for_all_components_unknown_filler() {
+        val date = MrzDate.parseExpiry(rawYear = "<<", rawMonth = "<<", rawDay = "<<", referenceTime = ref2026)
+        assertEquals(MrzDateInferenceMethod.RAW_ONLY, date.inferenceMethod)
+        assertNull(date.componentsFormCalendarDate)
+    }
 }

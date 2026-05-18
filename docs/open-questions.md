@@ -146,6 +146,16 @@ A state may have multiple transliteration conventions (different document types,
 
 **Resolution:** Revisit if real-world use cases require structured per-context profile selection.
 
+### Per-language conditionals in non-Latin transliteration
+
+ICAO Doc 9303 Part 3 Section 6 (Annex G) defines transliteration tables for Cyrillic (§6.B) and Arabic (§6.C) scripts in addition to Latin (§6.A). Several entries in those tables carry per-language conditionals — recommendations that differ depending on which language the name is in. As examples in §6.B: `Г` transliterates to `G` except for some languages where it transliterates to `H`; the first character of certain names follows a different rule in Ukrainian than in other Cyrillic-using languages; certain Serbian-language conventions diverge from the general Cyrillic rules. Arabic §6.C has similar per-language structure.
+
+The SDK's `TransliterationProfile` interface in `0.1.0` does not model a "primary language of the name being transliterated" parameter. The interface assumes one identifier per profile (typically a country code), which is sufficient for the Latin-only `0.1.0` coverage where Annex G's recommendations are uniform per codepoint. Extending to Cyrillic / Arabic raises the design question of how to surface language-conditional rules: an additional profile parameter, sub-profiles selected by language, a `LanguageHint` enum, or some other mechanism.
+
+**Source:** Pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F12) — surfaced during Phase 2 review of Annex G when comparing the Latin-only `buildIcaoLatinMappings` against the full Annex G scope.
+
+**Resolution:** Resolve when non-Latin script profiles ship (post-`0.1.0`, no scheduled release yet). The resolution must (a) name the mechanism the SDK uses to express language-conditional rules, (b) update the `TransliterationProfile` interface and `TransliterationProfileRegistry` if a new selection axis is required, (c) ensure the chosen mechanism is non-breaking to consumers who already use Latin-only profiles. Cross-reference from `transliteration.md` when the first non-Latin profile design begins.
+
 ### MIXED read method semantics
 
 The `ReadMethod.MIXED` enum value represents results that combine MRZ from camera with chip data from NFC. This becomes meaningful only when both reading paths are implemented (release 0.6.0 and later).
@@ -254,23 +264,25 @@ ICAO Doc 9303 (Machine Readable Travel Documents) is freely downloadable as PDFs
 
 **Embedding the spec's data tables verbatim is the open question.** ICAO's stated copyright position (per the site copyright notice) is restrictive: *"None of the materials provided on this web site may be used, reproduced or transmitted, in whole or in part, in any form or by any means... without permission in writing from ICAO."* Whether technical tables qualify as facts (uncopyrightable in many jurisdictions) versus creative compilations (copyrightable) is a legal question the project has not yet resolved. The conservative path for an Apache-2.0 open-source project is to avoid verbatim ICAO content until the question is settled.
 
-This is the umbrella entry for four related downstream questions on which it bears directly:
+This was the umbrella entry for four related downstream questions on which it bore directly:
 
-- **Sex value canonical set per ICAO Doc 9303** — answerable by reading Part 4 §4.1; no redistribution involved.
-- **Document type code table completeness** — full enumeration in Part 3 Section 4; redistribution is the question.
-- **Country code table completeness** — Part 3 Section 5 + ISO 3166-1 alpha-3; redistribution is the question. An alternative path exists: ISO 3166-1 codes are available via community-maintained datasets (e.g., the Debian `iso-codes` package, GPL-2.0+ licensed) where the data is widely treated as facts.
-- **Transliteration profile coverage completeness** — full tables in Part 3 Section 6 (Annex G), including Cyrillic, Greek, Arabic scripts the current starter set omits; redistribution is the question.
+- **Sex value canonical set per ICAO Doc 9303** — resolved by reading Part 4 §4.2.2.2 during the pre-tag audit; see the entry below.
+- **Document type code table completeness** — populated from Part 4 §4.4 (the harmonized P-prefix set) and Part 5 Appendix B (the `AC` Crew Member Certificate code); see the entry below.
+- **Country code table completeness** — populated from the published ISO 3166-1 alpha-3 list and ICAO Doc 9303 Part 3 §5 extensions; see the entry below.
+- **Transliteration profile coverage completeness** — Latin section (Annex G §6.A) populated to full coverage; non-Latin scripts (Cyrillic, Greek, Arabic) remain deferred to a future release; see the entry below.
 
 **Source:** Pre-`0.1.0`-tag recap (2026-05-18) — the audit established that the spec is accessible and corrected a prior framing in this document ("no authoritative copy on hand") that was incorrect.
 
-**Resolution:** Decide before public release (`1.0.0`). Possible paths, non-exclusive:
+**Resolution:** The project's operative posture from the pre-tag conformance pass is **cite-and-implement**: read Doc 9303, implement the technical content based on our understanding, cite section numbers in code KDoc and feature docs. This is path (4) above — facts-not-copyrightable, applied to the specific technical tables shipped in `0.1.0` (ISO 3166-1 alpha-3 list, the §5 extensions, the harmonized document codes, and the Annex G Latin transliteration table). The umbrella's original "stay deferred" framing was over-cautious; it served its purpose by forcing the conversation that produced the cite-and-implement posture.
 
-1. **Request permission from ICAO** for redistribution of the relevant tables in the SDK, citing Apache 2.0 license terms and the open-source distribution model.
-2. **Use alternative data sources** where permitted — for country codes, ISO 3166-1 alpha-3 via a permissively licensed community dataset; for sex characters and check digit math, derive from the spec text (algorithm, not data).
-3. **Defer to consumer-provided data** — keep the SDK's tables minimal and document the extension points so consumers can register additional codes / profiles from their own authoritative sources.
-4. **Rely on facts-not-copyrightable** — embed the data citing legal precedent, with legal counsel review before public release.
+What remains for `1.0.0`:
 
-Each downstream entry below cross-references this one for the licensing question; their own resolutions cover only the spec-reading side.
+1. **Legal review of the cite-and-implement posture before public release.** The specific scope: confirm that the technical data shipped in `0.1.0` (and any further bulk additions from Doc 9303 before `1.0.0`) is defensible under the project's Apache-2.0 license terms. Path (1) — requesting ICAO permission — remains available if review surfaces a concern.
+2. **Non-Latin transliteration coverage.** Cyrillic, Greek, and Arabic tables (Annex G §6.B, §6.C, §6.D) are not in `0.1.0`. When added, the same cite-and-implement posture applies. See the "Transliteration profile coverage completeness" entry below for the related design question on per-language conditionals.
+
+Paths (2) — alternative sources — and (3) — defer to consumer-provided data — are no longer in active consideration for the spec-derived data the SDK ships, though they remain options for future tables where licensing concerns become acute.
+
+Each downstream entry below records its own resolution against this posture.
 
 ### Specific document type implementations
 
@@ -282,43 +294,70 @@ Some document types are in scope but their specific format details require docum
 
 ### Sex value canonical set per ICAO Doc 9303
 
-`mrz-error-taxonomy.md` lists the valid sex characters as `M`, `F`, `<`, or `X`. The first validator slice uses this set as the allowed characters for `MrzInvalidSexValue`. ICAO Doc 9303 Part 4 §4.1 historically lists `M`, `F`, `<`; later guidance is reported to permit `X` for non-binary documents, and some issuing states use it. The canonical text is in Part 4 §4.1; the spec is freely downloadable from `icao.int` (see "External spec data licensing strategy" above) — confirming the canonical set is a reading task, not a licensing question.
+`mrz-error-taxonomy.md` lists the valid sex characters as `M`, `F`, `<`, or `X`. The first validator slice uses this set as the allowed characters for `MrzInvalidSexValue`. ICAO Doc 9303 Part 4 §4.1 historically lists `M`, `F`, `<`; later guidance is reported to permit `X` for non-binary documents, and some issuing states use it.
 
 **Source:** First validator implementation slice; aligns with `mrz-error-taxonomy.md` representative-examples list.
 
-**Resolution:** Read Part 4 §4.1 from the canonical Doc 9303 publication. If `X` is canonical, no code change is needed (the validator already permits it). If `X` is not canonical, narrow the validator's set, update `mrz-error-taxonomy.md`, and add a test for the change.
+**Resolution:** Resolved — Part 4 §4.2.2.2 (with equivalents in Parts 5/6/7) was read during the pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F16). The canonical MRZ sex characters per the 2021 Eighth Edition are `M`, `F`, `<` only — `X` is reserved for the VIZ per each part's Note p / Note f. Because real-world practice has adopted `X` in the MRZ for non-binary documents, the validator continues to accept `X` (Principle 1 — reader, not oracle) but now emits a new `MrzSexCharacterX` warning surfacing the spec deviation; `MrzInvalidSexValue` still fires for genuinely invalid characters. The new warning matches the existing `MrzPersonalNumberCheckDigitFiller` pattern for documented real-world deviations. Strict consumers who require literal spec conformance check `warnings.isEmpty()`. See the CHANGELOG `[Unreleased]` section.
 
 ### Document type code table completeness
 
-The `DocumentTypeCodeTable` in `mrz-core` ships with a deliberate starter set of well-known codes (`P`, `V`, `I`, `PP`, `PD`, `PS`) — not the complete enumeration committed to in `docs/features/lookup-tables.md` ("Initial Document Type Code Coverage"). The complete list is in ICAO Doc 9303 Part 3 Section 4, freely downloadable from `icao.int`; whether the full table can be embedded verbatim under the SDK's Apache-2.0 license is gated by the umbrella "External spec data licensing strategy" entry above.
-
-The architectural pattern (recognition-bearing value class living next to its lookup table per ADR-012) is in place; the data is intentionally partial. The starter set is documented as such in `DocumentTypeCodeTable.kt` (file-level comment), and the table is structured so that adding entries is a non-breaking change (per `lookup-tables.md` "Updating the Tables"). A test (`DocumentTypeCodeTableTest.by_category_residence_permit_returns_empty_list_in_starter_set`) locks the current coverage so any expansion surfaces explicitly.
+The `DocumentTypeCodeTable` in `mrz-core` originally shipped with a starter set of six codes (`P`, `V`, `I`, `PP`, `PD`, `PS`) — not the complete enumeration committed to in `docs/features/lookup-tables.md` ("Initial Document Type Code Coverage"). The full Part 4 §4.4 harmonized P-prefix set and Part 5 Appendix B `AC` code were absent.
 
 **Source:** First implementation slice for `DocumentType` (2026-05-04 session); aligns with `lookup-tables.md` coverage commitment.
 
-**Resolution:** Resolve the licensing question (see "External spec data licensing strategy" above), then populate the table from current ICAO Doc 9303 Part 3 Section 4 via the chosen path. Update tests to match the full set. Remove this entry once the table matches the spec.
+**Resolution:** Resolved — populated during the pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) findings F14, F15, F17). The table now contains: legacy single-character codes (`P`, `V`, `I`); the full Part 4 §4.4 harmonized P-prefix set (`PP`, `PE`, `PD`, `PO`, `PR`, `PT`, `PS`, `PL`, `PM`); and the Part 5 Appendix B `AC` Crew Member Certificate code. ~13 entries total. The `PS` displayName was corrected from "Service passport" (the original mislabeling) to "Stateless passport" per Part 4 §4.4. State-specific second-character TD1 / TD2 codes (where Parts 5/6 leave the second character to the issuing state's discretion — only the first character `A`, `C`, or `I` is fixed) are intentionally not enumerated; that open-endedness is documented in `DocumentTypeCodeTable.kt` and `lookup-tables.md`. See the CHANGELOG `[Unreleased]` section.
 
 ### Country code table completeness
 
-The `CountryCodeTable` in `mrz-core` ships with a deliberate starter set of five ISO 3166-1 alpha-3 state codes (`USA`, `GBR`, `DEU`, `FRA`, `JPN`) — not the complete enumeration committed to in `docs/features/lookup-tables.md` ("Initial Country Code Coverage"). The complete list combines all of ISO 3166-1 alpha-3 and ICAO Doc 9303 Part 3 Section 5 extensions (organizations, stateless persons, refugees, and historical states). Both source documents are accessible; whether the data can be embedded verbatim under the SDK's Apache-2.0 license is gated by the umbrella "External spec data licensing strategy" entry above. For the ISO 3166-1 portion specifically, community-maintained datasets (e.g., the Debian `iso-codes` package, GPL-2.0+ licensed) offer an alternative path noted in that entry.
-
-The architectural pattern (recognition-bearing value class living next to its lookup table per ADR-012) is in place; the data is intentionally partial. Same shape as the `DocumentTypeCodeTable` starter-set incompleteness above. The starter set is documented as such in `CountryCodeTable.kt` (file-level comment), and the table is structured so that adding entries is a non-breaking change (per `lookup-tables.md` "Updating the Tables"). Four tests (`CountryCodeTableTest.by_category_organization_returns_empty_list_in_starter_set` and the three sibling category-empty tests) lock the current coverage so any expansion surfaces explicitly. The `MrzUnknownCountryCode` warning will fire frequently in real-world inputs because of this until the table is populated.
+The `CountryCodeTable` in `mrz-core` originally shipped with a starter set of five ISO 3166-1 alpha-3 state codes (`USA`, `GBR`, `DEU`, `FRA`, `JPN`) — not the complete enumeration committed to in `docs/features/lookup-tables.md` ("Initial Country Code Coverage").
 
 **Source:** First implementation slice for `CountryCode` (2026-05-06 session); aligns with `lookup-tables.md` coverage commitment.
 
-**Resolution:** Resolve the licensing question (see "External spec data licensing strategy" above), then populate the table from ISO 3166-1 alpha-3 plus ICAO Doc 9303 Part 3 Section 5 extensions via the chosen path. Update tests to match the full set. Remove this entry once the table matches the spec.
+**Resolution:** Resolved — populated during the pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F7). The table now contains the full ISO 3166-1 alpha-3 list (~249 entries verified against the published ISO 3166/MA listing) plus the ICAO Doc 9303 Part 3 §5 extensions (Parts A through H — British nationality classes GBD/GBN/GBO/GBP/GBS, Kosovo `RKS`, European Union `EUE`, UN documents UNO/UNA/UNK, other international organizations XPO/XES/XMP/XOM/XDC, stateless and refugee codes XXA/XXB/XXC/XXX, the deprecated `ANT` and `NTZ` retained for documents still in circulation per Part F, the synthetic `UTO` specimen code per Part G, and ICAO's `IAO` code per Part H). ~272 entries total, each categorized per `CountryCodeCategory` (STATE / ORGANIZATION / STATELESS / REFUGEE / HISTORICAL / OTHER). See the CHANGELOG `[Unreleased]` section.
 
 ### Transliteration profile coverage completeness
 
-The transliteration profiles that ship in `mrz-core` (`IcaoDefaultTransliterationProfile` and `AzeTransliterationProfile`) draw their Latin-script mappings from a shared internal helper (`buildIcaoLatinMappings()`) that implements a deliberate starter subset of ICAO Doc 9303 Part 3 Section 6 (Annex G): the common Latin diacritics under the no-expansion convention plus the explicit multi-character transliterations the standard names (`Æ → AE`, `Œ → OE`, `ß → SS`, `Þ → TH`, `Ð → D`, `Ĳ → IJ`, and `Ə/ə` mapped per profile — `E` for ICAO, `A` for AZE). It is not the complete enumeration: ICAO Doc 9303 Part 3 Section 6 also includes mappings from Cyrillic, Greek, and Arabic scripts plus additional Latin variants the starter set does not cover.
+The transliteration profiles that ship in `mrz-core` (`IcaoDefaultTransliterationProfile` and `AzeTransliterationProfile`) draw their Latin-script mappings from a shared internal helper (`buildIcaoLatinMappings()`). The Latin portion of ICAO Doc 9303 Part 3 §6.A (Annex G) is now covered in full as of the pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F5, with the F2 schwa correction and F13 codepoint-disambiguation cross-check). Non-Latin scripts (Cyrillic §6.B, Arabic §6.C, and the Greek table) are not yet implemented.
 
-Per-profile overrides on top of the shared table are also starter sets. `AzeTransliterationProfile` overrides only the schwa pair (the load-bearing divergence the ADR-009 example calls out); if observed practice for this issuing state diverges in additional characters, the profile is updated accordingly.
+Per-profile overrides on top of the shared table are starter sets. `AzeTransliterationProfile` overrides only the schwa pair (the load-bearing divergence ADR-009 calls out); the no-expansion choices it inherits from the ICAO default for `Ö` / `Ü` are open to empirical revision — see the new "AZE profile `Ö` / `Ü` empirical verification" entry below for the gap and the dependency on real-document samples.
 
-Same shape as the `DocumentTypeCodeTable` and `CountryCodeTable` starter-set incompletenesses above. The starter sets are documented in each profile's file-level comment. Both profiles' fallback policy is to map any unmapped character to the filler `<`, so partial coverage is safe: a consumer who encounters a missing mapping gets a filler in the output rather than a runtime failure. Adding entries to the underlying table is a non-breaking change provided the existing mappings stay stable.
+Both profiles' fallback policy is to map any unmapped character to the filler `<`, so partial coverage of non-Latin scripts is safe: a consumer transliterating a Cyrillic or Arabic name through the current profiles gets filler output rather than a runtime failure. Adding entries to the underlying tables (or new per-script profiles) is a non-breaking change provided the existing mappings stay stable.
 
 **Source:** First implementation slice for `TransliterationProfile` (2026-05-17 session); aligns with `docs/features/transliteration.md` ("The ICAO Default Profile", "Country-Specific Profiles") and ADR-009.
 
-**Resolution:** Resolve the licensing question (see "External spec data licensing strategy" above), then populate the table from current ICAO Doc 9303 Part 3 Section 6 (Annex G) via the chosen path. Update tests to match the full set. Consider whether non-Latin scripts (Cyrillic, Greek, Arabic) belong in the default profile or in separate per-script profiles selected explicitly. Country-specific profile expansions (additional overrides or additional profiles for other issuing states) ship per consumer demand. Remove this entry once the shared table matches the canonical set and each shipped profile's overrides are confirmed against observed practice.
+**Resolution:** Latin section resolved (PR-4 of the conformance pass). Non-Latin scripts remain deferred to a post-`0.1.0` release. When they are added, three resolution points come up:
+
+1. **Per-language conditionals.** §6.B and §6.C use per-language exceptions that the `0.1.0` profile interface does not model — see the new "Per-language conditionals in non-Latin transliteration" entry under "Deferred to a Future Release" above.
+2. **Profile structure.** Decide whether non-Latin tables belong inside the existing default profile (treating Cyrillic / Arabic as universal) or in separate per-script profiles selected explicitly by the consumer (parallel to country-specific overrides).
+3. **AZE `Ö` / `Ü` empirical verification.** The current no-expansion inheritance is recorded as a working choice pending real-document evidence; see the entry below.
+
+Country-specific profile expansions for additional issuing states ship per consumer demand.
+
+### No publicly-findable regulation on MRZ transliteration for the issuing state coded AZE
+
+`AzeTransliterationProfile` ships a single override on top of the ICAO default: `Ə/ə → A` (the Latin schwa). Per the 2026-05-18 conformance audit's Phase 4 research, no specific regulation defining MRZ name transliteration for the issuing state coded `AZE` was located in publicly-searchable sources (searches against the state's publicly-available legal information system, cabinet-level resolutions, migration-service references, BGN/PCGN, and ECHR case-law sources). The override's justification therefore rests on three indirect grounds: BGN/PCGN's 2022 Note 1 recommending `Ä` as the schwa fallback when the letter cannot be reproduced, ICAO Annex G's no-expansion convention mapping `Ä → A`, and observed practice in AZE-issued passports.
+
+Two possibilities are equally consistent with the search outcome: (a) no specific regulation exists and the issuing authority follows ICAO + a local convention; (b) a regulation exists but is not in publicly-searchable form (local-language internal procedural document, restricted-access database). The project's posture does not depend on resolving this — the profile is documented as country-specific observed practice grounded in the BGN/PCGN + ICAO chain, not as an implementation of any specific statute of the AZE-coded issuing state.
+
+**Source:** Pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F23) — Phase 4 AZE-profile law research outcome.
+
+**Resolution:** Revisit if a specific regulatory text surfaces (via direct knowledge, a future search yielding new sources, or empirical evidence that observed practice diverges from the BGN/PCGN + ICAO chain). If found, cite the regulation in `AzeTransliterationProfile` KDoc and [ADR-009](decisions/0009-transliteration-profiles.md) and reframe the rationale accordingly. No `0.1.0` action required.
+
+### AZE profile `Ö` / `Ü` empirical verification
+
+ICAO Annex G recommends multiple permitted transliterations for two of the letters in the Roman alphabet of the issuing state coded `AZE`:
+
+- `Ö ö` → `OE` or `O` (state picks)
+- `Ü ü` → `UE` or `UXX` or `U` (state picks)
+
+The other AZE-relevant Latin letters (`Ç`, `Ğ`, `İ`, `ı`, `Ş`) have unambiguous single-character Annex G recommendations. `AzeTransliterationProfile` currently inherits the `IcaoDefaultTransliterationProfile`'s no-expansion choices (`Ö → O`, `Ü → U`) on the grounds that (a) no-expansion is the project's documented convention across Latin diacritics, (b) the schwa-chain reasoning (`Ə → Ä → A`) also produces a no-expansion result, (c) no observed-practice data has been gathered for these two letters specifically. The inheritance is the parsimonious choice given the absence of evidence to the contrary.
+
+The empirical verification is not yet possible — no AZE-issued passport specimen containing a name with `Ö` or `Ü` is on hand. If such a specimen becomes available and shows that the issuing authority uses `OE` / `UE` instead, two additional profile overrides would be added (non-breaking under [ADR-007](decisions/0007-strict-backward-compat-from-0x.md): adding overrides changes profile output for those characters, but the profile's identifier and contract are preserved).
+
+**Source:** Pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F25) — Phase 4 AZE-profile law research outcome.
+
+**Resolution:** Confirm or correct the no-expansion choice when an AZE-issued passport specimen with `Ö` or `Ü` becomes available. Either confirm current behavior (no change) or add two overrides to `AzeTransliterationProfile` and update its KDoc to cite the empirical source. The question is recorded so the gap is not forgotten between releases.
 
 ### Driver's license format choice (mDoc vs proprietary)
 

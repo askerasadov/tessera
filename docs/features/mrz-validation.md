@@ -183,6 +183,10 @@ Several validators check whether dates fall within plausible ranges. The convent
 
 These thresholds are intended to be configurable through the validator's options, with the documented defaults applied when no configuration is provided. The configuration surface itself is deferred (see `docs/open-questions.md` "Validator options (configurable thresholds)"); the current slice ships the thresholds as constants matching the documented defaults.
 
+### Century Inference Is the SDK's Heuristic
+
+ICAO Doc 9303 Part 3 §4.8 mandates the YYMMDD format for MRZ date fields but does not mandate any inference rule for which century a two-digit year belongs to. The sliding-window approach the parser uses — `SLIDING_WINDOW_BIRTH` (candidate must be in the past relative to the reference time and within 130 years), `SLIDING_WINDOW_EXPIRY` (10 years past to 50 years future relative to the reference time), and the resulting `RAW_ONLY` fallback when no candidate century fits — is entirely the SDK's design decision per [ADR-008](../decisions/0008-date-inference-hybrid.md). The thresholds above (`MAX_PLAUSIBLE_AGE_YEARS = 130`, `EXPIRY_PAST_WINDOW_YEARS = 10`, `EXPIRY_FUTURE_WINDOW_YEARS = 50`) are project choices, not specification numbers. Consumers who need different windowing semantics inspect the raw two-digit components on `MrzDate` and apply their own rule (Principle 1 — reader, not oracle: the SDK exposes both raw and computed values so consumers can decide which to use).
+
 ---
 
 ## What Validation Does Not Do
