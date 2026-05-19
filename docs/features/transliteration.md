@@ -69,9 +69,11 @@ The actual class names, method names, and registration mechanism are decided at 
 
 A single global transliteration table would be simpler to implement but cannot capture real-world practice. The same character is transliterated differently by different issuing states.
 
-The Latin schwa character (`Ə` / `ə`, Unicode U+018F / U+0259) is the clearest example. ICAO Doc 9303 Part 3 Section 6 recommends transliterating it to `E`. However, at least one issuing state where this character appears regularly in names uses `A` instead — applying the closest phonetic Latin equivalent in their official Latin alphabet rather than the schwa-as-vowel convention. Documents issued by that state consistently use `A`, and a system that produced `E` from the same input would produce MRZs that do not match the documents the state actually issues.
+The Latin schwa character (`Ə` / `ə`, Unicode U+018F / U+0259) is the clearest example. Schwa is **not in ICAO Doc 9303 Part 3 Annex G at all** — Annex G's coverage ends at U+017D plus U+1E9E, and schwa (U+018F / U+0259) lives in Latin Extended-B beyond that. So ICAO provides no default for schwa, and the SDK's ICAO default profile falls schwa through to the filler character `<`. Issuing states that use schwa regularly in names define their own convention. The state with ISO 3166-1 alpha-3 code `AZE`, for example, encodes schwa as `A` (derived through the BGN/PCGN 1993 Agreement's `Ə → Ä` fallback note and ICAO Annex G's no-expansion `Ä → A` rule — see [ADR-009](../decisions/0009-transliteration-profiles.md) for the full chain).
 
-Other examples exist. German conventions transliterate `ä` as `AE`; Scandinavian conventions use `Ä → AE` or `Ö → OE`. Some states drop diacritics entirely (`ä → A`, `ö → O`). The "correct" transliteration depends on which state is issuing the document, not on the character alone.
+The same state's profile diverges from Annex G defaults on several other letters too — `Ç → CH`, `Ğ → GH`, `Ş → SH`, plus a set of letters already in the MRZ alphabet that get encoded as English-phonetic-equivalent digraphs (`X → KH`, `C → J`, `J → ZH`, `Q → G`). This systematic phonetic Anglicization pattern is itself derivable from a primary source (the [ALA-LC romanization table for the AZE Latin alphabet](https://www.loc.gov/catdir/cpso/romanization/azerbaij.pdf) with diacritics stripped to ASCII), and matches observed practice in real AZE-issued documents. The point: even when Annex G has a recommendation, the issuing state's convention may diverge from it, and the SDK has to capture that divergence somewhere.
+
+Other examples exist beyond AZE. German conventions transliterate `ä` as `AE`; Scandinavian conventions use `Ä → AE` or `Ö → OE`. Some states drop diacritics entirely (`ä → A`, `ö → O`). The "correct" transliteration depends on which state is issuing the document, not on the character alone.
 
 The profile architecture honors this reality: each profile is documented as the convention used by a specific context. The consumer chooses the profile that applies (Principle 1 — Reader, not oracle: the SDK does not guess which profile to use; the consumer specifies).
 
@@ -96,10 +98,11 @@ The generator never silently applies a default profile based on inferred locale,
 
 ## The ICAO Default Profile
 
-The ICAO default profile implements the recommendations in ICAO Doc 9303 Part 3 Section 6. It includes:
+The ICAO default profile implements the recommendations in ICAO Doc 9303 Part 3 Section 6 — specifically §6.A (Annex G, the Latin section). Non-Latin scripts (Cyrillic §6.B, Arabic §6.C) are not in the initial release. It includes:
 
 - Removal of diacritics from Latin letters (e.g., `ç → C`, `ñ → N`, `é → E`, `ü → U` in the no-expansion convention)
 - The recommended transliterations for specific characters (e.g., `Æ → AE`, `ß → SS`, `Œ → OE`)
+- The §4.6 punctuation rules: apostrophes and other Western punctuation are omitted with no filler character inserted (per the spec's "shall be omitted" wording); hyphens convert to the filler character `<`
 - Conversion of any remaining unsupported character to the filler character `<` with appropriate documentation that this is a fallback
 
 This profile is applied when the consumer specifies it explicitly. It is not applied automatically; even when no other profile is more specific, the consumer must request it.
