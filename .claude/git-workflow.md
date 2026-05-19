@@ -58,7 +58,13 @@ When `0.1.0` is tagged, the `[Unreleased]` section becomes `[0.1.0] - YYYY-MM-DD
 
 The exact grep command and the user-curated list of terms live in memory `feedback_private_content_scan.md` — not duplicated here, so this file does not itself become a hit when the scan runs over the repo. Look up the memory entry and run the command from there.
 
-Expected output: nothing, or only the documented `InvalidData` false positive in `docs/features/mrz-error-taxonomy.md`. Anything else is a real leak — stop and flag.
+Expected output: nothing, or only the documented false positives. Anything else is a real leak — stop and flag.
+
+The documented false positives:
+
+1. **`InvalidData`** in `docs/features/mrz-error-taxonomy.md` — substring `idda` matches the scan but the word is a generic English term, not private context.
+2. **`"Azerbaijan"`** in `mrz-core/src/commonMain/.../recognition/CountryCodeTable.kt` — the ISO 3166-1 alpha-3 English short name, standard data identifier treated identically to USA / GBR / DEU / etc. The convention is about prose / comments / docs, not standard data identifiers.
+3. **`azerbaij.pdf`** in URL anchors pointing to the Library of Congress ALA-LC romanization document (`https://www.loc.gov/catdir/cpso/romanization/azerbaij.pdf`) — primary citation source for the AZE transliteration profile. The filename is what LoC chose; the URL is a citation, not authored prose. Used in `docs/decisions/0009-transliteration-profiles.md`, `docs/features/transliteration.md`, `docs/open-questions.md`.
 
 ### 5. Run verification
 
@@ -170,7 +176,7 @@ Or let Claude Code clean up automatically when the next session creates a new wo
 - **`gh auth setup-git`** is the bridge between Git's HTTPS push and `gh`'s credentials. Without it, `git push` will hit "could not read Username for 'https://github.com'" even when `gh auth status` shows logged in.
 - **PR template** at `.github/pull_request_template.md` auto-applies to web-UI PR creation. For CLI creation, the body is provided explicitly via `--body` — paste the template sections in.
 - **CHANGELOG-on-every-PR** is the discipline. The PR template has a checkbox; future sessions should default to updating the changelog rather than treating it as optional.
-- **Private-content scan** is mandatory before every push to a public-or-soon-to-be-public remote. The grep terms are user-curated and live in memory `feedback_private_content_scan.md`. The single documented false positive (`InvalidData` in `mrz-error-taxonomy.md`) does not count as a leak.
+- **Private-content scan** is mandatory before every push to a public-or-soon-to-be-public remote. The grep terms are user-curated and live in memory `feedback_private_content_scan.md`. The documented false positives are listed under "Run the private-content scan" above (`InvalidData` in `mrz-error-taxonomy.md`; `"Azerbaijan"` as ISO 3166-1 data in `CountryCodeTable.kt`; the `azerbaij.pdf` URL filename in ALA-LC citation links). None count as leaks.
 
 ---
 
