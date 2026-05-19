@@ -5,40 +5,53 @@ import io.lightine.tessera.mrz.parsing.isMrzAlphabetCharacter
 /**
  * Transliteration profile for the issuing state with ISO 3166-1 alpha-3 code `"AZE"`.
  *
- * The mapping inherits the ICAO Doc 9303 Part 3 §6.A Latin recommendations (no-expansion
- * convention) for every covered character. The load-bearing override is the Latin schwa
- * `Ə`/`ə` (U+018F / U+0259), which maps to `A`.
+ * Diverges systematically from the ICAO Doc 9303 Annex G defaults via **phonetic
+ * Anglicization** — letters whose phonetic value in the issuing state's Latin alphabet
+ * differs from common Latin practice are mapped to the English-equivalent character
+ * sequence in the MRZ. The eight overrides (each applied identically to upper and lower
+ * case):
  *
- * **Why the schwa maps to `A`.** Two standards-grounded reasons converge on the same
- * answer:
+ * | Source | MRZ | Source's phonetic value (rough) |
+ * |---|---|---|
+ * | `Ə` / `ə` | `A` | mid-central vowel (schwa); ALA-LC `ă` strips to `A` |
+ * | `Ç` / `ç` | `CH` | English "ch" (/tʃ/) |
+ * | `Ğ` / `ğ` | `GH` | voiced velar/uvular fricative (/ɣ/), closest to "gh" |
+ * | `Ş` / `ş` | `SH` | English "sh" (/ʃ/) |
+ * | `X` / `x` | `KH` | velar fricative (/x/), like German "ach-laut" |
+ * | `C` / `c` | `J` | English "j" (/dʒ/) |
+ * | `J` / `j` | `ZH` | English "zh" (/ʒ/) |
+ * | `Q` / `q` | `G` | voiced velar stop (/g/), like English "g" |
  *
- * 1. **BGN/PCGN 1993 Agreement** (UK government romanization system for the AZE
- *    alphabet, 2022 revision) Note 1: *"The special letter Ə, ə known as schwa, should be reproduced
- *    in that form whenever encountered. In those instances when it cannot be reproduced,
- *    however, the letter Ä ä may be substituted for it."* In the MRZ alphabet, schwa
- *    cannot be reproduced.
- * 2. **ICAO Doc 9303 Part 3 Annex G** maps `Ä → A` under the no-expansion convention.
+ * **Primary citation.** The overrides match the ALA-LC romanization table for the AZE
+ * Latin alphabet with diacritics stripped to ASCII — ALA-LC produces `ch`, `gh`, `kh`,
+ * `sh`, `ġ` (for Q), `ă` (for Ə), `ı̐` (for I), `i` (for İ), `ȯ` (for Ö), `u̇` (for Ü).
+ * After the stripping step the MRZ alphabet requires, the result matches observed practice
+ * in AZE-issued passports and ID cards. The two-step chain (ALA-LC romanize → strip
+ * diacritics) generalizes the schwa pattern ADR-009 originally cited (BGN/PCGN `Ə → Ä`
+ * fallback, ICAO no-expansion `Ä → A`); this profile applies the same chain across the
+ * full AZE alphabet, not just the schwa case.
  *
- * Chained: `Ə (schwa) → Ä (BGN/PCGN fallback) → A (ICAO Annex G no-expansion)`. This
- * matches observed practice in passports issued under code AZE. Schwa is not in ICAO
- * Annex G's table (which ends at U+017D plus U+1E9E, outside the Latin Extended-B range
- * where schwa lives), so the override is necessary regardless.
+ * **Empirical confirmation.** Sample documents (passport + national ID cards) verified
+ * the rules during the pre-`0.1.0` audit (2026-05-19) for `Ç`, `Ğ`, `İ`, `I`, `Ə`.
+ * `X → KH`, `Ş → SH`, `Q → G`, `J → ZH`, `C → J` rest on a fluent speaker's testimony
+ * plus the ALA-LC chain; the deferred sub-question on the empirical basis of `J → ZH`
+ * and `C → J` is tracked in `docs/open-questions.md`.
  *
- * For other letters in the AZE Latin alphabet (`Ç`, `Ğ`, `İ`, `ı`, `Ş` — single mapping
- * in Annex G; `Ö`, `Ü` — Annex G permits both no-expansion and expanded variants, this
- * profile uses no-expansion for consistency), the ICAO defaults from [`buildIcaoLatinMappings`]
- * are inherited without further override.
+ * **Inherits from ICAO Annex G without override** (where the default is correct for AZE):
+ * `İ → I`, `I → I`, `Ö → O`, `Ü → U`, plus every letter not listed in the table above.
+ *
+ * **Implementation detail.** Several overrides (`C`, `J`, `Q`, `X` and their lowercase
+ * forms) target characters that are already in the MRZ alphabet. This profile's
+ * `toMrzAlphabet` consults the override map **before** the MRZ-alphabet passthrough check
+ * so these overrides take effect — different from [IcaoDefaultTransliterationProfile],
+ * whose conservative defaults never override an MRZ-alphabet letter and which therefore
+ * keeps the original lookup order.
  *
  * Unmapped non-MRZ characters fall back to the filler `<`, so this profile always returns
- * [`TransliterationResult.Success`][TransliterationResult.Success].
+ * [TransliterationResult.Success].
  *
- * **Deliberate starter set.** The `Ö`/`Ü` no-expansion choice is empirically unverified
- * against a sample of AZE-issued passports; if observed practice for this issuing state
- * diverges (e.g., `Ö → OE` instead of `Ö → O`), additional overrides ship in a future
- * release. Tracked in `docs/open-questions.md` under "AZE profile `Ö`/`Ü` empirical
- * verification" and "Country-specific profile coverage completeness". Per the project's
- * vendor-neutral framing, the country is identified by its ISO code in code and never
- * named in prose.
+ * Per the project's vendor-neutral framing, the country is identified by its ISO code in
+ * code and never named in prose.
  */
 public object AzeTransliterationProfile : TransliterationProfile {
     public const val IDENTIFIER: String = "AZE"
@@ -49,16 +62,41 @@ public object AzeTransliterationProfile : TransliterationProfile {
 
     private val mappings: Map<Char, String> =
         buildIcaoLatinMappings().apply {
+            // Schwa (Ə U+018F / ə U+0259) — outside Annex G; mapped here via
+            // BGN/PCGN fallback + ICAO no-expansion chain (Ə → Ä → A). See ADR-009.
             put('Ə', "A")
             put('ə', "A")
+
+            // AZE-specific phonetic Anglicization overrides. Each pair maps the
+            // source letter (in both cases) to the English digraph that matches its
+            // phonetic value. The ICAO default would either (a) leave the letter
+            // alone (`C`, `J`, `Q`, `X` — already in the MRZ alphabet) or
+            // (b) collapse it under no-expansion (`Ç → C`, `Ğ → G`, `Ş → S`); both
+            // would lose the source phoneme.
+            put('Ç', "CH")
+            put('ç', "CH")
+            put('Ğ', "GH")
+            put('ğ', "GH")
+            put('Ş', "SH")
+            put('ş', "SH")
+            put('X', "KH")
+            put('x', "KH")
+            put('C', "J")
+            put('c', "J")
+            put('J', "ZH")
+            put('j', "ZH")
+            put('Q', "G")
+            put('q', "G")
         }
 
     public override fun toMrzAlphabet(normalizedInput: String): TransliterationResult {
         val output = StringBuilder(normalizedInput.length)
         for (char in normalizedInput) {
+            val mapped = mappings[char]
             when {
+                mapped != null -> output.append(mapped)
                 isMrzAlphabetCharacter(char) -> output.append(char)
-                else -> output.append(mappings[char] ?: FILLER.toString())
+                else -> output.append(FILLER)
             }
         }
         return TransliterationResult.Success(output.toString())
