@@ -298,7 +298,7 @@ Some document types are in scope but their specific format details require docum
 
 **Source:** First validator implementation slice; aligns with `mrz-error-taxonomy.md` representative-examples list.
 
-**Resolution:** Resolved — Part 4 §4.2.2.2 (with equivalents in Parts 5/6/7) was read during the pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F16). The canonical MRZ sex characters per the 2021 Eighth Edition are `M`, `F`, `<` only — `X` is reserved for the VIZ per each part's Note p / Note f. Because real-world practice has adopted `X` in the MRZ for non-binary documents, the validator continues to accept `X` (Principle 1 — reader, not oracle) but now emits a new `MrzSexCharacterX` warning surfacing the spec deviation; `MrzInvalidSexValue` still fires for genuinely invalid characters. The new warning matches the existing `MrzPersonalNumberCheckDigitFiller` pattern for documented real-world deviations. Strict consumers who require literal spec conformance check `warnings.isEmpty()`. See the CHANGELOG `[Unreleased]` section.
+**Resolution:** Resolved — Part 4 §4.2.2.2 (with equivalents in Parts 5/6/7) was read during the pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F16). The canonical MRZ sex characters per the 2021 Eighth Edition are `M`, `F`, `<` only — `X` is reserved for the VIZ per each part's Note p / Note f. Because real-world practice has adopted `X` in the MRZ for non-binary documents, the validator continues to accept `X` (Principle 1 — reader, not oracle) but now emits a new `MrzSexCharacterX` warning surfacing the spec deviation; `MrzInvalidSexValue` still fires for genuinely invalid characters. The new warning matches the existing `MrzPersonalNumberCheckDigitFiller` pattern for documented real-world deviations. Strict consumers who require literal spec conformance check `warnings.isEmpty()`. See the CHANGELOG `[0.1.0]` section.
 
 ### Document type code table completeness
 
@@ -306,7 +306,7 @@ The `DocumentTypeCodeTable` in `mrz-core` originally shipped with a starter set 
 
 **Source:** First implementation slice for `DocumentType` (2026-05-04 session); aligns with `lookup-tables.md` coverage commitment.
 
-**Resolution:** Resolved — populated during the pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) findings F14, F15, F17). The table now contains: legacy single-character codes (`P`, `V`, `I`); the full Part 4 §4.4 harmonized P-prefix set (`PP`, `PE`, `PD`, `PO`, `PR`, `PT`, `PS`, `PL`, `PM`); and the Part 5 Appendix B `AC` Crew Member Certificate code. ~13 entries total. The `PS` displayName was corrected from "Service passport" (the original mislabeling) to "Stateless passport" per Part 4 §4.4. State-specific second-character TD1 / TD2 codes (where Parts 5/6 leave the second character to the issuing state's discretion — only the first character `A`, `C`, or `I` is fixed) are intentionally not enumerated; that open-endedness is documented in `DocumentTypeCodeTable.kt` and `lookup-tables.md`. See the CHANGELOG `[Unreleased]` section.
+**Resolution:** Resolved — populated during the pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) findings F14, F15, F17). The table now contains: legacy single-character codes (`P`, `V`, `I`); the full Part 4 §4.4 harmonized P-prefix set (`PP`, `PE`, `PD`, `PO`, `PR`, `PT`, `PS`, `PL`, `PM`); and the Part 5 Appendix B `AC` Crew Member Certificate code. ~13 entries total. The `PS` displayName was corrected from "Service passport" (the original mislabeling) to "Stateless passport" per Part 4 §4.4. State-specific second-character TD1 / TD2 codes (where Parts 5/6 leave the second character to the issuing state's discretion — only the first character `A`, `C`, or `I` is fixed) are intentionally not enumerated; that open-endedness is documented in `DocumentTypeCodeTable.kt` and `lookup-tables.md`. See the CHANGELOG `[0.1.0]` section.
 
 ### Country code table completeness
 
@@ -314,13 +314,13 @@ The `CountryCodeTable` in `mrz-core` originally shipped with a starter set of fi
 
 **Source:** First implementation slice for `CountryCode` (2026-05-06 session); aligns with `lookup-tables.md` coverage commitment.
 
-**Resolution:** Resolved — populated during the pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F7). The table now contains the full ISO 3166-1 alpha-3 list (~249 entries verified against the published ISO 3166/MA listing) plus the ICAO Doc 9303 Part 3 §5 extensions (Parts A through H — British nationality classes GBD/GBN/GBO/GBP/GBS, Kosovo `RKS`, European Union `EUE`, UN documents UNO/UNA/UNK, other international organizations XPO/XES/XMP/XOM/XDC, stateless and refugee codes XXA/XXB/XXC/XXX, the deprecated `ANT` and `NTZ` retained for documents still in circulation per Part F, the synthetic `UTO` specimen code per Part G, and ICAO's `IAO` code per Part H). ~272 entries total, each categorized per `CountryCodeCategory` (STATE / ORGANIZATION / STATELESS / REFUGEE / HISTORICAL / OTHER). See the CHANGELOG `[Unreleased]` section.
+**Resolution:** Resolved — populated during the pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F7). The table now contains the full ISO 3166-1 alpha-3 list (~249 entries verified against the published ISO 3166/MA listing) plus the ICAO Doc 9303 Part 3 §5 extensions (Parts A through H — British nationality classes GBD/GBN/GBO/GBP/GBS, Kosovo `RKS`, European Union `EUE`, UN documents UNO/UNA/UNK, other international organizations XPO/XES/XMP/XOM/XDC, stateless and refugee codes XXA/XXB/XXC/XXX, the deprecated `ANT` and `NTZ` retained for documents still in circulation per Part F, the synthetic `UTO` specimen code per Part G, and ICAO's `IAO` code per Part H). ~272 entries total, each categorized per `CountryCodeCategory` (STATE / ORGANIZATION / STATELESS / REFUGEE / HISTORICAL / OTHER). See the CHANGELOG `[0.1.0]` section.
 
 ### Transliteration profile coverage completeness
 
 The transliteration profiles that ship in `mrz-core` (`IcaoDefaultTransliterationProfile` and `AzeTransliterationProfile`) draw their Latin-script mappings from a shared internal helper (`buildIcaoLatinMappings()`). The Latin portion of ICAO Doc 9303 Part 3 §6.A (Annex G) is now covered in full as of the pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F5, with the F2 schwa correction and F13 codepoint-disambiguation cross-check). Non-Latin scripts (Cyrillic §6.B, Arabic §6.C, and the Greek table) are not yet implemented.
 
-Per-profile overrides on top of the shared table are starter sets. `AzeTransliterationProfile` overrides only the schwa pair (the load-bearing divergence ADR-009 calls out); the no-expansion choices it inherits from the ICAO default for `Ö` / `Ü` are open to empirical revision — see the new "AZE profile `Ö` / `Ü` empirical verification" entry below for the gap and the dependency on real-document samples.
+Per-profile overrides on top of the shared table evolved in two passes. **At 2026-05-18 (PR #43):** `AzeTransliterationProfile` overrode only the schwa pair (the load-bearing divergence ADR-009 originally called out), inheriting Annex G no-expansion for everything else. **At 2026-05-19 (pre-tag empirical pass):** AZE practice was verified against sample documents + fluent-speaker testimony + the [ALA-LC romanization table](https://www.loc.gov/catdir/cpso/romanization/azerbaij.pdf), which revealed a systematic phonetic Anglicization pattern. `AzeTransliterationProfile` now ships 8 overrides (`Ə/ə → A`, `Ç/ç → CH`, `Ğ/ğ → GH`, `Ş/ş → SH`, `X/x → KH`, `C/c → J`, `J/j → ZH`, `Q/q → G`). The four overrides on letters already in the MRZ alphabet (`C`, `J`, `Q`, `X`) required the profile to consult its override map before the MRZ-alphabet passthrough check — see ADR-009 "Implementation Note: Override Lookup Order".
 
 Both profiles' fallback policy is to map any unmapped character to the filler `<`, so partial coverage of non-Latin scripts is safe: a consumer transliterating a Cyrillic or Arabic name through the current profiles gets filler output rather than a runtime failure. Adding entries to the underlying tables (or new per-script profiles) is a non-breaking change provided the existing mappings stay stable.
 
@@ -336,13 +336,19 @@ Country-specific profile expansions for additional issuing states ship per consu
 
 ### No publicly-findable regulation on MRZ transliteration for the issuing state coded AZE
 
-`AzeTransliterationProfile` ships a single override on top of the ICAO default: `Ə/ə → A` (the Latin schwa). Per the 2026-05-18 conformance audit's Phase 4 research, no specific regulation defining MRZ name transliteration for the issuing state coded `AZE` was located in publicly-searchable sources (searches against the state's publicly-available legal information system, cabinet-level resolutions, migration-service references, BGN/PCGN, and ECHR case-law sources). The override's justification therefore rests on three indirect grounds: BGN/PCGN's 2022 Note 1 recommending `Ä` as the schwa fallback when the letter cannot be reproduced, ICAO Annex G's no-expansion convention mapping `Ä → A`, and observed practice in AZE-issued passports.
+Per the 2026-05-18 conformance audit's Phase 4 research, no specific regulation defining MRZ name transliteration for the issuing state coded `AZE` was located in publicly-searchable sources (searches against the state's publicly-available legal information system, cabinet-level resolutions, migration-service references, BGN/PCGN, and ECHR case-law sources). The original `AzeTransliterationProfile` (single schwa override, `Ə/ə → A`) was justified via the BGN/PCGN + ICAO chain plus observed practice.
 
-Two possibilities are equally consistent with the search outcome: (a) no specific regulation exists and the issuing authority follows ICAO + a local convention; (b) a regulation exists but is not in publicly-searchable form (local-language internal procedural document, restricted-access database). The project's posture does not depend on resolving this — the profile is documented as country-specific observed practice grounded in the BGN/PCGN + ICAO chain, not as an implementation of any specific statute of the AZE-coded issuing state.
+The 2026-05-19 pre-tag pass extended the profile to 8 systematic overrides covering AZE's phonetic Anglicization pattern (see [ADR-009](decisions/0009-transliteration-profiles.md) for the full reframe). The citable basis is now stronger than at conformance time:
 
-**Source:** Pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F23) — Phase 4 AZE-profile law research outcome.
+- **Primary source: ALA-LC romanization table for the AZE Latin alphabet** (US Library of Congress / British Library standard). ALA-LC produces `ch`, `gh`, `kh`, `sh`, `ġ` (for Q), `ă` (for Ə), `ı̐` (for I), `i` (for İ), `ȯ` (for Ö), `u̇` (for Ü). When the MRZ alphabet strips ALA-LC's diacritics to ASCII, the result matches every observed AZE encoding (for the letters ALA-LC covers).
+- **Secondary source: empirical sample documents** (passport + 2 ID cards) verified the rules for `Ç`, `Ğ`, `İ`, `I`, `Ə` directly.
+- **Tertiary source: fluent speaker's testimony with worked examples** verified `X → KH`, `Ş → SH`, `Q → G`, `J → ZH`, `C → J`.
 
-**Resolution:** Revisit if a specific regulatory text surfaces (via direct knowledge, a future search yielding new sources, or empirical evidence that observed practice diverges from the BGN/PCGN + ICAO chain). If found, cite the regulation in `AzeTransliterationProfile` KDoc and [ADR-009](decisions/0009-transliteration-profiles.md) and reframe the rationale accordingly. No `0.1.0` action required.
+A specific government regulation is still not in publicly-searchable form. Two possibilities remain equally consistent with the search outcome: (a) no specific regulation exists and the issuing authority follows ICAO + a local convention captured by ALA-LC; (b) a regulation exists but is not publicly accessible. The project's posture no longer depends on resolving this — the profile rests on ALA-LC plus the corroborating evidence.
+
+**Source:** Pre-`0.1.0`-tag conformance audit (2026-05-18, finding F23); 2026-05-19 empirical update.
+
+**Resolution:** Partially resolved. The substantive question (what does AZE encode in the MRZ?) is answered by the ALA-LC chain + corroborating evidence. The narrower question (is there a citable national regulation?) is open; revisit if such a regulation surfaces and update `AzeTransliterationProfile` KDoc + [ADR-009](decisions/0009-transliteration-profiles.md) accordingly. No `0.1.0` action required.
 
 ### AZE profile `Ö` / `Ü` empirical verification
 
@@ -351,13 +357,25 @@ ICAO Annex G recommends multiple permitted transliterations for two of the lette
 - `Ö ö` → `OE` or `O` (state picks)
 - `Ü ü` → `UE` or `UXX` or `U` (state picks)
 
-The other AZE-relevant Latin letters (`Ç`, `Ğ`, `İ`, `ı`, `Ş`) have unambiguous single-character Annex G recommendations. `AzeTransliterationProfile` currently inherits the `IcaoDefaultTransliterationProfile`'s no-expansion choices (`Ö → O`, `Ü → U`) on the grounds that (a) no-expansion is the project's documented convention across Latin diacritics, (b) the schwa-chain reasoning (`Ə → Ä → A`) also produces a no-expansion result, (c) no observed-practice data has been gathered for these two letters specifically. The inheritance is the parsimonious choice given the absence of evidence to the contrary.
-
-The empirical verification is not yet possible — no AZE-issued passport specimen containing a name with `Ö` or `Ü` is on hand. If such a specimen becomes available and shows that the issuing authority uses `OE` / `UE` instead, two additional profile overrides would be added (non-breaking under [ADR-007](decisions/0007-strict-backward-compat-from-0x.md): adding overrides changes profile output for those characters, but the profile's identifier and contract are preserved).
+The other AZE-relevant Latin letters (`Ç`, `Ğ`, `İ`, `ı`, `Ş`) had unambiguous Annex G recommendations under no-expansion at conformance time. `AzeTransliterationProfile` originally inherited the `IcaoDefaultTransliterationProfile`'s no-expansion choices (`Ö → O`, `Ü → U`) parsimoniously, given the absence of evidence to the contrary.
 
 **Source:** Pre-`0.1.0`-tag conformance audit (2026-05-18, [`CONFORMANCE-NOTES-2026-05-18.md`](../CONFORMANCE-NOTES-2026-05-18.md) finding F25) — Phase 4 AZE-profile law research outcome.
 
-**Resolution:** Confirm or correct the no-expansion choice when an AZE-issued passport specimen with `Ö` or `Ü` becomes available. Either confirm current behavior (no change) or add two overrides to `AzeTransliterationProfile` and update its KDoc to cite the empirical source. The question is recorded so the gap is not forgotten between releases.
+**Resolution:** Resolved (2026-05-19). A fluent speaker's confirmation grounded in observed practice and the [ALA-LC romanization table](https://www.loc.gov/catdir/cpso/romanization/azerbaij.pdf) (which gives `Ö → ȯ` and `Ü → u̇`, both single-character with diacritic — stripping to `O` and `U` under MRZ ASCII) converge on the no-expansion form. The AZE profile inherits `Ö → O` and `Ü → U` from `IcaoDefaultTransliterationProfile` unchanged. (The broader empirical pass that resolved this also surfaced 7 other AZE overrides — see the "Transliteration profile coverage completeness" entry above for the full set.)
+
+### AZE profile `J → ZH` and `C → J` empirical basis
+
+Of the 8 overrides in `AzeTransliterationProfile`, five (`Ç → CH`, `Ğ → GH`, `Ş → SH`, `X → KH`, `Q → G`) are derivable from the ALA-LC romanization table (Library of Congress standard) and corroborated by either sample documents or worked examples. Two — `J → ZH` and `C → J` — are not in ALA-LC's explicit table (ALA-LC treats both as plain Latin letters that pass through). They were added based on:
+
+- A fluent speaker's testimony with worked examples (`Jalə → ZHALA`, `Cəlal → JALAL`)
+- The phonetic Anglicization principle that explains the other 6 overrides (AZE J is /ʒ/ = English "zh"; AZE C is /dʒ/ = English "j")
+- Internal consistency: in the AZE profile, every letter whose source phonetic value diverges from the corresponding English letter is overridden, so leaving J and C alone would be inconsistent with the systematic pattern
+
+The two overrides remain the empirically weakest links in the profile. If a future sample passport contains either letter in the name field and shows passthrough (`J → J`, `C → C`) instead, the overrides should be removed.
+
+**Source:** 2026-05-19 pre-tag empirical pass.
+
+**Resolution:** Confirm against a real sample document containing `J` or `C` in the name field when available. Either confirm current behavior (no change) or remove the override and update `AzeTransliterationProfile` KDoc + [ADR-009](decisions/0009-transliteration-profiles.md). Tracking so the gap is not forgotten.
 
 ### Driver's license format choice (mDoc vs proprietary)
 

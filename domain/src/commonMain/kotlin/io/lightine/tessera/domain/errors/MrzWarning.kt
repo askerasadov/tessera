@@ -12,10 +12,13 @@ package io.lightine.tessera.domain.errors
  * are informational, not disqualifying. Consumers who want strict behavior can check
  * `warnings.isEmpty()` together with `validationFailures.isEmpty()`.
  *
- * Examples include implausibly-old birth dates ([MrzBirthDateImplausiblyOld]), expiry dates
- * far in the future ([MrzExpiryDateImplausiblyFar]), name-field truncation
- * ([MrzNameTruncated]), and country/document codes the SDK does not yet recognize
- * ([MrzUnknownCountryCode], [MrzUnknownDocumentTypeCode]).
+ * Examples include implausibly-old birth dates ([MrzBirthDateImplausiblyOld]), expiry
+ * dates in the past ([MrzExpiryDatePast]) or far in the future ([MrzExpiryDateImplausiblyFar]),
+ * name-field truncation ([MrzNameTruncated]), country/document codes the SDK does not yet
+ * recognize ([MrzUnknownCountryCode], [MrzUnknownDocumentTypeCode]), and documented
+ * real-world deviations from the canonical spec — `X` in the MRZ sex field
+ * ([MrzSexCharacterX]) and a filler in the TD3 personal-number check-digit slot
+ * ([MrzPersonalNumberCheckDigitFiller]).
  *
  * The root is deliberately separate from [MrzError] and [MrzValidationError] so consumers
  * cannot accidentally conflate informational observations with hard or per-field failures.

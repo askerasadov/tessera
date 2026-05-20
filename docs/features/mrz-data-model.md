@@ -283,7 +283,7 @@ This data model represents what ICAO Doc 9303 specifies, restructured for the SD
 
 - Field positions, lengths, and check digit algorithms are defined by ICAO Doc 9303 Parts 3-7 (Part 3: common; Part 4: passports/TD3; Part 5: TD1; Part 6: TD2; Part 7: visas)
 - Country codes follow ISO 3166-1 alpha-3 with extensions defined in Doc 9303 Part 3 Section 5
-- Document type codes are defined in Doc 9303 Part 3 Section 4
+- Document type codes are defined in Doc 9303 Part 3 §4 (general framing) and Part 4 §4.4 (the harmonized two-character `P`-prefix set, mandated for new MRPs from 1 January 2026 and for all MRPs from 1 January 2028). Part 5 Appendix B adds the `AC` Crew Member Certificate code
 - Check digit algorithm is defined in Doc 9303 Part 3 Appendix A
 - Truncation rules for names are defined per Part (TD3 in Part 4, TD1 in Part 5, etc.)
 

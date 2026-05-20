@@ -210,6 +210,10 @@ The foundation. Pure parsing, generation, and validation for all ICAO Doc 9303 M
 
 **Pre-release tech-stack review (2026-05-17):** Reviewed against the Pre-Release Tech-Stack Review rule in [`CLAUDE.md`](../CLAUDE.md). Foundation work — parsing/validation/generation triad for all five MRZ formats, error taxonomy, lookup-table machinery — ships in this release. Two subsystems remain before tag: transliteration profiles and the pluggable telemetry interface. Transliteration triggers its own focused review (Unicode strategy is the key open question) before its code work begins. Full lookup-table data population and mobile target enablement are tracked separately in [`open-questions.md`](open-questions.md) and are not 0.1.0 blockers.
 
+**Post-review update (2026-05-18):** A subsequent pre-tag spec-conformance verification pass against ICAO Doc 9303 expanded both lookup tables to spec coverage and shipped them in 0.1.0 (per Path A: bundle expansion into 0.1.0 rather than defer to 0.1.1). `CountryCodeTable` now contains the full ISO 3166-1 alpha-3 list plus the ICAO §5 extensions (~272 entries); `DocumentTypeCodeTable` now contains the full Part 4 §4.4 harmonized `P`-prefix set plus the legacy single-character codes and the Part 5 Appendix B `AC` code (~13 entries). The mobile-target deferral above is unchanged — Android target activates in 0.2.0 alongside camera reading; iOS target deferral remains pending Xcode availability.
+
+**Post-tag update (2026-05-19):** A pre-tag empirical pass on the `AzeTransliterationProfile` (one of the two transliteration profiles 0.1.0 commits to) expanded it from a single schwa override (`Ə → A`) to a full systematic phonetic Anglicization override set (8 overrides total), backed by sample documents + a fluent speaker's testimony + the ALA-LC romanization table. See [ADR-009](decisions/0009-transliteration-profiles.md) for the reframe; see `CHANGELOG.md` `[0.1.0]` for the full set. This is what ships in 0.1.0.
+
 ### 0.2.0 — Live Camera Reading
 
 Adds the camera-based MRZ reading capability for initial mobile targets. Headless: consumers integrate camera frames and receive parsed results. No bundled UI yet.

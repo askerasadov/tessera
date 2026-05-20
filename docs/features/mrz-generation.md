@@ -24,8 +24,8 @@ The generator ships incrementally, format by format, per the phased addition pro
 | `MrzGenerator.generate(document: MrvB): GenerationResult` | Implemented |
 | Per-format primitive-input methods (`generateTD3(documentType, issuingState, ...)` etc.) | Implemented for all five formats; each accepts an optional `transliteration: TransliterationProfile? = null` parameter |
 | `MrzGenerationFieldOverflow` error type | Implemented |
-| `MrzGenerationMissingRequiredField` error type | Implemented (the type exists; surfaces when the primitive-input methods land and have required fields to enforce) |
 | `MrzGenerationUnsupportedCharacters` error type | Implemented; returned by both `generate(document)` (when text fields contain non-MRZ characters and the consumer has not pre-transliterated) and by the primitive-input methods (when a profile is provided but cannot map all characters) |
+| `MrzGenerationNumericInNameField` error type | Implemented (primitive-input methods). Per ICAO Doc 9303 Part 3 §4.6 ("Numeric characters shall not be used in the name fields of the MRZ"), the generator rejects `primaryIdentifier` or `secondaryIdentifier` arguments containing digits with a typed error carrying the format, the observed value, and the list of numeric characters encountered. The rejection happens before any transliteration profile is applied so the error references the consumer's original input. Pre-tag conformance-verification finding (F4) |
 | Long document number extension (TD3) | Deferred — `>9`-character document numbers currently fail with `MrzGenerationFieldOverflow` rather than spilling into the personal-number field |
 | Transliteration via `TransliterationProfile` parameter | Implemented on the primitive-input methods. Profiles are applied to primary and secondary identifiers; the post-normalization and post-transliteration forms are exposed on `ResultMetadata.transliterationDetails` per Principle 5 ([ADR-014](../decisions/0014-unicode-normalization-strategy.md)) |
 | Round-trip property tests (`parse ∘ generate = identity` on raw fields) | Implemented for all five formats. TD3 has the most thorough coverage (custom-date variant, two-character document type code, sex character verbatim round-trip); TD1/TD2/MRV-A/MRV-B share the canonical Anna Eriksson specimen pattern with per-format edge cases |
@@ -139,6 +139,7 @@ Before producing any output, the generator validates that the input can produce 
 - Date fields parse to real calendar dates
 - Sex values are within the allowed set (`MALE`, `FEMALE`, `UNSPECIFIED`)
 - Names contain only characters in the MRZ alphabet (A-Z and the filler), unless a transliteration profile is provided
+- Names do not contain numeric characters — per ICAO Doc 9303 Part 3 §4.6, "numeric characters shall not be used in the name fields of the MRZ". The primitive-input methods enforce this on the `primaryIdentifier` and `secondaryIdentifier` arguments before any transliteration profile is applied, and emit `MrzGenerationNumericInNameField` if violated. The SDK does not silently strip digits (Principle 1 — reader, not oracle)
 
 Validation failures at this stage produce typed errors and the generator does not produce output. The consumer receives `GenerationResult.Failure` with a specific error type indicating what was wrong.
 
@@ -146,7 +147,7 @@ Validation failures at this stage produce typed errors and the generator does no
 
 ## Transliteration Behavior
 
-Names in the MRZ must use only the restricted MRZ alphabet (uppercase A-Z and the filler character). Real-world names often contain characters outside this set: diacritics, characters from Cyrillic or other scripts, the Latin schwa, and so on.
+Names in the MRZ must use only the restricted MRZ alphabet (uppercase A-Z and the filler character). Real-world names often contain characters outside this set: diacritics, characters from non-Latin scripts, ligatures, and Latin Extended-B characters (such as the schwa, which is outside Annex G's table — see [`transliteration.md`](transliteration.md) and [ADR-009](../decisions/0009-transliteration-profiles.md) for the full story).
 
 The generator handles this through explicit consumer choice. Two paths are supported:
 
