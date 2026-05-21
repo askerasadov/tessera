@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-05-19
+### Added
+
+- `SECURITY.md` at project root — private vulnerability disclosure policy (GitHub Security tab + email fallback), supported-versions matrix, response timeline targets, in-scope / out-of-scope guidance. Added as part of the pre-public-sharing readiness pass after the v0.1.0 release tag landed (the repo went public during 0.1.0 work; this PR adds the protection scaffolding before the repo is shared with contributors)
+- `CONTRIBUTING.md` at project root — short pointer file directing contributors to `docs/conventions.md`, `.claude/git-workflow.md`, `docs/versioning.md`, `docs/testing.md`, `docs/principles.md`, `docs/open-questions.md`, the PR template, and `SECURITY.md`. Resolves the "CONTRIBUTING.md at project root" entry in `docs/open-questions.md`
+- `.github/CODEOWNERS` — default code owner mapping for the repo (`@askerasadov` for all paths). Paired with the planned `main` branch protection rule "Require review from Code Owners," only the listed owners' approvals satisfy the required-approval gate
+- `.github/dependabot.yml` — monthly Gradle dependency updates and monthly GitHub Actions version updates with `chore(deps)` commit-message prefix and `dependencies` labels. Security updates are enabled separately via the GitHub UI and route through these same `package-ecosystem` entries
+- `.github/workflows/check.yml` — GitHub Actions CI workflow running `./gradlew check` plus `bash scripts/check-cross-references.sh` on every pull request to `main` and every push to `main`. JDK 21 / Temurin, Gradle wrapper, read-only cache on PRs. Exists so the planned branch-protection rule "Require status checks to pass before merging" has something meaningful to wait on
 
 The first internal release. Pure parsing, generation, and validation for all five ICAO Doc 9303 MRZ formats (TD1, TD2, TD3, MRV-A, MRV-B), the error taxonomy, the lookup-table machinery, transliteration profiles (ICAO default + AZE country-specific), and the pluggable telemetry interface (contract-only at this release; first emitters in 0.2.0 and 0.6.0). JVM target enabled; additional targets activate per-release as the corresponding reading methods land. Includes a pre-tag spec-conformance verification pass against ICAO Doc 9303 (findings F1–F25, recorded across PRs [#43](https://github.com/askerasadov/Tessera/pull/43)–[#48](https://github.com/askerasadov/Tessera/pull/48)) and a follow-up 2026-05-19 empirical pass that expanded the AZE transliteration profile to its full systematic phonetic Anglicization pattern (8 overrides) plus a doc-drift cleanup from a deep alignment audit. 577 tests.
 

@@ -1,0 +1,39 @@
+# Dependabot configuration for Tessera.
+#
+# Schedules version updates for Gradle dependencies and GitHub Actions.
+# Security updates are enabled separately via the GitHub UI
+# (Settings → Code security and analysis → Dependabot security updates)
+# and use this file's `package-ecosystem` entries for routing.
+#
+# See:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Gradle / Kotlin dependencies (build.gradle.kts + libs.versions.toml)
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: monthly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - gradle
+    commit-message:
+      prefix: chore(deps)
+      include: scope
+
+  # GitHub Actions workflow versions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: chore(deps)
+      include: scope
