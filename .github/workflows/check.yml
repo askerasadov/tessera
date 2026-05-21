@@ -1,0 +1,50 @@
+# Continuous integration: runs `./gradlew check` on every PR to main and on
+# every push to main. This workflow exists so the branch-protection rule
+# "Require status checks to pass before merging" has something meaningful to
+# wait on.
+#
+# Scope kept minimal at 0.1.0:
+# - JVM-only (no Android, iOS, JS, Wasm yet — they're per-release-activated
+#   per docs/scope.md "Supported Platforms")
+# - JDK 21 to match each module's jvmToolchain(21)
+# - Gradle 9.5.1 via the project's wrapper
+
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  check:
+    name: gradle check (JVM)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          # Read-only cache for PR runs; main runs may write fresh entries.
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Run gradle check
+        run: ./gradlew check
+
+      - name: Run cross-reference validator
+        run: bash scripts/check-cross-references.sh

@@ -489,6 +489,8 @@ GitHub recognizes a top-level `CONTRIBUTING.md` and surfaces it on PR creation. 
 
 **Trigger:** Before the first public push to GitHub or equivalent.
 
+**Resolution:** Resolved (2026-05-20). Added a short [`CONTRIBUTING.md`](../CONTRIBUTING.md) at the project root pointing to `docs/conventions.md`, `.claude/git-workflow.md`, `docs/versioning.md`, `docs/testing.md`, `docs/principles.md`, `docs/open-questions.md`, the PR template, and `SECURITY.md`. The file is intentionally short — it does not duplicate the full conventions, just makes them discoverable from GitHub's contributor flow. Landed alongside `SECURITY.md`, `.github/CODEOWNERS`, `.github/dependabot.yml`, and `.github/workflows/check.yml` in the pre-public-readiness pass.
+
 ### CHANGELOG.md initial entry
 
 The project commits to Keep a Changelog format (see `docs/versioning.md`). The actual `CHANGELOG.md` file does not yet exist. It will be created with the first internal release entry.
