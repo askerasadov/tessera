@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- `.github/dependabot.yml` commit-message `prefix` changed from `chore(deps)` to `chore`. Dependabot's `include: scope` directive already wraps the ecosystem name in `(deps)` automatically, so the prior `prefix: chore(deps)` produced doubled `chore(deps)(deps):` titles on the first batch of auto-PRs (#51, #52, #53). With `prefix: chore` + `include: scope`, future Dependabot PRs land as `chore(deps): bump ...` cleanly. Cosmetic; no behaviour change
+
 ### Added
 
 - `SECURITY.md` at project root — private vulnerability disclosure policy (GitHub Security tab + email fallback), supported-versions matrix, response timeline targets, in-scope / out-of-scope guidance. Added as part of the pre-public-sharing readiness pass after the v0.1.0 release tag landed (the repo went public during 0.1.0 work; this PR adds the protection scaffolding before the repo is shared with contributors)
