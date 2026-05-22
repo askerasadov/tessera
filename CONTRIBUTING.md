@@ -4,6 +4,10 @@ Thanks for your interest. Tessera is in pre-`1.0.0` development; the public API 
 
 The full contributor reference lives in the project documentation. This file is a short pointer.
 
+## First-time setup
+
+If you haven't worked on this project before, start with [`docs/contributor-setup.md`](docs/contributor-setup.md) — a per-platform walkthrough covering cloning, configuring Git identity, and setting up the SSH commit and tag signing required by branch protection on `main`. The rest of this file assumes that setup is done.
+
 ## Where the rules live
 
 - **[`docs/conventions.md`](docs/conventions.md)** — branch naming, PR flow, naming conventions for new types, the procedure for adding new MRZ formats, code-style commitments
