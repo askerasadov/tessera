@@ -11,6 +11,5 @@ The entry point for AI assistants is the `CLAUDE.md` file at project root. That 
 - **`known-pitfalls.md`** — Real failure modes that have surfaced during the project. Read before drafting significant changes.
 - **`gitignore-planning.md`** — What goes into the public repo and what does not. Read before committing anything new.
 - **`session-handoff-template.md`** — Template for ending a Claude Code session with a clear handoff to the next session.
-- **`pre-implementation-checklist.md`** — The gate before implementation begins. Every item must be satisfied before writing the first line of code.
 
 Material in this folder is public — it goes into the open-source repository at the 1.0.0 release. Nothing private should accumulate here. If private notes are needed during development, they live elsewhere (a personal workspace folder outside the repo) and never get committed.
