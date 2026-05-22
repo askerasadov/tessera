@@ -53,7 +53,7 @@ Using `--local` (not `--global`) keeps these settings scoped to this repository,
 
 Branch protection on `main` requires every commit and every release tag to be signed by a key registered to a GitHub account with push permission. The rest of this section is platform-specific. Jump to yours:
 
-- [macOS](#macos) — the project-verified path
+- [macOS](#macos)
 - [Linux](#linux)
 - [Windows](#windows)
 
