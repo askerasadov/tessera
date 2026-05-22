@@ -48,7 +48,6 @@ If you are looking for...
 | Failure modes to avoid | [`.claude/known-pitfalls.md`](.claude/known-pitfalls.md) |
 | What goes in the public repo and what doesn't | [`.claude/gitignore-planning.md`](.claude/gitignore-planning.md) |
 | Session handoff template | [`.claude/session-handoff-template.md`](.claude/session-handoff-template.md) |
-| Pre-implementation gate checklist | [`.claude/pre-implementation-checklist.md`](.claude/pre-implementation-checklist.md) |
 | Git and GitHub workflow (branch naming, PR flow, gh CLI usage) | [`.claude/git-workflow.md`](.claude/git-workflow.md) |
 
 ---
