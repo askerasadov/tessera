@@ -50,7 +50,7 @@ If your change touches:
 
 ## Code of conduct
 
-For now, the project follows a *"be kind, be specific, assume good faith"* convention. A formal `CODE_OF_CONDUCT.md` may be added if and when the contributor base grows beyond a small team.
+For now, the project follows a *"be kind, be specific, assume good faith"* convention. A formal CODE_OF_CONDUCT.md may be added if and when the contributor base grows beyond a small team.
 
 ## License
 
