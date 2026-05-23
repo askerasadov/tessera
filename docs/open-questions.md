@@ -184,6 +184,14 @@ The pass is most usefully scheduled after release 0.6.0 (NFC chip reading lands 
 
 **Resolution:** Schedule and perform the review pass before tagging 1.0.0. Update `reading-risks.md` and other affected documents with the findings.
 
+### GitHub repository topics for discoverability
+
+The repository on GitHub has no topics set, which limits discoverability through GitHub's topic search and the homepage's topic-based recommendations. Candidate topics include `kotlin`, `kotlin-multiplatform`, `mrz`, `icao-9303`, `passport`, `identity-document`; per-release additions follow as new capabilities land (e.g., `nfc` and `emrtd` when 0.6.0 ships, `android` and `ios` when platform-I/O modules activate). The question deferred is *which* topics and *when*, not *whether* to have them.
+
+**Source:** `SESSION-HANDOFF-2026-05-21-1348-v-0-1-0-shipped-and-protected.md` "Things to Watch For" carry-forward; reaffirmed in the 2026-05-22 session close-out conversation.
+
+**Resolution:** Pick an initial set and apply via `gh repo edit --add-topic ...`. Establish a maintenance rhythm of reviewing topics at each release milestone — add topics as capabilities land, remove ones that no longer describe scope. Either a small follow-up PR or fold into the next release-prep pass.
+
 ### Android target configuration on core modules
 
 Core modules are scaffolded with the JVM target only. The Android target is intentionally deferred until 0.2.0 work begins, when the first Android-touching module (`mrz-camera-android`) is introduced and AGP needs to be added to the build anyway. Adding `androidTarget()` to the pure-logic core modules earlier would buy only theoretical insurance against Android-incompatible APIs sneaking into `commonMain`, at the cost of pulling AGP and its version-coupling constraints into the build before they earn their keep (Principle 2: the option that assumes less wins; Principle 11: don't promote infrastructure before it's justified). The Android SDK is already installed on the development machine; the deferral is by intent, not by tooling gap.
