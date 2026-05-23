@@ -158,6 +158,7 @@ When new content needs a home, use this guidance.
 | A rule that applies when working with specific files or paths | A new file in [`.claude/rules/`](.claude/rules/) with `paths:` frontmatter |
 | A workflow triggered by a specific event (release prep, dep bump, etc.) | A new skill directory in [`.claude/skills/`](.claude/skills/), invoked explicitly |
 | A deterministic action that must happen every time, no exceptions | A hook in `.claude/settings.json` (lifecycle events; not advisory) |
+| A specialized review or investigation task with isolated context (no main-context pollution) | A new subagent in [`.claude/agents/<name>.md`](.claude/agents/), invoked via the `Agent` tool with `subagent_type: "<name>"` |
 
 **Project documentation and working-note content:**
 
