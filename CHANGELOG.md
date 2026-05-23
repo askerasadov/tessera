@@ -6,11 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-### Changed
-
-- `.github/dependabot.yml` commit-message `prefix` changed from `chore(deps)` to `chore`. Dependabot's `include: scope` directive already wraps the ecosystem name in `(deps)` automatically, so the prior `prefix: chore(deps)` produced doubled `chore(deps)(deps):` titles on the first batch of auto-PRs (#51, #52, #53). With `prefix: chore` + `include: scope`, future Dependabot PRs land as `chore(deps): bump ...` cleanly. Cosmetic; no behaviour change
-- `docs/open-questions.md` — new entry "GitHub repository topics for discoverability" added under `## Deferred to a Future Release`. Tracks the deferred decision of which topics to set on the GitHub repository (`kotlin`, `kotlin-multiplatform`, `mrz`, `icao-9303`, `passport`, `identity-document` as the candidate initial set, with per-release additions as new capabilities land) and the maintenance rhythm of reviewing topics at each release milestone. Carried forward from `SESSION-HANDOFF-2026-05-21-1348-v-0-1-0-shipped-and-protected.md` "Things to Watch For"
-
 ### Added
 
 - `SECURITY.md` at project root — private vulnerability disclosure policy (GitHub Security tab + email fallback), supported-versions matrix, response timeline targets, in-scope / out-of-scope guidance. Added as part of the pre-public-sharing readiness pass after the v0.1.0 release tag landed (the repo went public during 0.1.0 work; this PR adds the protection scaffolding before the repo is shared with contributors)
@@ -20,13 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `.github/workflows/check.yml` — GitHub Actions CI workflow running `./gradlew check` plus `bash scripts/check-cross-references.sh` on every pull request to `main` and every push to `main`. JDK 21 / Temurin, Gradle wrapper, read-only cache on PRs. Exists so the planned branch-protection rule "Require status checks to pass before merging" has something meaningful to wait on
 - `docs/contributor-setup.md` — per-platform (macOS / Linux / Windows) walkthrough for one-time machine setup: cloning, configuring Git identity, generating an SSH signing key, registering it on GitHub as a Signing Key, and optionally setting up `gpg.ssh.allowedSignersFile` for local signature verification. Cross-linked from `CONTRIBUTING.md` as the "First-time setup" entry point. The macOS path is the project-verified one as of 2026-05; Linux and Windows follow the same logic but have not been end-to-end verified against branch protection
 
+### Changed
+
+- `.github/dependabot.yml` commit-message `prefix` changed from `chore(deps)` to `chore`. Dependabot's `include: scope` directive already wraps the ecosystem name in `(deps)` automatically, so the prior `prefix: chore(deps)` produced doubled `chore(deps)(deps):` titles on the first batch of auto-PRs (#51, #52, #53). With `prefix: chore` + `include: scope`, future Dependabot PRs land as `chore(deps): bump ...` cleanly. Cosmetic; no behaviour change
+- `docs/open-questions.md` — new entry "GitHub repository topics for discoverability" added under `## Deferred to a Future Release`. Tracks the deferred decision of which topics to set on the GitHub repository (`kotlin`, `kotlin-multiplatform`, `mrz`, `icao-9303`, `passport`, `identity-document` as the candidate initial set, with per-release additions as new capabilities land) and the maintenance rhythm of reviewing topics at each release milestone. Carried forward from `SESSION-HANDOFF-2026-05-21-1348-v-0-1-0-shipped-and-protected.md` "Things to Watch For"
+- `[Unreleased]` subsection order in `CHANGELOG.md` reordered from `Changed → Added → Removed → Fixed` to the Keep a Changelog 1.1.0 canonical order (`Added → Changed → Deprecated → Removed → Fixed → Security`, with only the subsections that exist). The non-canonical ordering had been in place since PR #50 introduced the post-tag `[Unreleased]` entries. No entry text changed; bullets moved verbatim with their headings
+
 ### Removed
 
 - `.claude/pre-implementation-checklist.md` — historical record of the 2026-05-04 design→implementation gate. The file itself declared "Status: Historical record from the moment the gate was passed (2026-05-04)" but `CLAUDE.md` and `.claude/README.md` still pointed at it as if it were a live document. That mismatch had already caused a small misread (an entry citing "Gradle 8.14" was treated as drift rather than as accurate-for-its-date snapshot). Removed alongside the two references; the deferred items the checklist tracked are all already in other living docs — Android target, iOS target, and platform I/O module scaffolding in [`docs/open-questions.md`](docs/open-questions.md) with full context and resolution criteria; IDE setup is per-machine and is now covered by [`docs/contributor-setup.md`](docs/contributor-setup.md). No information loss; the gate criteria remain readable via `git log -- .claude/pre-implementation-checklist.md`. The CHANGELOG entry where the historical-record header was originally added is left untouched as the durable record of the file's existence
 
 ### Fixed
 
-- Restored the `## [0.1.0] - 2026-05-19` version header in `CHANGELOG.md` that PR #50 (`1800772`, "Public-repo protection scaffolding") had accidentally replaced with `### Added` when introducing the post-tag `[Unreleased]` entries. With the header missing, every entry below it (the entire 0.1.0 release notes, ~320 lines) was structurally nested under `## [Unreleased]` from a Markdown standpoint. No content was lost; only the section demarcation. The link-reference section at the bottom of the file is left as-is for now — `[Unreleased]: ...compare/HEAD` has been broken since the file's first commit (it predates PR #50 and is unrelated to this regression), and a `[0.1.0]: ...` link has never existed; both are quality improvements appropriate for a separate small PR
+- Restored the `## [0.1.0] - 2026-05-19` version header in `CHANGELOG.md` that PR #50 (`1800772`, "Public-repo protection scaffolding") had accidentally replaced with `### Added` when introducing the post-tag `[Unreleased]` entries. With the header missing, every entry below it (the entire 0.1.0 release notes, ~320 lines) was structurally nested under `## [Unreleased]` from a Markdown standpoint. No content was lost; only the section demarcation
+- `CHANGELOG.md` link references at the bottom of the file. The `[Unreleased]` link target was `https://github.com/askerasadov/tessera/compare/HEAD` — a HEAD-vs-HEAD comparison that always renders empty — and has been broken since the link reference was first added (predates PR #50, unrelated to the header regression fixed above). Corrected to `compare/v0.1.0...HEAD`. Added the missing `[0.1.0]: https://github.com/askerasadov/tessera/releases/tag/v0.1.0` link reference so the restored `## [0.1.0] - 2026-05-19` header resolves to its release page
 
 ## [0.1.0] - 2026-05-19
 
@@ -347,4 +349,5 @@ These are documented commitments that are explicitly *not* in this `[Unreleased]
 - iOS targets, Android targets (waiting on Xcode install / 0.2.0 platform I/O work)
 - Platform I/O modules (`mrz-camera-*`, `emrtd-nfc-*`, `mrz-camera-ui-*`)
 
-[Unreleased]: https://github.com/askerasadov/tessera/compare/HEAD
+[Unreleased]: https://github.com/askerasadov/tessera/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/askerasadov/tessera/releases/tag/v0.1.0
