@@ -58,6 +58,8 @@ When `0.1.0` is tagged, the `[Unreleased]` section becomes `[0.1.0] - YYYY-MM-DD
 
 For Claude Code sessions, this is automated. The PreToolUse hook in `.claude/settings.json` fires on every `Bash(git push *)` call and runs `scripts/private-content-scan.sh`. If the script exits non-zero, the push is blocked and the offending lines surface as the block reason. You don't need to remember to run it — the hook does.
 
+**The hook is silent in the transcript on PASS — this is by design, not a bug.** PreToolUse hooks' stdout goes to Claude Code's debug log rather than the session transcript ([hooks reference](https://code.claude.com/docs/en/hooks)), and the `statusMessage` spinner is too brief to register on a sub-second scan. So a successful `git push` from a Claude session looks identical whether the hook ran or didn't run. If you ever need to verify the hook is actually wired up without parsing debug logs, temporarily add a known scan term to `.claude/private-content-terms.local`, attempt a push, and confirm the script's `BLOCKED ...` stderr surfaces as the tool-call block reason — then remove the term.
+
 For manual pushes (from a regular terminal), run the script yourself before pushing:
 
 ```sh
