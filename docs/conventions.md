@@ -210,7 +210,7 @@ The project bumps the toolchain and dependencies to current stable on a **six-mo
 
 Each cycle bumps the items pinned in `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `settings.gradle.kts`, and the `jvmToolchain(N)` calls across module `build.gradle.kts` files: Kotlin (and KMP plugin), Gradle, JDK toolchain floor (when LTS situation warrants), dev tooling (Spotless, ktlint), runtime dependencies (kotlinx-datetime), test dependencies (kotest), and Gradle settings plugins (foojay-resolver-convention).
 
-The full operational detail — what to bump, how to verify compatibility, how to split into PRs to keep blast radius small — lives in the "Dependency Upgrade Cadence" rule in [`CLAUDE.md`](../CLAUDE.md).
+The full operational detail — what to bump, how to verify compatibility, how to split into PRs to keep blast radius small — lives in the [`dependency-upgrade-cadence`](../.claude/skills/dependency-upgrade-cadence/SKILL.md) skill, with a short summary and the "next date" reminder in [`CLAUDE.md`](../CLAUDE.md).
 
 ### Pre-Release Tech-Stack Review
 
@@ -218,7 +218,7 @@ Before starting work on each release (`0.2.0`, `0.3.0`, etc.), the project does 
 
 The review surfaces: foundational architectural choices that may need revisiting, new dependencies the upcoming subsystem will need (camera lib for `0.2.0`, NFC lib for `0.6.0`, etc.), local-machine tooling the build can't auto-provision (platform SDKs, CLIs, test hardware), and API-stability commitments the release would lock in. Output is a brief decision record (an ADR if significant, a recap-style working note otherwise) naming the project's expectations — contributors track their own local installs separately. The 2026-05-17 pre-`0.1.0` recap is the working precedent.
 
-Full operational detail in the "Pre-Release Tech-Stack Review" rule in [`CLAUDE.md`](../CLAUDE.md).
+Full operational detail in the [`pre-release-tech-stack-review`](../.claude/skills/pre-release-tech-stack-review/SKILL.md) skill, with a short summary in [`CLAUDE.md`](../CLAUDE.md).
 
 ### Pre-commitment alignment check
 
@@ -232,7 +232,7 @@ Full operational detail in the "Pre-commitment alignment check" rule in [`CLAUDE
 
 Project folders and files follow a consistent placement-and-naming convention: visible folders (`docs/`, `scripts/`, source modules, etc.) hold project deliverables that contributors interact with directly; dot-prefix folders (`.claude/`, `.github/`, `.handoffs/`, `.recaps/`, `.conformance/`, `.spec/`) hold project infrastructure — AI-facing docs, tool config, working notes, maintainer reference material — regardless of whether those folders' contents are committed or gitignored. Naming is purpose-driven rather than folder-driven: dated working notes use `<CATEGORY>-YYYY-MM-DD[-HHMM][-<slug>].md` (uppercase category, UTC date), evergreen documentation files use lowercase-hyphen names with the `.md` extension (ADRs add a 4-digit numeric prefix), and root-level project files follow the long-standing software convention of UPPERCASE filenames.
 
-Full operational detail in the "Folder and File Organization" rule in [`CLAUDE.md`](../CLAUDE.md).
+Full operational detail in the [`folder-organization`](../.claude/rules/folder-organization.md) rule (path-scoped, auto-loaded when working with markdown files), with a short summary in [`CLAUDE.md`](../CLAUDE.md).
 
 ### Swift, other languages
 

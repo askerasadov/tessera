@@ -96,36 +96,17 @@ The operational ruleset. Each rule is concrete and triggers on a specific situat
 
 ### Folder and File Organization
 
-**Folder placement reflects audience.** Folders holding *project deliverables* — source code, runnable scripts, human-facing docs — live at visible paths (`docs/`, `scripts/`, source modules, root-level files like `README.md` and `CHANGELOG.md`). Folders holding *project infrastructure* — AI-facing conventions, tool config, build state, AI working notes, maintainer reference material — live at dot-prefix paths (`.claude/`, `.github/`, `.gradle/`, `.handoffs/`, `.recaps/`, `.conformance/`, `.spec/`). The dot-prefix signals "infrastructure, not deliverable," regardless of whether the contents are committed (most of `.claude/`, `.github/`) or gitignored (`.handoffs/`, `.gradle/`, `.spec/`). Gitignore status is a separate decision driven by "is this universal across clones?" (commit) vs "is this per-machine local?" (gitignore).
-
-**Naming depends on file purpose, not folder location.** Dated working notes use `<CATEGORY>-YYYY-MM-DD[-HHMM][-<slug>].md` (UPPERCASE category prefix, which may itself be multi-word with internal hyphens — e.g., `SESSION-HANDOFF`, `RECAP-CODE-DOC-ALIGNMENT`, `CONFORMANCE-NOTES`). Evergreen documentation files use lowercase-hyphen names with the `.md` extension (real examples: [`docs/features/mrz-parsing.md`](docs/features/mrz-parsing.md), [`docs/features/lookup-tables.md`](docs/features/lookup-tables.md), [`.claude/working-patterns.md`](.claude/working-patterns.md)). Sequentially-numbered docs like ADRs add a 4-digit prefix to the same pattern ([`docs/decisions/0001-kotlin-multiplatform.md`](docs/decisions/0001-kotlin-multiplatform.md), [`docs/decisions/0007-strict-backward-compat-from-0x.md`](docs/decisions/0007-strict-backward-compat-from-0x.md)). Root-level project files follow long-standing software convention (UPPERCASE: `README.md`, `CHANGELOG.md`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CLAUDE.md`).
-
-**Scope.** Applies to *working-pattern artifacts* the project produces — categorized notes that recur and have a documented purpose — and to project documentation. Does NOT apply to *personal scratch* (one-off debugging logs, personal todos, "thinking out loud" files) or to *externally-named folders* (`build/`, `node_modules/`, `gradle/`) that follow their tool's own conventions.
-
-**Self-healing.** Hidden working-note folders (`.handoffs/`, `.recaps/`, `.conformance/`, etc.) materialize on first use — a session writing the first file creates the parent directory if absent. No setup script needed.
-
-**Cross-reference from [`docs/conventions.md`](docs/conventions.md)** so human contributors see the convention too.
+Visible folders (`docs/`, `scripts/`, source modules) hold project deliverables; dot-prefix folders (`.claude/`, `.handoffs/`, `.recaps/`, `.conformance/`, `.spec/`) hold project infrastructure. Naming is purpose-driven: dated working notes use `<CATEGORY>-YYYY-MM-DD[-HHMM][-<slug>].md`, evergreen docs use lowercase-hyphen `.md`, root-level files use UPPERCASE. Full rule (with examples and scope) in [`.claude/rules/folder-organization.md`](.claude/rules/folder-organization.md) — auto-loaded when working with markdown files. Cross-reference for human contributors in [`docs/conventions.md`](docs/conventions.md).
 
 ### Dependency Upgrade Cadence
 
-The project bumps the toolchain and dependencies to current stable on a **six-monthly cadence**. This keeps the project from accumulating multi-year-stale tooling (which compounds upgrade pain) while not chasing every patch release (which is its own form of churn).
+Six-monthly toolchain and dependency bumps to current stable. **Next scheduled check: 2026-10-01** (then every 6 months thereafter; ±2 weeks is fine). Full procedure — what to bump, how to verify compatibility, how to split into PRs — in the [`dependency-upgrade-cadence`](.claude/skills/dependency-upgrade-cadence/SKILL.md) skill. Cross-reference for human contributors in [`docs/conventions.md`](docs/conventions.md).
 
-- **Next scheduled check: 2026-10-01.** After that, every six months: 2027-04-01, 2027-10-01, 2028-04-01, etc.
-- The exact day doesn't matter — anything within ±2 weeks of the date is fine. The cadence is the operational rhythm, not a hard deadline.
-- **What to bump each cycle:** Kotlin (and KMP plugin), Gradle wrapper, JDK toolchain floor, dev tooling (Spotless, ktlint), runtime dependencies (kotlinx-datetime, etc.), test dependencies (kotest), and any other plugins pinned in `settings.gradle.kts` (foojay-resolver-convention, etc.). The complete inventory is whatever has a version pinned in `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `settings.gradle.kts`, and the `jvmToolchain(N)` calls across module `build.gradle.kts` files.
-- **How to bump:** verify the latest stable of each via web search at upgrade time (knowledge cutoffs drift); check the compatibility matrix between Kotlin + Gradle + KGP; bump to the highest mutually supported triple. JDK toolchain bump is a separate call — only move when the LTS situation warrants it and the build/test surface is stable.
-- **Split into 2–3 focused PRs per cycle.** The first cycle (2026-05-17) used three PRs: (1) Kotlin + KMP + Gradle + JDK toolchain, (2) dev tooling (Spotless + ktlint) + Gradle wrapper regeneration, (3) runtime + test dependencies + this cadence rule + docs. The split keeps blast radius small if any single bump breaks something.
-- **Cross-reference from [`docs/conventions.md`](docs/conventions.md)** so human contributors see the cadence too.
+At each cadence checkpoint, also do a **CLAUDE.md health review** (5-minute pass piggy-backed on the dependency check): confirm the file is still under 200 lines, no rules that should have been path-scoped or made into skills have crept back in, no rules have gone stale relative to actual practice.
 
 ### Pre-Release Tech-Stack Review
 
-Before starting work on each `0.x` (or later `x.0` / `x.y` minor) release, the project does an explicit tech-stack review. The review is milestone-driven and complementary to the clock-driven Dependency Upgrade Cadence above. Where the cadence asks "are we on current stable?", the review asks "are our underlying choices still right for what we're about to build?"
-
-- **Trigger: before any code is written for the next release.** Not before tagging — pre-tag is "verify we shipped what we said" (the recap pattern). Pre-start is when the discussion has maximum leverage; once code is being written, retroactive tech-stack changes are expensive.
-- **Scope of the review:** revisit foundational architectural choices (KMP, native UI per platform, sealed type hierarchies, etc.) against the upcoming release's actual demands; identify new dependencies the upcoming subsystem will need (e.g., camera library for 0.2.0, NFC library for 0.6.0, transliteration approach for 0.1.0); identify local-machine tooling the build can't auto-provision (platform SDKs, CLIs, test hardware — e.g., Android command-line tools + Android SDK for 0.2.0, Xcode + simulators for iOS, an NFC-capable test device for 0.6.0); flag any API-stability commitments the release would lock in that should be reconsidered first; surface tech-stack drift that the 6-monthly cadence didn't catch (e.g., a foundational tool reaching end-of-life).
-- **Output:** a brief decision record (could be a new ADR if significant, or a recap-style working note if smaller). At minimum, name what was reviewed and what was decided. The output names *project* expectations — how each contributor satisfies local-tooling prerequisites on their own machine is theirs to track (e.g., via personal notes or AI-assistant memory). The 2026-05-17 pre-0.1.0 recap is the working precedent for this format.
-- **What this is not:** not a full design review of the upcoming release. The release's own design lives in the relevant feature docs and gets developed slice-by-slice as usual. The tech-stack review is the narrow architectural-fit pass that gates the start of release work.
-- **Cross-reference from [`docs/conventions.md`](docs/conventions.md)** so human contributors see the convention too.
+Before starting work on each `0.x` (or later `x.0` / `x.y`) release, run an explicit tech-stack review — does the foundation still fit what we're about to build? Trigger is pre-start, not pre-tag. Full procedure (scope, output, what it isn't) in the [`pre-release-tech-stack-review`](.claude/skills/pre-release-tech-stack-review/SKILL.md) skill. Cross-reference for human contributors in [`docs/conventions.md`](docs/conventions.md).
 
 ### Git and GitHub Workflow
 
@@ -167,11 +148,21 @@ A known failure mode: declaring work "ready" prematurely, only to find gaps unde
 
 ## Maintaining the Documentation System
 
-When new content needs a home, use this guidance:
+When new content needs a home, use this guidance.
+
+**AI-facing rules and workflows** (the placement test: *would removing this cause Claude to make mistakes?* — see Anthropic's [memory-files guidance](https://code.claude.com/docs/en/memory) for the full reasoning):
 
 | New content is... | Goes in... |
 |---|---|
-| A rule that applies in every session | This file (CLAUDE.md, Rules section) |
+| A rule Claude needs in every session (behavioral, foundational, security-critical) | This file (CLAUDE.md, Rules section) |
+| A rule that applies when working with specific files or paths | A new file in [`.claude/rules/`](.claude/rules/) with `paths:` frontmatter |
+| A workflow triggered by a specific event (release prep, dep bump, etc.) | A new skill directory in [`.claude/skills/`](.claude/skills/), invoked explicitly |
+| A deterministic action that must happen every time, no exceptions | A hook in `.claude/settings.json` (lifecycle events; not advisory) |
+
+**Project documentation and working-note content:**
+
+| New content is... | Goes in... |
+|---|---|
 | A working pattern observed during implementation | [`.claude/working-patterns.md`](.claude/working-patterns.md) |
 | A mistake to avoid | [`.claude/known-pitfalls.md`](.claude/known-pitfalls.md) |
 | A deferred decision | [`docs/open-questions.md`](docs/open-questions.md) |
@@ -181,7 +172,7 @@ When new content needs a home, use this guidance:
 | A testing commitment | [`docs/testing.md`](docs/testing.md) |
 | A risk profile for a new reading method | [`docs/reading-risks.md`](docs/reading-risks.md) |
 
-Some rules and patterns serve **multiple audiences** — both AI assistants and human contributors. When that's the case, place the content in its primary home and cross-reference from secondary homes. The established precedent in this project: rules in CLAUDE.md that also affect human contributors get a short cross-reference subsection in [`docs/conventions.md`](docs/conventions.md). The Dependency Upgrade Cadence, Pre-Release Tech-Stack Review, and Pre-commitment alignment check rules are the working precedents. Before placing a new rule, ask: *who does this serve — future AI sessions, future human contributors, or both?* Place and cross-reference accordingly. Memories serve a narrower audience (one Claude on one machine) and are appropriate when the content is genuinely local; rules that apply to any contributor or any AI on the repo belong in committed files instead.
+Some rules and patterns serve **multiple audiences** — both AI assistants and human contributors. When that's the case, place the content in its primary home and cross-reference from secondary homes. The established precedent in this project: rules and skills that also affect human contributors get a short cross-reference subsection in [`docs/conventions.md`](docs/conventions.md). Before placing a new rule, ask: *who does this serve — future AI sessions, future human contributors, or both?* Place and cross-reference accordingly. Memories serve a narrower audience (one Claude on one machine) and are appropriate when the content is genuinely local; rules that apply to any contributor or any AI on the repo belong in committed files instead.
 
 After every substantive session, ask: *did this session reveal anything that should be added to the documentation? Was anything in the docs wrong relative to what was built?* If yes, update before writing the handoff.
 
