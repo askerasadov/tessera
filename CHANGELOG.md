@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - `.github/dependabot.yml` commit-message `prefix` changed from `chore(deps)` to `chore`. Dependabot's `include: scope` directive already wraps the ecosystem name in `(deps)` automatically, so the prior `prefix: chore(deps)` produced doubled `chore(deps)(deps):` titles on the first batch of auto-PRs (#51, #52, #53). With `prefix: chore` + `include: scope`, future Dependabot PRs land as `chore(deps): bump ...` cleanly. Cosmetic; no behaviour change
+- `docs/open-questions.md` — new entry "GitHub repository topics for discoverability" added under `## Deferred to a Future Release`. Tracks the deferred decision of which topics to set on the GitHub repository (`kotlin`, `kotlin-multiplatform`, `mrz`, `icao-9303`, `passport`, `identity-document` as the candidate initial set, with per-release additions as new capabilities land) and the maintenance rhythm of reviewing topics at each release milestone. Carried forward from `SESSION-HANDOFF-2026-05-21-1348-v-0-1-0-shipped-and-protected.md` "Things to Watch For"
 
 ### Added
 
