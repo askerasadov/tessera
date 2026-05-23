@@ -22,7 +22,7 @@ For trivial sessions (a small fix, a one-question consultation), a handoff is no
 
 ## Where to Put the Handoff
 
-The handoff is a file at the project root, named with the date, the UTC time, and a short kebab-case slug describing the slice:
+The handoff is a file in the project's `.handoffs/` directory, named with the date, the UTC time, and a short kebab-case slug describing the slice:
 
 ```
 SESSION-HANDOFF-YYYY-MM-DD-HHMM-<slug>.md
@@ -34,7 +34,7 @@ Where:
 - `HHMM` is the UTC time as four digits with no separator (`0930`, `2256`). Get it with `date -u +%H%M`.
 - `<slug>` summarizes what the session shipped — match the feature branch's slug when there is one (`feature/mrz-validator` → `validator`, `feature/mrz-expiry-warnings` → `expiry-warnings`, `docs/handoff-filename-add-utc-time` → `handoff-filename-add-utc-time`).
 
-Both the time and the slug are mandatory. The time makes `ls -1 SESSION-HANDOFF-*.md | sort -r | head -1` deterministic — no dependency on filesystem mtime (which is unreliable across `git clone`, `rsync`, archive extraction, file syncs). The slug makes the directory listing self-documenting at a glance: the reader sees what each session shipped without opening files.
+Both the time and the slug are mandatory. The time makes `ls -1 .handoffs/SESSION-HANDOFF-*.md | sort -r | head -1` deterministic — no dependency on filesystem mtime (which is unreliable across `git clone`, `rsync`, archive extraction, file syncs). The slug makes the directory listing self-documenting at a glance: the reader sees what each session shipped without opening files.
 
 The next session reads the most recent handoff by sorting filenames descending. The `YYYY-MM-DD-HHMM` prefix is lexically sortable, so `sort -r | head -1` returns the canonical latest.
 
