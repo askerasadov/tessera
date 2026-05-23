@@ -111,7 +111,7 @@ Without this step, every signed commit prompts for the passphrase.
 ssh-add --apple-use-keychain ~/.ssh/tessera_signing
 ```
 
-You'll be prompted once; macOS stores the passphrase in your login Keychain. To make this persist across reboots and shell sessions, add to `~/.ssh/config`:
+You'll be prompted once; macOS stores the passphrase in your login Keychain. **The `~/.ssh/config` block below is required, not optional** — without it, the SSH agent forgets the key on every reboot, and your first `git commit` afterward will silently hang waiting for a passphrase prompt that the agent has no way to surface. Add to `~/.ssh/config`:
 
 ```
 Host *
@@ -288,6 +288,16 @@ You should see `Good "git" signature for you@example.com with ED25519 key SHA256
 ## 4. Troubleshooting
 
 These issues are platform-agnostic. Platform-specific passphrase / agent problems are covered in step 3e of your platform's section above.
+
+### `git commit` hangs silently after a reboot or login
+
+Symptom: a commit hangs with no output. Running `ssh-add -l` in another terminal reports "The agent has no identities" (or returns an error).
+
+The setup from step 3e didn't carry across the reboot or login — the agent is empty and `git`'s call into `ssh-keygen -Y sign` is blocked waiting for a passphrase that nothing can supply (the prompt has no terminal to write to when the commit was invoked by an editor, IDE, or scripted environment). The fix is platform-specific:
+
+- **macOS** — usually the `~/.ssh/config` block from step 3e is missing, or your Keychain passphrase entry was cleared. Re-do step 3e. To confirm Keychain has the passphrase: `ssh-add -D && ssh-add --apple-use-keychain ~/.ssh/tessera_signing` should not prompt; if it does, enter the passphrase once and Keychain will store it. Note: the `security find-generic-password` CLI may report "not found" even when an iCloud or data-protection keychain entry exists — trust the empirical `ssh-add` test over the CLI query.
+- **Linux** — your DE's keyring integration or the `keychain` wrapper didn't start on this login. Re-do step 3e for the current session (`eval "$(ssh-agent -s)" && ssh-add ~/.ssh/tessera_signing`). For permanent persistence, pick one of the mechanisms listed in step 3e (DE keyring auto-start, or the `keychain` wrapper invoked from your shell rc) so future logins don't repeat the problem.
+- **Windows** — verify `Get-Service ssh-agent` reports both `Running` and `Automatic`. If you use Git for Windows, also verify `git config --get core.sshCommand` points at the system OpenSSH; mismatched agents is the most common Windows-specific failure per step 3e's note.
 
 ### "Good 'git' signature" locally but GitHub shows "Unverified"
 
