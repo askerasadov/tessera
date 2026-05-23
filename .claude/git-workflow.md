@@ -56,15 +56,35 @@ When `0.1.0` is tagged, the `[Unreleased]` section becomes `[0.1.0] - YYYY-MM-DD
 
 **Required before every push to a public-or-soon-to-be-public remote.**
 
-The exact grep command and the user-curated list of terms live in memory `feedback_private_content_scan.md` — not duplicated here, so this file does not itself become a hit when the scan runs over the repo. Look up the memory entry and run the command from there.
+For Claude Code sessions, this is automated. The PreToolUse hook in `.claude/settings.json` fires on every `Bash(git push *)` call and runs `scripts/private-content-scan.sh`. If the script exits non-zero, the push is blocked and the offending lines surface as the block reason. You don't need to remember to run it — the hook does.
 
-Expected output: nothing, or only the documented false positives. Anything else is a real leak — stop and flag.
+For manual pushes (from a regular terminal), run the script yourself before pushing:
 
-The documented false positives:
+```sh
+bash scripts/private-content-scan.sh
+```
 
-1. **`InvalidData`** in `docs/features/mrz-error-taxonomy.md` — substring `idda` matches the scan but the word is a generic English term, not private context.
-2. **`"Azerbaijan"`** in `mrz-core/src/commonMain/.../recognition/CountryCodeTable.kt` — the ISO 3166-1 alpha-3 English short name, standard data identifier treated identically to USA / GBR / DEU / etc. The convention is about prose / comments / docs, not standard data identifiers.
+The script reads scan terms from `.claude/private-content-terms.local` (gitignored — each contributor maintains their own; see "First-time setup" below). It greps `git ls-files`-tracked `.md`, `.kt`, and `.gradle*` files for case-insensitive substring matches, then filters out the documented false positives.
+
+Expected exit codes:
+
+- **0** — `no private content found in tracked files.` Proceed.
+- **0** with `terms file not found ... skipping.` — no terms configured locally; the scan no-ops. See "First-time setup" below.
+- **2** — `BLOCKED — possible private content found...` Stop and inspect the listed lines.
+
+#### First-time setup
+
+Create `.claude/private-content-terms.local` with one substring per line. Lines starting with `#` are comments; blank lines are skipped. The file is gitignored and stays on your local machine only. The terms themselves are the private context being protected, so the file must never be committed (`.gitignore` already excludes it).
+
+#### Documented false positives
+
+The script's `FALSE_POSITIVES` extended-regex excludes lines matching any of:
+
+1. **`InvalidData`** in `docs/features/mrz-error-taxonomy.md` — generic English compound; substring matches the scan but the word is not private context.
+2. **`"Azerbaijan"`** (with the surrounding double quotes) in `mrz-core/src/commonMain/.../recognition/CountryCodeTable.kt` — the ISO 3166-1 alpha-3 English short name, standard data identifier treated identically to USA / GBR / DEU / etc. The convention is about prose / comments / docs, not standard data identifiers.
 3. **`azerbaij.pdf`** in URL anchors pointing to the Library of Congress ALA-LC romanization document (`https://www.loc.gov/catdir/cpso/romanization/azerbaij.pdf`) — primary citation source for the AZE transliteration profile. The filename is what LoC chose; the URL is a citation, not authored prose. Used in `docs/decisions/0009-transliteration-profiles.md`, `docs/features/transliteration.md`, `docs/open-questions.md`.
+
+If a NEW generic substring needs to be allowlisted, update `FALSE_POSITIVES` in `scripts/private-content-scan.sh` AND document it here in the same PR.
 
 ### 5. Run verification
 
@@ -176,7 +196,7 @@ Or let Claude Code clean up automatically when the next session creates a new wo
 - **`gh auth setup-git`** is the bridge between Git's HTTPS push and `gh`'s credentials. Without it, `git push` will hit "could not read Username for 'https://github.com'" even when `gh auth status` shows logged in.
 - **PR template** at `.github/pull_request_template.md` auto-applies to web-UI PR creation. For CLI creation, the body is provided explicitly via `--body` — paste the template sections in.
 - **CHANGELOG-on-every-PR** is the discipline. The PR template has a checkbox; future sessions should default to updating the changelog rather than treating it as optional.
-- **Private-content scan** is mandatory before every push to a public-or-soon-to-be-public remote. The grep terms are user-curated and live in memory `feedback_private_content_scan.md`. The documented false positives are listed under "Run the private-content scan" above (`InvalidData` in `mrz-error-taxonomy.md`; `"Azerbaijan"` as ISO 3166-1 data in `CountryCodeTable.kt`; the `azerbaij.pdf` URL filename in ALA-LC citation links). None count as leaks.
+- **Private-content scan** is mandatory before every push to a public-or-soon-to-be-public remote. Automated for Claude via the PreToolUse hook in `.claude/settings.json` calling `scripts/private-content-scan.sh`; manual pushes run the script directly. Scan terms live in the gitignored `.claude/private-content-terms.local` (per-contributor). Documented false positives are listed under "Run the private-content scan" above (`InvalidData` in `mrz-error-taxonomy.md`; `"Azerbaijan"` as ISO 3166-1 data in `CountryCodeTable.kt`; the `azerbaij.pdf` URL filename in ALA-LC citation links). None count as leaks.
 
 ---
 
@@ -186,4 +206,4 @@ Or let Claude Code clean up automatically when the next session creates a new wo
 - [`docs/conventions.md`](../docs/conventions.md) — naming conventions, code style.
 - [`docs/versioning.md`](../docs/versioning.md) — Keep a Changelog format and SemVer rules.
 - `.github/pull_request_template.md` — auto-applied PR description template.
-- Memory `feedback_private_content_scan.md` — exact grep terms for the private-content scan.
+- `scripts/private-content-scan.sh` — runs the private-content scan; reads terms from the gitignored `.claude/private-content-terms.local` (per-contributor). Called automatically by the PreToolUse hook in `.claude/settings.json` and runnable manually before any push.
