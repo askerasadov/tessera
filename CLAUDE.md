@@ -189,12 +189,3 @@ The user has been clear about how they want collaboration to work:
 - **Treat the user as a peer.** Different powers, equal standing. Servile collaboration produces worse output than peer collaboration.
 
 Detailed working patterns are in [`.claude/working-patterns.md`](.claude/working-patterns.md).
-
----
-
-## Related Documents
-
-- [`README.md`](README.md) — project front door (better starting point for human readers)
-- [`docs/principles.md`](docs/principles.md) — the foundational principles
-- [`docs/conventions.md`](docs/conventions.md) — how work is done
-- [`.claude/`](.claude/) — supporting working notes for AI assistants
