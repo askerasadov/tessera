@@ -57,10 +57,10 @@ kotlin-js-store/
 *.log
 logs/
 
-# Session handoff files live in handoffs/ (working notes from individual Claude Code sessions,
+# Session handoff files live in .handoffs/ (working notes from individual Claude Code sessions,
 # not project history). The leading slash anchors the match to project root so a nested
-# handoffs/ elsewhere — should one ever appear — is not silently excluded too.
-/handoffs/
+# .handoffs/ elsewhere — should one ever appear — is not silently excluded too.
+/.handoffs/
 
 # Code/doc alignment recap files (snapshot audits, not project history). Same rationale as above
 # for the leading slash.
