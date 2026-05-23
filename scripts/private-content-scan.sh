@@ -13,13 +13,13 @@
 #   - "InvalidData" — generic English compound in
 #     docs/features/mrz-error-taxonomy.md (substring matches the term
 #     "idda" but is not private content)
-#   - "Azerbaijan" wrapped in double quotes — ISO 3166-1 alpha-3 short
-#     name in mrz-core/.../CountryCodeTable.kt (standard data identifier,
-#     same treatment as USA / GBR / DEU)
-#   - "azerbaij.pdf" — filename in Library of Congress ALA-LC romanization
-#     URL anchors (citation source, not authored prose). Cited in
-#     docs/decisions/0009-transliteration-profiles.md,
-#     docs/features/transliteration.md, docs/open-questions.md
+#
+# (Earlier versions of this script also filtered "Azerbaijan" and
+# "azerbaij.pdf" as false positives because "azerbaij" was a scan term.
+# That was an over-correction: Azerbaijan is a country, not private
+# context, and the user is openly from Azerbaijan. The term was removed
+# from .claude/private-content-terms.local in the slim pass, and its
+# associated false-positive filters were removed here at the same time.)
 #
 # Called by:
 #   - The PreToolUse hook on Bash(git push *) in .claude/settings.json,
@@ -60,7 +60,7 @@ fi
 
 # Documented false positives. Lines matching ANY of these patterns are
 # excluded from the result set. Extended-regex.
-FALSE_POSITIVES='InvalidData|"Azerbaijan"|azerbaij\.pdf'
+FALSE_POSITIVES='InvalidData'
 
 # Scan tracked files only (git ls-files = what a fresh cloner sees).
 # -z for NUL-delimited paths handles unusual filenames.
