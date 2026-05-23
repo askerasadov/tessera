@@ -78,13 +78,17 @@ Create `.claude/private-content-terms.local` with one substring per line. Lines 
 
 #### Documented false positives
 
-The script's `FALSE_POSITIVES` extended-regex excludes lines matching any of:
+The script's `FALSE_POSITIVES` extended-regex excludes lines matching:
 
-1. **`InvalidData`** in `docs/features/mrz-error-taxonomy.md` — generic English compound; substring matches the scan but the word is not private context.
-2. **`"Azerbaijan"`** (with the surrounding double quotes) in `mrz-core/src/commonMain/.../recognition/CountryCodeTable.kt` — the ISO 3166-1 alpha-3 English short name, standard data identifier treated identically to USA / GBR / DEU / etc. The convention is about prose / comments / docs, not standard data identifiers.
-3. **`azerbaij.pdf`** in URL anchors pointing to the Library of Congress ALA-LC romanization document (`https://www.loc.gov/catdir/cpso/romanization/azerbaij.pdf`) — primary citation source for the AZE transliteration profile. The filename is what LoC chose; the URL is a citation, not authored prose. Used in `docs/decisions/0009-transliteration-profiles.md`, `docs/features/transliteration.md`, `docs/open-questions.md`.
+- **`InvalidData`** in `docs/features/mrz-error-taxonomy.md` — generic English compound; substring matches the scan but the word is not private context.
 
 If a NEW generic substring needs to be allowlisted, update `FALSE_POSITIVES` in `scripts/private-content-scan.sh` AND document it here in the same PR.
+
+##### Why "Azerbaijan" is not in the scan or the false-positive list
+
+Earlier versions of the scan included `azerbaij` as a term and required two false-positive exclusions (`"Azerbaijan"` in the ISO 3166 table and `azerbaij.pdf` in ALA-LC citation URLs). That was an over-correction: Azerbaijan is a country, not private context. The user is openly from Azerbaijan, Tessera ships AZE transliteration as one profile among many, and the ISO 3166 table includes Azerbaijan alongside ~250 other countries. The term and its associated false positives were removed together in the scan's slim pass.
+
+Country names, ISO codes, and citation URLs that reference country names are NEVER private context and should not be added to the scan terms file.
 
 ### 5. Run verification
 
@@ -196,7 +200,7 @@ Or let Claude Code clean up automatically when the next session creates a new wo
 - **`gh auth setup-git`** is the bridge between Git's HTTPS push and `gh`'s credentials. Without it, `git push` will hit "could not read Username for 'https://github.com'" even when `gh auth status` shows logged in.
 - **PR template** at `.github/pull_request_template.md` auto-applies to web-UI PR creation. For CLI creation, the body is provided explicitly via `--body` — paste the template sections in.
 - **CHANGELOG-on-every-PR** is the discipline. The PR template has a checkbox; future sessions should default to updating the changelog rather than treating it as optional.
-- **Private-content scan** is mandatory before every push to a public-or-soon-to-be-public remote. Automated for Claude via the PreToolUse hook in `.claude/settings.json` calling `scripts/private-content-scan.sh`; manual pushes run the script directly. Scan terms live in the gitignored `.claude/private-content-terms.local` (per-contributor). Documented false positives are listed under "Run the private-content scan" above (`InvalidData` in `mrz-error-taxonomy.md`; `"Azerbaijan"` as ISO 3166-1 data in `CountryCodeTable.kt`; the `azerbaij.pdf` URL filename in ALA-LC citation links). None count as leaks.
+- **Private-content scan** is mandatory before every push to a public-or-soon-to-be-public remote. Automated for Claude via the PreToolUse hook in `.claude/settings.json` calling `scripts/private-content-scan.sh`; manual pushes run the script directly. Scan terms live in the gitignored `.claude/private-content-terms.local` (per-contributor). Sole documented false positive: `InvalidData` in `mrz-error-taxonomy.md` (substring matches but is generic English, not private context). Country names (e.g., Azerbaijan) are not in the scan and not in the false-positive list — see "Run the private-content scan" above for why.
 
 ---
 
