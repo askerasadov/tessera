@@ -62,22 +62,22 @@ logs/
 # .handoffs/ elsewhere — should one ever appear — is not silently excluded too.
 /.handoffs/
 
-# Code/doc alignment recap files (snapshot audits, not project history). Same rationale as above
-# for the leading slash.
-/RECAP-*.md
+# Code/doc alignment recap files live in .recaps/ (snapshot audits, not project history).
+# Same leading-slash rationale as the handoffs entry above.
+/.recaps/
 
-# Conformance verification working notes (per-session findings from spec-vs-implementation
-# verification passes). Same rationale as the recap files — these are working artifacts, not
-# committed project history. Leading slash for the same reason.
-/CONFORMANCE-*.md
+# Conformance verification working notes live in .conformance/ (per-session findings from
+# spec-vs-implementation verification passes). Same rationale as the recap files — these are
+# working artifacts, not committed project history. Leading slash for the same reason.
+/.conformance/
 
-# Local reference copies of external specifications (e.g., ICAO Doc 9303 PDFs downloaded for
-# implementation verification). These are NEVER committed: ICAO's terms restrict redistribution
-# of their materials without written permission. The spec content is consulted locally to
-# verify the SDK's implementations against authoritative source; findings translate into code
-# changes and citations via section numbers, never via verbatim spec content. Leading slash
-# anchors to project root (avoid accidental matches in nested module trees).
-/spec/
+# Local reference copies of external specifications live in .spec/ (e.g., ICAO Doc 9303 PDFs
+# downloaded for implementation verification). These are NEVER committed: ICAO's terms restrict
+# redistribution of their materials without written permission. The spec content is consulted
+# locally to verify the SDK's implementations against authoritative source; findings translate
+# into code changes and citations via section numbers, never via verbatim spec content. Leading
+# slash anchors to project root (avoid accidental matches in nested module trees).
+/.spec/
 
 # Coverage reports
 coverage/

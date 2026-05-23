@@ -228,6 +228,12 @@ This is not "verify everything." Most decisions are routine and the project's do
 
 Full operational detail in the "Pre-commitment alignment check" rule in [`CLAUDE.md`](../CLAUDE.md) and the full working pattern in [`.claude/working-patterns.md`](../.claude/working-patterns.md).
 
+### Folder and File Organization
+
+Project folders and files follow a consistent placement-and-naming convention: visible folders (`docs/`, `scripts/`, source modules, etc.) hold project deliverables that contributors interact with directly; dot-prefix folders (`.claude/`, `.github/`, `.handoffs/`, `.recaps/`, `.conformance/`, `.spec/`) hold project infrastructure — AI-facing docs, tool config, working notes, maintainer reference material — regardless of whether those folders' contents are committed or gitignored. Naming is purpose-driven rather than folder-driven: dated working notes use `<CATEGORY>-YYYY-MM-DD[-HHMM][-<slug>].md` (uppercase category, UTC date), evergreen documentation files use lowercase-hyphen names with the `.md` extension (ADRs add a 4-digit numeric prefix), and root-level project files follow the long-standing software convention of UPPERCASE filenames.
+
+Full operational detail in the "Folder and File Organization" rule in [`CLAUDE.md`](../CLAUDE.md).
+
 ### Swift, other languages
 
 Conventions for Swift wrappers and any future languages are added to this document when those source sets are introduced. The same principle applies: idiomatic per-language style, enforced by the language's standard tooling (e.g., SwiftLint for Swift), with configuration committed at the project root.
