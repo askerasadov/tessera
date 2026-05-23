@@ -79,6 +79,13 @@ logs/
 # slash anchors to project root (avoid accidental matches in nested module trees).
 /.spec/
 
+# Private-content scan terms file lives at .claude/private-content-terms.local (per-contributor
+# local-only list of substrings that must never appear in committed files — organizational and
+# location identifiers). Read by scripts/private-content-scan.sh, which is wired into the
+# PreToolUse hook in .claude/settings.json to block any git push that would leak them. The
+# terms themselves are the private context being protected, so the file is gitignored by design.
+/.claude/private-content-terms.local
+
 # Coverage reports
 coverage/
 *.lcov

@@ -114,7 +114,7 @@ The project uses **GitHub Flow**: `main` is the trunk; feature branches off `mai
 
 - **Branch off `origin/main`** for every PR. Name `feature/...`, `fix/...`, `docs/...`, or `chore/...` per the contents.
 - **Rename auto-generated worktree branches** before pushing. `claude/<random>` is meaningless to reviewers.
-- **Run the private-content scan before every push** to a public-or-soon-to-be-public remote. Grep terms are in memory `feedback_private_content_scan.md`.
+- **Private-content scan before every push.** Automated for Claude's `git push` calls via a PreToolUse hook in [`.claude/settings.json`](.claude/settings.json) calling [`scripts/private-content-scan.sh`](scripts/private-content-scan.sh); manual pushes run the script directly. Setup, false-positive allowlist, and resolution steps in [`.claude/git-workflow.md`](.claude/git-workflow.md) section 4.
 - **Use the PR template** at `.github/pull_request_template.md`. Fill Documentation Impact, Tests, Open Questions, Changelog, and Verification sections.
 - **`gh` CLI is set up and authed** in this environment. Push and create PRs directly from the session.
 - **Delete merged branches locally** with `git branch -d <name>` after merge. Remote branches auto-delete via repo settings.
