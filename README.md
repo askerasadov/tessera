@@ -4,7 +4,7 @@ A vendor-neutral SDK for reading, validating, and generating identity document d
 
 Tessera reads Machine Readable Zones (MRZ) from passports, national ID cards, residence permits, machine-readable visas, and similar travel documents conforming to ICAO Doc 9303. It returns extracted data verbatim, with structured validation results — leaving all trust decisions to the integrating application.
 
-> **Status:** In development. Not yet released. The first public release is targeted for version 1.0.0; pre-release versions in the 0.x line are available to early integrators with the same backward-compatibility commitments as post-1.0 versions.
+> **Status:** In active `0.x` development. `v0.1.0` released 2026-05-19 — see [`CHANGELOG.md`](CHANGELOG.md). The `1.0.0` milestone marks the public-stability and open-source release commitment per [ADR-011](docs/decisions/0011-open-source-at-public-release.md); pre-`1.0.0` releases follow the same strict backward-compatibility commitments as post-`1.0.0` releases. See [`docs/versioning.md`](docs/versioning.md) for the policy.
 
 ---
 
@@ -82,6 +82,8 @@ The project's documentation is structured for two audiences: integrators (who wa
 - [`docs/principles.md`](docs/principles.md) — the foundational principles every design decision honors
 - [`docs/architecture.md`](docs/architecture.md) — module structure, dependency graph, and technology choices
 - [`docs/conventions.md`](docs/conventions.md) — how documentation is written, how decisions are made, how contributions happen
+- [`docs/testing.md`](docs/testing.md) — testing discipline (tests alongside implementation, synthetic data only)
+- [`docs/contributor-setup.md`](docs/contributor-setup.md) — one-time machine setup for contributors (clone, Git identity, SSH commit signing)
 - [`docs/decisions/`](docs/decisions/) — Architecture Decision Records capturing the reasoning behind major choices
 - [`docs/open-questions.md`](docs/open-questions.md) — decisions that have been deliberately deferred, tracked so they are not forgotten
 
@@ -89,18 +91,18 @@ The project's documentation is structured for two audiences: integrators (who wa
 
 ## Platforms
 
-Currently targeted platforms:
+Tessera is built with Kotlin Multiplatform. Targets activate per-release as the corresponding reading methods land — see [`docs/scope.md`](docs/scope.md) for the full roadmap.
 
-- **Android** — minimum API level 26 (Android 8.0)
-- **iOS** — minimum iOS 15.0
+Enabled in `0.1.0`:
 
-The architecture supports additional targets without changes to the core logic:
+- **JVM** — the pure core logic (parsing, validation, generation, lookup tables, transliteration profiles, telemetry contract)
 
-- **JVM backend** — for server-side parsing, validation, and generation
-- **Web** (JS / Wasm) — for browser-side validation and generation
-- **Desktop** (JVM and native) — for desktop applications
+Planned per the roadmap:
 
-These additional targets are not part of the initial releases but can be activated when there is a use case.
+- **Android** — activates alongside camera reading. Minimum API level 26 (Android 8.0)
+- **iOS** — activates when Xcode availability allows. Minimum iOS 15.0
+
+The architecture supports further targets — Web (JS / Wasm), Desktop (JVM and native) — without changes to the core logic. They are not part of the initial releases but can be activated when there is a use case.
 
 ---
 
@@ -116,15 +118,21 @@ Tessera is released under the Apache License 2.0. The full license text is in th
 
 ---
 
+## Security
+
+Tessera is used in trust-related contexts. Security reports are taken seriously and handled privately. See [`SECURITY.md`](SECURITY.md) for the disclosure process, the supported-versions matrix, and what is in and out of scope.
+
+---
+
 ## Contributing
 
-Contribution conventions are documented in [`docs/conventions.md`](docs/conventions.md). The short version:
+[`CONTRIBUTING.md`](CONTRIBUTING.md) is the short pointer for new contributors; [`docs/conventions.md`](docs/conventions.md) holds the full contribution rules; [`docs/contributor-setup.md`](docs/contributor-setup.md) covers one-time machine setup. The short version:
 
 - Decisions of architectural or scope significance are recorded as ADRs
 - Disagreement is welcome — the project's culture is dispute-driven, grounded in the principles
 - New conventions are added through normal contribution: proposal, discussion, agreement, then an edit
 
-The project is currently in pre-release development. Public contribution channels open at the 1.0.0 release.
+The project is in active `0.x` development. The formal open-source release happens at `1.0.0` per [ADR-011](docs/decisions/0011-open-source-at-public-release.md).
 
 ---
 
