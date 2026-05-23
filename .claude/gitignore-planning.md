@@ -108,7 +108,7 @@ A pre-commit hook or CI check should catch any of these. Even with such a check,
 - Build outputs (`build/`, `target/`, `out/`, `Pods/`, `DerivedData/`)
 - Temporary backup files (editor-specific)
 - Local environment files (`local.properties`, `.env.local`)
-- **Session handoff files** (`SESSION-HANDOFF-*.md` at project root) — these are working notes from individual Claude Code sessions, not part of the project's history. The handoff template lives in `.claude/session-handoff-template.md` and is committed; the actual generated handoff files are not.
+- **Session handoff files** (`SESSION-HANDOFF-*.md` in the project's `handoffs/` directory) — these are working notes from individual Claude Code sessions, not part of the project's history. The handoff template lives in `.claude/session-handoff-template.md` and is committed; the entire `handoffs/` directory is excluded from version control.
 
 ---
 
