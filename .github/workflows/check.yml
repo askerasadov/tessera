@@ -48,3 +48,6 @@ jobs:
 
       - name: Run cross-reference validator
         run: bash scripts/check-cross-references.sh
+
+      - name: Run markdown link validator
+        run: bash scripts/check-markdown-links.sh
