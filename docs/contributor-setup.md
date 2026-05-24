@@ -111,7 +111,7 @@ Without this step, every signed commit prompts for the passphrase.
 ssh-add --apple-use-keychain ~/.ssh/tessera_signing
 ```
 
-You'll be prompted once; macOS stores the passphrase in your login Keychain. **The `~/.ssh/config` block below is required, not optional** — without it, the SSH agent forgets the key on every reboot, and your first `git commit` afterward will silently hang waiting for a passphrase prompt that the agent has no way to surface. Add to `~/.ssh/config`:
+You'll be prompted once; macOS stores the passphrase in your login Keychain. **The `~/.ssh/config` block below is required, not optional** — without it, you'd have to run `ssh-add` manually every new login to repopulate the agent (macOS clears the agent on every reboot regardless of this block; the block makes the repopulation automatic on first SSH client use). Add to `~/.ssh/config`:
 
 ```
 Host *
@@ -119,6 +119,8 @@ Host *
   UseKeychain yes
   AddKeysToAgent yes
 ```
+
+The block instructs the SSH **client** (used by `git push`, `git fetch`, `ssh`) to read the passphrase from Keychain on first use and load the key into the agent. After any one ssh client operation in a new login session, the agent holds the key and `git commit` can sign through it. `git commit`'s signing path (`ssh-keygen -Y sign`) does not read `~/.ssh/config` itself — it relies on the agent already being populated. In normal workflow this is invisible (most sessions start with a `pull` or `push`); see section 4 if your first SSH operation in a session is a commit and signing fails.
 
 #### 3f. Verify with a test commit
 
@@ -291,11 +293,11 @@ These issues are platform-agnostic. Platform-specific passphrase / agent problem
 
 ### `git commit` hangs silently after a reboot or login
 
-Symptom: a commit hangs with no output. Running `ssh-add -l` in another terminal reports "The agent has no identities" (or returns an error).
+Symptom: a commit hangs with no output (interactive terminal), or fails with an `incorrect passphrase` / similar error (non-interactive context — scripted commits, IDE-driven commits with no passphrase UI, agentic flows). Running `ssh-add -l` in another terminal reports "The agent has no identities" (or returns an error).
 
-The setup from step 3e didn't carry across the reboot or login — the agent is empty and `git`'s call into `ssh-keygen -Y sign` is blocked waiting for a passphrase that nothing can supply (the prompt has no terminal to write to when the commit was invoked by an editor, IDE, or scripted environment). The fix is platform-specific:
+The agent is empty and `git`'s call into `ssh-keygen -Y sign` has no key to sign with. ssh-keygen falls back to prompting for the passphrase on a TTY — which hangs interactively, or reads garbage from a missing stdin and fails with `incorrect passphrase` in non-interactive contexts. The fix is platform-specific:
 
-- **macOS** — usually the `~/.ssh/config` block from step 3e is missing, or your Keychain passphrase entry was cleared. Re-do step 3e. To confirm Keychain has the passphrase: `ssh-add -D && ssh-add --apple-use-keychain ~/.ssh/tessera_signing` should not prompt; if it does, enter the passphrase once and Keychain will store it. Note: the `security find-generic-password` CLI may report "not found" even when an iCloud or data-protection keychain entry exists — trust the empirical `ssh-add` test over the CLI query.
+- **macOS** — usually the `~/.ssh/config` block from step 3e is missing, or your Keychain passphrase entry was cleared. Re-do step 3e. To confirm Keychain has the passphrase: `ssh-add -D && ssh-add --apple-use-keychain ~/.ssh/tessera_signing` should not prompt; if it does, enter the passphrase once and Keychain will store it. Note: the `security find-generic-password` CLI may report "not found" even when an iCloud or data-protection keychain entry exists — trust the empirical `ssh-add` test over the CLI query. **Edge case — the bridge is fine but hasn't fired yet:** the `~/.ssh/config` block populates the agent on first ssh *client* operation (`git push`, `git fetch`, `ssh`), not on signing. If your first SSH operation in a session happens to be a commit (common in scripted, IDE-driven, or agentic flows), the agent will still be empty even with the bridge correctly configured. One manual `ssh-add --apple-use-keychain ~/.ssh/tessera_signing` (silent if Keychain holds the passphrase) populates the agent and unblocks signing; or just run any `git pull` / `git fetch` first.
 - **Linux** — your DE's keyring integration or the `keychain` wrapper didn't start on this login. Re-do step 3e for the current session (`eval "$(ssh-agent -s)" && ssh-add ~/.ssh/tessera_signing`). For permanent persistence, pick one of the mechanisms listed in step 3e (DE keyring auto-start, or the `keychain` wrapper invoked from your shell rc) so future logins don't repeat the problem.
 - **Windows** — verify `Get-Service ssh-agent` reports both `Running` and `Automatic`. If you use Git for Windows, also verify `git config --get core.sshCommand` points at the system OpenSSH; mismatched agents is the most common Windows-specific failure per step 3e's note.
 
