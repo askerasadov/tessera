@@ -403,11 +403,13 @@ Cryptographic verification of NFC chip signatures requires trust anchors (typica
 
 ### Distribution channels (Maven Central, CocoaPods, SPM)
 
-The choice of artifact distribution channels for each target platform is not yet decided. Current focus is on producing usable artifacts; publication mechanics will be settled before public release.
+**Maven Central is the confirmed channel for the JVM target.** The Sonatype namespace under `io.lightine` was claimed and verified (backed by the owned `lightine.io` domain), aligning with the project's existing `io.lightine.tessera.*` package root from the "Project root namespace" entry above.
+
+Two follow-on questions remain open under this same entry: (1) the published coordinate shape — groupId/artifactId pattern (`io.lightine.tessera:mrz-core` vs `io.lightine:tessera-mrz-core` vs other conventions; the current working module names per `docs/architecture.md` become artifactIds at first publish and lock under [ADR-007](decisions/0007-strict-backward-compat-from-0x.md) strict backward-compatibility); (2) *when* to first publish — at `0.x` for early integrators, or wait for the `1.0.0` public release per [ADR-011](decisions/0011-open-source-at-public-release.md). iOS distribution channel (CocoaPods vs Swift Package Manager) remains separately deferred — the iOS target activates per `docs/scope.md` when Xcode availability allows.
 
 **Source:** Implicit; not yet referenced.
 
-**Resolution:** Decide and document before public release.
+**Resolution:** Maven Central confirmed for JVM target with namespace `io.lightine` (verified on Sonatype). First-publish timing and artifact coordinate shape still to decide and document before first publish. iOS distribution channel to decide before iOS target activates.
 
 ### LICENSE file at project root
 
