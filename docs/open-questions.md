@@ -403,13 +403,13 @@ Cryptographic verification of NFC chip signatures requires trust anchors (typica
 
 ### Distribution channels (Maven Central, CocoaPods, SPM)
 
-**Maven Central is the confirmed channel for the JVM target.** The Sonatype namespace under `io.lightine` was claimed and verified (backed by the owned `lightine.io` domain), aligning with the project's existing `io.lightine.tessera.*` package root from the "Project root namespace" entry above.
+**JVM coordinate shape, lockstep versioning, BOM, first-publish version, and first-publish scope are resolved by [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md).** The published groupId is `io.lightine.tessera` (backed by the verified Sonatype namespace at `io.lightine`); artifactIds follow the `tessera-<module>` convention; modules version in lockstep with a `tessera-bom` artifact for version alignment; the first Maven Central publication ships at 0.1.1 with all five current modules plus the BOM; no snapshot builds at 0.x.
 
-Two follow-on questions remain open under this same entry: (1) the published coordinate shape — groupId/artifactId pattern (`io.lightine.tessera:mrz-core` vs `io.lightine:tessera-mrz-core` vs other conventions; the current working module names per `docs/architecture.md` become artifactIds at first publish and lock under [ADR-007](decisions/0007-strict-backward-compat-from-0x.md) strict backward-compatibility); (2) *when* to first publish — at `0.x` for early integrators, or wait for the `1.0.0` public release per [ADR-011](decisions/0011-open-source-at-public-release.md). iOS distribution channel (CocoaPods vs Swift Package Manager) remains separately deferred — the iOS target activates per `docs/scope.md` when Xcode availability allows.
+What remains open under this entry: iOS distribution channel (CocoaPods vs Swift Package Manager). The iOS target activates per `docs/scope.md` when Xcode availability allows; channel selection is decided alongside.
 
 **Source:** Implicit; not yet referenced.
 
-**Resolution:** Maven Central confirmed for JVM target with namespace `io.lightine` (verified on Sonatype). First-publish timing and artifact coordinate shape still to decide and document before first publish. iOS distribution channel to decide before iOS target activates.
+**Resolution:** JVM distribution fully resolved by [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md). iOS distribution channel to decide before iOS target activates.
 
 ### LICENSE file at project root
 
