@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.recognition
 
-import io.lightine.tessera.domain.vocabulary.CountryCodeCategory
+import io.lightine.tessera.types.vocabulary.CountryCodeCategory
 import kotlin.jvm.JvmInline
 
 /**
@@ -11,7 +11,7 @@ import kotlin.jvm.JvmInline
  * The [rawCode] is what the document actually contains; the other properties consult
  * [CountryCodeTable] to add SDK-recognized context (display name, category). Lookup
  * failures are not errors — see [isRecognized] and
- * [`MrzUnknownCountryCode`][io.lightine.tessera.domain.errors.MrzUnknownCountryCode]
+ * [`MrzUnknownCountryCode`][io.lightine.tessera.types.errors.MrzUnknownCountryCode]
  * for the recognition-failure flow per
  * [ADR-013](https://github.com/askerasadov/Tessera/blob/main/docs/decisions/0013-recognition-failures-are-warnings.md).
  */

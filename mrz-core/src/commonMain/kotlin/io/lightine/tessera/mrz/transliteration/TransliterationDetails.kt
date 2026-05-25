@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.transliteration
 
-import io.lightine.tessera.domain.vocabulary.MrzField
+import io.lightine.tessera.types.vocabulary.MrzField
 
 /**
  * Per-field audit trail of transliteration applied during MRZ generation. Exposed on

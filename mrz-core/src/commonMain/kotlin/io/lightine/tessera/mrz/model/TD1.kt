@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.model
 
-import io.lightine.tessera.domain.vocabulary.MrzFormat
+import io.lightine.tessera.types.vocabulary.MrzFormat
 
 /**
  * A parsed TD1 (identity card) MRZ document per ICAO Doc 9303 Part 5. Three lines of 30

@@ -1,13 +1,13 @@
 package io.lightine.tessera.mrz.parsing
 
-import io.lightine.tessera.domain.errors.MrzCharacterSetViolation
-import io.lightine.tessera.domain.errors.MrzFormatNotDetected
-import io.lightine.tessera.domain.vocabulary.MrzFormat
 import io.lightine.tessera.mrz.model.MrvA
 import io.lightine.tessera.mrz.model.MrvB
 import io.lightine.tessera.mrz.model.TD1
 import io.lightine.tessera.mrz.model.TD2
 import io.lightine.tessera.mrz.model.TD3
+import io.lightine.tessera.types.errors.MrzCharacterSetViolation
+import io.lightine.tessera.types.errors.MrzFormatNotDetected
+import io.lightine.tessera.types.vocabulary.MrzFormat
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -250,7 +250,7 @@ class MrzParserAutoDetectTest {
     fun failure_metadata_uses_backend_string_input_read_method() {
         val result = MrzParser.parse("", referenceTime = ref2026)
         val failure = assertIs<ParseResult.Failure>(result)
-        assertEquals(io.lightine.tessera.domain.vocabulary.ReadMethod.BACKEND_STRING_INPUT, failure.metadata.readMethod)
+        assertEquals(io.lightine.tessera.types.vocabulary.ReadMethod.BACKEND_STRING_INPUT, failure.metadata.readMethod)
         assertTrue(failure.metadata.warnings.isEmpty())
         assertTrue(failure.metadata.validationFailures.isEmpty())
     }

@@ -1,7 +1,7 @@
 package io.lightine.tessera.mrz.parsing
 
-import io.lightine.tessera.domain.errors.MrzParseError
 import io.lightine.tessera.mrz.model.MrzDocument
+import io.lightine.tessera.types.errors.MrzParseError
 
 /**
  * The outcome of [`MrzParser`][MrzParser.parse] parsing input. Three variants:
@@ -16,9 +16,9 @@ import io.lightine.tessera.mrz.model.MrzDocument
  *   MRZ alphabet, no recognized format). Carries the [`error`][Failure.error] and the
  *   raw input that produced it.
  *
- * Every variant carries [metadata]: [`ReadMethod`][io.lightine.tessera.domain.vocabulary.ReadMethod],
- * any [`MrzWarning`][io.lightine.tessera.domain.errors.MrzWarning]s, any
- * [`MrzValidationError`][io.lightine.tessera.domain.errors.MrzValidationError]s, and the
+ * Every variant carries [metadata]: [`ReadMethod`][io.lightine.tessera.types.vocabulary.ReadMethod],
+ * any [`MrzWarning`][io.lightine.tessera.types.errors.MrzWarning]s, any
+ * [`MrzValidationError`][io.lightine.tessera.types.errors.MrzValidationError]s, and the
  * transliteration audit trail (which is `null` for parser-produced results since the
  * parser does not transliterate).
  */

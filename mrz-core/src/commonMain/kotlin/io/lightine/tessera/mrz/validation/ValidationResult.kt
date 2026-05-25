@@ -1,7 +1,7 @@
 package io.lightine.tessera.mrz.validation
 
-import io.lightine.tessera.domain.errors.MrzValidationError
-import io.lightine.tessera.domain.errors.MrzWarning
+import io.lightine.tessera.types.errors.MrzValidationError
+import io.lightine.tessera.types.errors.MrzWarning
 
 /**
  * The output of [`MrzValidator.validate`][MrzValidator.validate]: per-field validation

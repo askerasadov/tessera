@@ -1,17 +1,17 @@
 package io.lightine.tessera.mrz.validation
 
-import io.lightine.tessera.domain.errors.MrzCheckDigitMismatch
-import io.lightine.tessera.domain.errors.MrzInvalidSexValue
-import io.lightine.tessera.domain.errors.MrzUnknownCountryCode
-import io.lightine.tessera.domain.errors.MrzValidationError
-import io.lightine.tessera.domain.vocabulary.MrzField
-import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.model.CommonFields
 import io.lightine.tessera.mrz.model.MrzCheckDigits
 import io.lightine.tessera.mrz.model.MrzDate
 import io.lightine.tessera.mrz.model.TD2
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
+import io.lightine.tessera.types.errors.MrzCheckDigitMismatch
+import io.lightine.tessera.types.errors.MrzInvalidSexValue
+import io.lightine.tessera.types.errors.MrzUnknownCountryCode
+import io.lightine.tessera.types.errors.MrzValidationError
+import io.lightine.tessera.types.vocabulary.MrzField
+import io.lightine.tessera.types.vocabulary.Sex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

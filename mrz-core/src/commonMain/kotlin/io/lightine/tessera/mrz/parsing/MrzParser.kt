@@ -1,11 +1,5 @@
 package io.lightine.tessera.mrz.parsing
 
-import io.lightine.tessera.domain.errors.MrzCharacterSetViolation
-import io.lightine.tessera.domain.errors.MrzFormatNotDetected
-import io.lightine.tessera.domain.errors.MrzInvalidLength
-import io.lightine.tessera.domain.vocabulary.MrzFormat
-import io.lightine.tessera.domain.vocabulary.ReadMethod
-import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.formats.MrvAFormatSpec
 import io.lightine.tessera.mrz.formats.MrvBFormatSpec
 import io.lightine.tessera.mrz.formats.Td1FormatSpec
@@ -25,6 +19,12 @@ import io.lightine.tessera.mrz.model.TD3
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
 import io.lightine.tessera.mrz.validation.MrzValidator
+import io.lightine.tessera.types.errors.MrzCharacterSetViolation
+import io.lightine.tessera.types.errors.MrzFormatNotDetected
+import io.lightine.tessera.types.errors.MrzInvalidLength
+import io.lightine.tessera.types.vocabulary.MrzFormat
+import io.lightine.tessera.types.vocabulary.ReadMethod
+import io.lightine.tessera.types.vocabulary.Sex
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -37,7 +37,7 @@ import kotlin.time.Instant
  *
  * 1. **Auto-detecting** — [parse]. Identifies the format from the input's line count and
  *    per-line lengths and dispatches to the matching format-specific parser. Returns
- *    [`MrzFormatNotDetected`][io.lightine.tessera.domain.errors.MrzFormatNotDetected]
+ *    [`MrzFormatNotDetected`][io.lightine.tessera.types.errors.MrzFormatNotDetected]
  *    when the input shape does not match any supported format. Inputs whose shape is
  *    ambiguous between a non-visa and a visa format are disambiguated by the leading
  *    `V` character on line 1 (per Principle 1: dispatch is deterministic, never
@@ -45,8 +45,8 @@ import kotlin.time.Instant
  *
  * 2. **Format-specific** — [parseTD3], [parseTD2], [parseTD1], [parseMRVA], [parseMRVB].
  *    Use these when the consumer already knows the expected format. Format-specific
- *    parsers return [`MrzInvalidLength`][io.lightine.tessera.domain.errors.MrzInvalidLength]
- *    (not [`MrzFormatNotDetected`][io.lightine.tessera.domain.errors.MrzFormatNotDetected])
+ *    parsers return [`MrzInvalidLength`][io.lightine.tessera.types.errors.MrzInvalidLength]
+ *    (not [`MrzFormatNotDetected`][io.lightine.tessera.types.errors.MrzFormatNotDetected])
  *    when the input doesn't match the format's dimensions.
  *
  * Every entry point optionally accepts a [`referenceTime`][kotlin.time.Instant] used for
@@ -151,9 +151,9 @@ public object MrzParser {
 
     /**
      * Parses [input] as TD3 (passport, 2 lines × 44 characters per ICAO Doc 9303 Part 4).
-     * Returns [`MrzInvalidLength`][io.lightine.tessera.domain.errors.MrzInvalidLength] if
+     * Returns [`MrzInvalidLength`][io.lightine.tessera.types.errors.MrzInvalidLength] if
      * the input does not match the format's dimensions;
-     * [`MrzCharacterSetViolation`][io.lightine.tessera.domain.errors.MrzCharacterSetViolation]
+     * [`MrzCharacterSetViolation`][io.lightine.tessera.types.errors.MrzCharacterSetViolation]
      * if any character is outside the MRZ alphabet. Structurally-valid inputs produce
      * [`Success`][ParseResult.Success] or [`PartialSuccess`][ParseResult.PartialSuccess]
      * depending on whether the validator surfaced failures.

@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.recognition
 
-import io.lightine.tessera.domain.vocabulary.CountryCodeCategory
+import io.lightine.tessera.types.vocabulary.CountryCodeCategory
 
 /**
  * A single entry in [CountryCodeTable]: the raw three-character code as it appears in an

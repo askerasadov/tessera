@@ -1,9 +1,9 @@
 package io.lightine.tessera.mrz.model
 
-import io.lightine.tessera.domain.vocabulary.MrzFormat
-import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
+import io.lightine.tessera.types.vocabulary.MrzFormat
+import io.lightine.tessera.types.vocabulary.Sex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

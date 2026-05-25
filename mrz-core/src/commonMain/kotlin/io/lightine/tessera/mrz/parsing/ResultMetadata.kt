@@ -1,9 +1,9 @@
 package io.lightine.tessera.mrz.parsing
 
-import io.lightine.tessera.domain.errors.MrzValidationError
-import io.lightine.tessera.domain.errors.MrzWarning
-import io.lightine.tessera.domain.vocabulary.ReadMethod
 import io.lightine.tessera.mrz.transliteration.TransliterationDetails
+import io.lightine.tessera.types.errors.MrzValidationError
+import io.lightine.tessera.types.errors.MrzWarning
+import io.lightine.tessera.types.vocabulary.ReadMethod
 
 /**
  * Diagnostic context attached to every [ParseResult] and [`GenerationResult`][io.lightine.tessera.mrz.generation.GenerationResult].
@@ -12,8 +12,8 @@ import io.lightine.tessera.mrz.transliteration.TransliterationDetails
  * failures observed.
  *
  * - [readMethod] — the provenance of the input (see
- *   [`ReadMethod`][io.lightine.tessera.domain.vocabulary.ReadMethod]). 0.1.0 SDK code
- *   reports [`ReadMethod.BACKEND_STRING_INPUT`][io.lightine.tessera.domain.vocabulary.ReadMethod.BACKEND_STRING_INPUT]
+ *   [`ReadMethod`][io.lightine.tessera.types.vocabulary.ReadMethod]). 0.1.0 SDK code
+ *   reports [`ReadMethod.BACKEND_STRING_INPUT`][io.lightine.tessera.types.vocabulary.ReadMethod.BACKEND_STRING_INPUT]
  *   because the SDK's only input path is plain strings; later releases produce other
  *   values as the corresponding reading methods activate.
  * - [warnings] — informational observations that do not prevent the result from being

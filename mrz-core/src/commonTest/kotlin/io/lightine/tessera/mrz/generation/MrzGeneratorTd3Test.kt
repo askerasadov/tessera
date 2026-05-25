@@ -1,10 +1,5 @@
 package io.lightine.tessera.mrz.generation
 
-import io.lightine.tessera.domain.errors.MrzGenerationFieldOverflow
-import io.lightine.tessera.domain.vocabulary.MrzField
-import io.lightine.tessera.domain.vocabulary.MrzFormat
-import io.lightine.tessera.domain.vocabulary.ReadMethod
-import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.model.CommonFields
 import io.lightine.tessera.mrz.model.MrzCheckDigits
 import io.lightine.tessera.mrz.model.MrzDate
@@ -13,6 +8,11 @@ import io.lightine.tessera.mrz.parsing.MrzParser
 import io.lightine.tessera.mrz.parsing.ParseResult
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
+import io.lightine.tessera.types.errors.MrzGenerationFieldOverflow
+import io.lightine.tessera.types.vocabulary.MrzField
+import io.lightine.tessera.types.vocabulary.MrzFormat
+import io.lightine.tessera.types.vocabulary.ReadMethod
+import io.lightine.tessera.types.vocabulary.Sex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

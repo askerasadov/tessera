@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.transliteration
 
-import io.lightine.tessera.domain.vocabulary.UnmappedCharacter
+import io.lightine.tessera.types.vocabulary.UnmappedCharacter
 
 /**
  * The outcome of a [TransliterationProfile] applying its mapping rules to a normalized

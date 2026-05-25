@@ -1,15 +1,15 @@
 package io.lightine.tessera.mrz.parsing
 
-import io.lightine.tessera.domain.errors.MrzCharacterSetViolation
-import io.lightine.tessera.domain.errors.MrzCheckDigitMismatch
-import io.lightine.tessera.domain.errors.MrzInvalidLength
-import io.lightine.tessera.domain.errors.MrzInvalidSexValue
-import io.lightine.tessera.domain.errors.MrzUnknownCountryCode
-import io.lightine.tessera.domain.vocabulary.MrzField
-import io.lightine.tessera.domain.vocabulary.MrzFormat
-import io.lightine.tessera.domain.vocabulary.ReadMethod
-import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.model.TD1
+import io.lightine.tessera.types.errors.MrzCharacterSetViolation
+import io.lightine.tessera.types.errors.MrzCheckDigitMismatch
+import io.lightine.tessera.types.errors.MrzInvalidLength
+import io.lightine.tessera.types.errors.MrzInvalidSexValue
+import io.lightine.tessera.types.errors.MrzUnknownCountryCode
+import io.lightine.tessera.types.vocabulary.MrzField
+import io.lightine.tessera.types.vocabulary.MrzFormat
+import io.lightine.tessera.types.vocabulary.ReadMethod
+import io.lightine.tessera.types.vocabulary.Sex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

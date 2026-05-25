@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.model
 
-import io.lightine.tessera.domain.vocabulary.MrzFormat
+import io.lightine.tessera.types.vocabulary.MrzFormat
 
 /**
  * A parsed TD3 (passport) MRZ document per ICAO Doc 9303 Part 4. Two lines of 44
@@ -10,7 +10,7 @@ import io.lightine.tessera.domain.vocabulary.MrzFormat
  *
  * Note that some issuing states leave [personalNumberCheckDigit] as the filler character
  * `<` even when [personalNumber] is populated; the SDK surfaces this as
- * [`MrzPersonalNumberCheckDigitFiller`][io.lightine.tessera.domain.errors.MrzPersonalNumberCheckDigitFiller]
+ * [`MrzPersonalNumberCheckDigitFiller`][io.lightine.tessera.types.errors.MrzPersonalNumberCheckDigitFiller]
  * rather than a check digit failure (real-world deviation, not strict ICAO conformance).
  */
 public data class TD3(

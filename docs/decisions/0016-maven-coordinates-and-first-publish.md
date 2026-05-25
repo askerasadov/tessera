@@ -32,7 +32,7 @@ Every published module gets the `tessera-` prefix. Examples at 0.1.1:
 
 - `io.lightine.tessera:tessera-mrz-core:0.1.1`
 - `io.lightine.tessera:tessera-emrtd-core:0.1.1`
-- `io.lightine.tessera:tessera-domain:0.1.1`
+- `io.lightine.tessera:tessera-types:0.1.1`
 - `io.lightine.tessera:tessera-telemetry:0.1.1`
 - `io.lightine.tessera:tessera-logging:0.1.1`
 
@@ -66,13 +66,13 @@ The currently-tagged `v0.1.0` commit does not include publishing infrastructure 
 At 0.1.1 the published set is:
 
 - `tessera-mrz-core`
-- `tessera-domain`
+- `tessera-types` (was `tessera-domain` at ADR-016 acceptance time — renamed in the executed follow-up cleanup; see Follow-up Cleanup section below)
 - `tessera-emrtd-core`
 - `tessera-telemetry`
 - `tessera-logging`
 - `tessera-bom`
 
-No module is held back. `domain` is published even though it is a transitive-only dependency for almost all consumers (depended on by `tessera-mrz-core` and `tessera-emrtd-core` via Gradle `api`); it has to be published or those modules will not resolve.
+No module is held back. `tessera-types` is published even though it is a transitive-only dependency for almost all consumers (depended on by `tessera-mrz-core` and `tessera-emrtd-core` via Gradle `api`); it has to be published or those modules will not resolve.
 
 Snapshot builds (`<version>-SNAPSHOT` to the Sonatype snapshots repository) are not published at 0.x. Snapshots can be added later if a real need emerges, with the cost of one additional `repository {}` block in the publishing configuration. At the project's current scale (single maintainer, no external integrators tracking work-in-progress), they add infrastructure without proportional value.
 
@@ -97,7 +97,7 @@ Snapshot builds (`<version>-SNAPSHOT` to the Sonatype snapshots repository) are 
 - Lockstep versioning means republishing modules that had no internal changes — `tessera-telemetry` may ship unchanged bytes at 0.2.0 with only a version bump. The storage cost on Maven Central is trivial; the conceptual cost (a "release" of an unchanged module) is small but real.
 - All decisions in this ADR lock under [ADR-007](0007-strict-backward-compat-from-0x.md). The groupId, the artifactId names, the BOM coordinate, and the lockstep posture cannot change at any point in the 0.x or 1.x line without breaking every consumer.
 - Consumers who want very fine-grained version control across modules cannot get it — pinning individual modules to different versions defeats the BOM. (No real consumer is expected to want this, but it is foreclosed by lockstep.)
-- The `domain` module is published under a slightly generic name. `tessera-domain` is unambiguous given the prefix, but `domain` is still a less semantic name than the module's actual contents (the error type hierarchy and shared data types) suggest. Tracked as a follow-up cleanup below.
+- The shared-types module was originally named `domain` at this ADR's acceptance time. As anticipated in the Follow-up Cleanup section below, that name was renamed to `types` before first publish (executed as a separate PR) to ship under a more semantic name. The published artifactId is therefore `tessera-types`, not `tessera-domain`.
 
 **Neutral:**
 
@@ -114,7 +114,7 @@ Snapshot builds (`<version>-SNAPSHOT` to the Sonatype snapshots repository) are 
 Considered. This is the AWS SDK style (`software.amazon.awssdk:s3`, `software.amazon.awssdk:dynamodb`). Cleaner aesthetically — no doubled "tessera" — and the groupId already carries project context in any tool that shows full coordinates. Rejected because:
 
 - The Kotlin/Java multi-module convention is overwhelmingly to use the prefix. Going against it imposes a small but persistent friction on consumers.
-- The `domain` module name is generic enough that `tessera-domain` is more legible everywhere it appears. With the prefix, the `domain` name's bluntness is masked by the project context.
+- Even semantic-but-short module names (`types`, also generic words like `core`) are more legible with the `tessera-` prefix. The shared-types module was originally named `domain` at ADR acceptance time — see Follow-up Cleanup — and the same reasoning applied to that name.
 - Some dependency tools (notably Dependabot PR titles, certain security scanners, jar filename references in error messages) display artifactId without groupId. The prefix preserves identification in those contexts.
 - The aesthetic redundancy is a small ongoing cost; the conventional pattern's familiarity is a small ongoing benefit. The benefit slightly wins.
 
@@ -180,7 +180,7 @@ Considered. Sonatype supports snapshot publishing to a separate repository; many
 
 ## Follow-up Cleanup (Out of Scope for This ADR)
 
-- **Rename the `domain` module.** `domain` is a slightly generic name; something more semantic (`mrz-types`, `tessera-types`, or similar) would be more legible. Doesn't need to block first publish if done as a renaming PR before the 0.1.1 release work — preferable to ship under a deliberate name rather than rename later (which would be a breaking change under ADR-007). If not done before 0.1.1, the name locks under this ADR's coordinate commitment.
+- **Rename the `domain` module — EXECUTED.** Renamed from `domain` to `types` in a focused follow-up PR before 0.1.1 ships, per this anticipation. The module folder, the package root (`io.lightine.tessera.domain.*` → `io.lightine.tessera.types.*`), all internal references, the Gradle `include(...)` declaration, the dependent modules' `api(project(...))` declarations, and the relevant living documentation (`architecture.md`, `mrz-error-taxonomy.md`) were updated together; the published artifactId at first publish is `tessera-types`. ADR-012 (which references the `domain` module throughout its reasoning) carries a one-line header note about the rename rather than being rewritten — its reasoning predates the rename and remains historically accurate as written. A separate small follow-up PR will land a path-scoped `.claude/rules/` discipline rule (`tessera-types is types-only; non-type shared code goes in a separate module like tessera-utils`) and cross-reference it from `docs/conventions.md`.
 
 - **Publishing infrastructure work.** This ADR locks the design decisions; the actual implementation (Gradle `maven-publish` configuration, PGP signing key generation and management, Dokka setup for Javadoc, POM metadata configuration, BOM module scaffolding, Sonatype credential management, the publishing workflow itself) is a separate slice. Coordinated to land alongside the 0.1.1 work that this ADR commits to.
 
