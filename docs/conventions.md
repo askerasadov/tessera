@@ -79,7 +79,7 @@ This discipline applies to documents, code comments, public APIs, and conversati
 
 Module names follow the pattern `{domain}-{role}[-{platform}]`:
 
-- `{domain}` identifies the subject area (`mrz`, `emrtd`, `domain`, `telemetry`, `logging`)
+- `{domain}` identifies the subject area (`mrz`, `emrtd`, `types`, `telemetry`, `logging`)
 - `{role}` identifies what the module does (`core` for pure logic, `nfc` or `camera` for I/O, `ui` for user interface)
 - `{platform}` is appended only for platform-specific modules (`android`, `ios`, etc.)
 

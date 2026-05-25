@@ -447,7 +447,7 @@ The project's author is in a jurisdiction whose regulatory frameworks for open s
 
 ### iOS target configuration on core modules
 
-Core modules (`mrz-core`, `emrtd-core`, `domain`, `telemetry`, `logging`) are scaffolded with the JVM target only. Configuring the iOS targets (`iosX64`, `iosArm64`, `iosSimulatorArm64`) requires Xcode, which is not installed on the development machine where scaffolding was performed. There is no design decision to make — the targets are committed in `architecture.md` and ADR-002. The deferral is purely about toolchain availability.
+Core modules (`mrz-core`, `emrtd-core`, `types`, `telemetry`, `logging`) are scaffolded with the JVM target only. Configuring the iOS targets (`iosX64`, `iosArm64`, `iosSimulatorArm64`) requires Xcode, which is not installed on the development machine where scaffolding was performed. There is no design decision to make — the targets are committed in `architecture.md` and ADR-002. The deferral is purely about toolchain availability.
 
 **Source:** Pre-implementation scaffolding session; depends on Xcode install.
 

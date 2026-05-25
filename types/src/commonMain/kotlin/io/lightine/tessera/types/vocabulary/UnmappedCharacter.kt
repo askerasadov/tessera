@@ -9,8 +9,8 @@ package io.lightine.tessera.types.vocabulary
  * and by
  * [`MrzGenerationUnsupportedCharacters`][io.lightine.tessera.types.errors.MrzGenerationUnsupportedCharacters]
  * so consumers can identify exactly which characters were problematic and where they
- * appeared. Lives in `domain.vocabulary` rather than the transliteration package so that
- * domain-side errors can reference it without depending on `mrz-core`.
+ * appeared. Lives in `types.vocabulary` rather than the transliteration package so that
+ * error types in the `types` module can reference it without depending on `mrz-core`.
  */
 public data class UnmappedCharacter(
     val character: Char,

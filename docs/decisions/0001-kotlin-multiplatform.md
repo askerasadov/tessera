@@ -22,7 +22,7 @@ A decision was needed before any meaningful implementation work began.
 
 ## Decision
 
-The SDK uses Kotlin Multiplatform for all shared core logic. Core logic modules (`mrz-core`, `emrtd-core`, `domain`, `telemetry`, `logging`) are written in Kotlin and compiled to multiple targets through KMP.
+The SDK uses Kotlin Multiplatform for all shared core logic. Core logic modules (`mrz-core`, `emrtd-core`, `types`, `telemetry`, `logging`) are written in Kotlin and compiled to multiple targets through KMP.
 
 This is the answer to "how do we share the platform-independent logic." It is not the answer to "how do we build the UI" or "how do we access platform APIs" — those are decided separately (see ADR-002).
 
