@@ -18,7 +18,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "tessera"
 
-include(":domain")
+include(":types")
 include(":mrz-core")
 include(":emrtd-core")
 include(":telemetry")

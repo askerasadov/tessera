@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.recognition
 
-import io.lightine.tessera.domain.vocabulary.DocumentCategory
+import io.lightine.tessera.types.vocabulary.DocumentCategory
 
 /**
  * A single entry in [DocumentTypeCodeTable]: the raw document type code as it appears in

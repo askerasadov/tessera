@@ -1,13 +1,5 @@
 package io.lightine.tessera.mrz.generation
 
-import io.lightine.tessera.domain.errors.MrzGenerationFieldOverflow
-import io.lightine.tessera.domain.errors.MrzGenerationNumericInNameField
-import io.lightine.tessera.domain.errors.MrzGenerationUnsupportedCharacters
-import io.lightine.tessera.domain.vocabulary.MrzField
-import io.lightine.tessera.domain.vocabulary.MrzFormat
-import io.lightine.tessera.domain.vocabulary.ReadMethod
-import io.lightine.tessera.domain.vocabulary.Sex
-import io.lightine.tessera.domain.vocabulary.UnmappedCharacter
 import io.lightine.tessera.mrz.checkdigit.computeCheckDigit
 import io.lightine.tessera.mrz.formats.MrvAFormatSpec
 import io.lightine.tessera.mrz.formats.MrvBFormatSpec
@@ -33,6 +25,14 @@ import io.lightine.tessera.mrz.transliteration.TransliterationDetails
 import io.lightine.tessera.mrz.transliteration.TransliterationProfile
 import io.lightine.tessera.mrz.transliteration.TransliterationResult
 import io.lightine.tessera.mrz.transliteration.transliterate
+import io.lightine.tessera.types.errors.MrzGenerationFieldOverflow
+import io.lightine.tessera.types.errors.MrzGenerationNumericInNameField
+import io.lightine.tessera.types.errors.MrzGenerationUnsupportedCharacters
+import io.lightine.tessera.types.vocabulary.MrzField
+import io.lightine.tessera.types.vocabulary.MrzFormat
+import io.lightine.tessera.types.vocabulary.ReadMethod
+import io.lightine.tessera.types.vocabulary.Sex
+import io.lightine.tessera.types.vocabulary.UnmappedCharacter
 import kotlinx.datetime.LocalDate
 
 /**
@@ -48,7 +48,7 @@ import kotlinx.datetime.LocalDate
  *    type-specific overloads. Encodes a fully-constructed document; the consumer is
  *    responsible for ensuring the document's text fields already contain only MRZ-alphabet
  *    characters. Returns
- *    [`MrzGenerationUnsupportedCharacters`][io.lightine.tessera.domain.errors.MrzGenerationUnsupportedCharacters]
+ *    [`MrzGenerationUnsupportedCharacters`][io.lightine.tessera.types.errors.MrzGenerationUnsupportedCharacters]
  *    when they don't (this closes a silent-failure gap on the existing path).
  *
  * 2. **Primitive-input methods** — [generateTD3], [generateTD2], [generateTD1],
@@ -107,7 +107,7 @@ public object MrzGenerator {
     /**
      * Encodes a TD3 (passport) MRZ from primitive field values. Date fields take
      * [`LocalDate`][kotlinx.datetime.LocalDate]; the sex field takes
-     * [`Sex`][io.lightine.tessera.domain.vocabulary.Sex]; everything else is a string in
+     * [`Sex`][io.lightine.tessera.types.vocabulary.Sex]; everything else is a string in
      * the consumer's preferred representation.
      *
      * If [transliteration] is non-null, [primaryIdentifier] and [secondaryIdentifier] are
@@ -115,7 +115,7 @@ public object MrzGenerator {
      * per-field audit trail is exposed on the result's
      * [`ResultMetadata.transliterationDetails`][io.lightine.tessera.mrz.parsing.ResultMetadata]
      * field; any unmapped characters produce
-     * [`MrzGenerationUnsupportedCharacters`][io.lightine.tessera.domain.errors.MrzGenerationUnsupportedCharacters].
+     * [`MrzGenerationUnsupportedCharacters`][io.lightine.tessera.types.errors.MrzGenerationUnsupportedCharacters].
      * If [transliteration] is null, the identifier strings are used verbatim and must
      * already contain only MRZ-alphabet characters.
      *

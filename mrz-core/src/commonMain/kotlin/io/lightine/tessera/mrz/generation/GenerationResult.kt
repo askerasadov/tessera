@@ -1,7 +1,7 @@
 package io.lightine.tessera.mrz.generation
 
-import io.lightine.tessera.domain.errors.MrzGenerationError
 import io.lightine.tessera.mrz.parsing.ResultMetadata
+import io.lightine.tessera.types.errors.MrzGenerationError
 
 /**
  * The outcome of [`MrzGenerator`][MrzGenerator] encoding a document into MRZ lines. Two

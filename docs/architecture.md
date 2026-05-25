@@ -42,8 +42,8 @@ Pure logic for the Machine Readable Zone: parsing, generation, validation, trans
 **`emrtd-core`**
 Pure logic for electronic document data: parsing of data groups (DG1, DG2, DG11, DG12, etc.), structural parsing of the Security Object (SOD), Logical Data Structure (LDS) layout, ASN.1 utilities, and the key derivation logic for chip access protocols (BAC and PACE). This module does not perform NFC I/O — it operates on raw bytes provided by the I/O layer.
 
-**`domain`**
-Shared types and vocabulary used across modules: format enumerations (`MrzFormat`), categorical enumerations (`Sex`, `DocumentCategory`, `CountryCodeCategory`), shared field identifiers (`MrzField`), error taxonomy sealed roots (`MrzError`, `MrzValidationError`, `MrzWarning`), and common data structures with no runtime data dependency. Value classes whose contract requires consulting a lookup table (notably `CountryCode` and `DocumentType`) live with their tables in `mrz-core`, not here — see ADR-012. This module depends on nothing else and is depended on by everything. Its API surface is deliberately small.
+**`types`**
+Shared types and vocabulary used across modules: format enumerations (`MrzFormat`), categorical enumerations (`Sex`, `DocumentCategory`, `CountryCodeCategory`), shared field identifiers (`MrzField`), error taxonomy sealed roots (`MrzError`, `MrzValidationError`, `MrzWarning`), and common data structures with no runtime data dependency. Value classes whose contract requires consulting a lookup table (notably `CountryCode` and `DocumentType`) live with their tables in `mrz-core`, not here — see ADR-012. This module depends on nothing else and is depended on by everything. Its API surface is deliberately small. Discipline boundary: types only — if non-type shared code is ever needed, it goes in a separate module, not here.
 
 ### Platform I/O Modules
 
@@ -88,7 +88,7 @@ graph TD
     NFC_IOS[emrtd-nfc-ios]
     MRZ[mrz-core]
     EMRTD[emrtd-core]
-    DOMAIN[domain]
+    TYPES[types]
     TEL[telemetry]
     LOG[logging]
 
@@ -98,8 +98,8 @@ graph TD
     CAM_IOS --> MRZ
     NFC_AND --> EMRTD
     NFC_IOS --> EMRTD
-    MRZ --> DOMAIN
-    EMRTD --> DOMAIN
+    MRZ --> TYPES
+    EMRTD --> TYPES
     CAM_AND --> TEL
     CAM_IOS --> TEL
     NFC_AND --> TEL
@@ -110,9 +110,9 @@ graph TD
 
 Properties of the graph:
 
-- **No cycles.** Anywhere a reader starts, the path flows toward `domain`, `telemetry`, or `logging`.
-- **`domain` is the foundation.** It depends on nothing else and provides shared vocabulary used by everything that handles document data.
-- **`mrz-core` and `emrtd-core` are independent.** A consumer can use either without the other. They communicate, when needed, through types defined in `domain`.
+- **No cycles.** Anywhere a reader starts, the path flows toward `types`, `telemetry`, or `logging`.
+- **`types` is the foundation.** It depends on nothing else and provides shared vocabulary used by everything that handles document data.
+- **`mrz-core` and `emrtd-core` are independent.** A consumer can use either without the other. They communicate, when needed, through types defined in `types`.
 - **Platform I/O modules depend on core, never the reverse.** Pure logic stays pure.
 - **UI modules are leaves.** Nothing depends on them; they are entirely optional.
 - **Cross-cutting modules** (`telemetry`, `logging`) sit at the bottom of the graph. They are infrastructure for the others.
@@ -123,7 +123,7 @@ Properties of the graph:
 
 A clear boundary between layers is what makes the architecture stable. The boundary is drawn at the data, not the code.
 
-**Core logic** operates on plain data: byte arrays, strings, numbers, structured types defined in `domain`. It has no awareness of where data comes from or where it goes.
+**Core logic** operates on plain data: byte arrays, strings, numbers, structured types defined in `types`. It has no awareness of where data comes from or where it goes.
 
 **Platform I/O** translates between platform-specific objects (camera frames, NFC tags, file handles) and the plain data that core logic consumes. It is responsible for everything that involves the operating system, hardware, or external services.
 

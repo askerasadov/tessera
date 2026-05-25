@@ -10,7 +10,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api(project(":domain"))
+                api(project(":types"))
                 implementation(project(":logging"))
             }
         }

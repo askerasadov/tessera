@@ -12,7 +12,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api(project(":domain"))
+                api(project(":types"))
                 api(libs.kotlinx.datetime)
                 implementation(project(":logging"))
             }

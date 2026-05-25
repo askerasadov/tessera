@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.model
 
-import io.lightine.tessera.domain.vocabulary.MrzFormat
+import io.lightine.tessera.types.vocabulary.MrzFormat
 
 /**
  * A parsed MRV-B (Type-B visa) MRZ document per ICAO Doc 9303 Part 7. Two lines of 36

@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.recognition
 
-import io.lightine.tessera.domain.vocabulary.DocumentCategory
+import io.lightine.tessera.types.vocabulary.DocumentCategory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

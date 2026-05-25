@@ -1,8 +1,8 @@
 package io.lightine.tessera.mrz.model
 
-import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
+import io.lightine.tessera.types.vocabulary.Sex
 
 /**
  * The set of MRZ fields present in every supported format. Concrete
@@ -16,13 +16,13 @@ import io.lightine.tessera.mrz.recognition.DocumentType
  *   need the original presentation should use [rawNameField].
  * - [nameTruncated] — `true` when the name field fills the available width with no
  *   trailing filler (ICAO convention: a complete name always leaves at least one trailing
- *   `<`). See [`MrzNameTruncated`][io.lightine.tessera.domain.errors.MrzNameTruncated].
+ *   `<`). See [`MrzNameTruncated`][io.lightine.tessera.types.errors.MrzNameTruncated].
  * - [rawNameField] — the name field exactly as encoded on the document, before decoding.
- * - [sex] — the SDK's [`Sex`][io.lightine.tessera.domain.vocabulary.Sex] enum, derived
+ * - [sex] — the SDK's [`Sex`][io.lightine.tessera.types.vocabulary.Sex] enum, derived
  *   from [rawSex]. Both are exposed per Principle 5 (transparency).
  * - [rawSex] — the actual character on the document. May be outside the ICAO allowed
  *   set if the document is non-conforming; see
- *   [`MrzInvalidSexValue`][io.lightine.tessera.domain.errors.MrzInvalidSexValue].
+ *   [`MrzInvalidSexValue`][io.lightine.tessera.types.errors.MrzInvalidSexValue].
  * - [checkDigits] — the check digits as recorded on the document, not as the SDK would
  *   compute them. See [MrzCheckDigits].
  */

@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.model
 
-import io.lightine.tessera.domain.vocabulary.MrzFormat
+import io.lightine.tessera.types.vocabulary.MrzFormat
 
 /**
  * A parsed TD2 (smaller identity document) MRZ document per ICAO Doc 9303 Part 6. Two

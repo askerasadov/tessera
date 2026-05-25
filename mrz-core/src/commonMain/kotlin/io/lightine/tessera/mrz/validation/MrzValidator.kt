@@ -1,19 +1,5 @@
 package io.lightine.tessera.mrz.validation
 
-import io.lightine.tessera.domain.errors.MrzBirthDateImplausiblyOld
-import io.lightine.tessera.domain.errors.MrzCheckDigitMismatch
-import io.lightine.tessera.domain.errors.MrzDateNotInCalendar
-import io.lightine.tessera.domain.errors.MrzExpiryDateImplausiblyFar
-import io.lightine.tessera.domain.errors.MrzExpiryDatePast
-import io.lightine.tessera.domain.errors.MrzInvalidSexValue
-import io.lightine.tessera.domain.errors.MrzNameTruncated
-import io.lightine.tessera.domain.errors.MrzPersonalNumberCheckDigitFiller
-import io.lightine.tessera.domain.errors.MrzSexCharacterX
-import io.lightine.tessera.domain.errors.MrzUnknownCountryCode
-import io.lightine.tessera.domain.errors.MrzUnknownDocumentTypeCode
-import io.lightine.tessera.domain.errors.MrzValidationError
-import io.lightine.tessera.domain.errors.MrzWarning
-import io.lightine.tessera.domain.vocabulary.MrzField
 import io.lightine.tessera.mrz.checkdigit.computeCheckDigit
 import io.lightine.tessera.mrz.formats.MrvAFormatSpec
 import io.lightine.tessera.mrz.formats.MrvBFormatSpec
@@ -30,6 +16,20 @@ import io.lightine.tessera.mrz.model.TD2
 import io.lightine.tessera.mrz.model.TD3
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
+import io.lightine.tessera.types.errors.MrzBirthDateImplausiblyOld
+import io.lightine.tessera.types.errors.MrzCheckDigitMismatch
+import io.lightine.tessera.types.errors.MrzDateNotInCalendar
+import io.lightine.tessera.types.errors.MrzExpiryDateImplausiblyFar
+import io.lightine.tessera.types.errors.MrzExpiryDatePast
+import io.lightine.tessera.types.errors.MrzInvalidSexValue
+import io.lightine.tessera.types.errors.MrzNameTruncated
+import io.lightine.tessera.types.errors.MrzPersonalNumberCheckDigitFiller
+import io.lightine.tessera.types.errors.MrzSexCharacterX
+import io.lightine.tessera.types.errors.MrzUnknownCountryCode
+import io.lightine.tessera.types.errors.MrzUnknownDocumentTypeCode
+import io.lightine.tessera.types.errors.MrzValidationError
+import io.lightine.tessera.types.errors.MrzWarning
+import io.lightine.tessera.types.vocabulary.MrzField
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -43,10 +43,10 @@ import kotlin.time.Instant
  * cross-field checks defined by ICAO Doc 9303 and by the SDK's documented warnings.
  *
  * Returns a [ValidationResult] carrying any
- * [`MrzValidationError`][io.lightine.tessera.domain.errors.MrzValidationError]s (per-field
+ * [`MrzValidationError`][io.lightine.tessera.types.errors.MrzValidationError]s (per-field
  * structural failures: check digit mismatches, calendar-invalid dates, out-of-range sex
  * characters) and any
- * [`MrzWarning`][io.lightine.tessera.domain.errors.MrzWarning]s (informational
+ * [`MrzWarning`][io.lightine.tessera.types.errors.MrzWarning]s (informational
  * observations: implausible dates, name truncation, unknown country/document codes).
  *
  * `MrzParser` invokes the validator internally and folds the result into

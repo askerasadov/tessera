@@ -7,7 +7,7 @@ package io.lightine.tessera.mrz.model
  * from the field content (Principle 5 — transparency).
  * [`MrzValidator`][io.lightine.tessera.mrz.validation.MrzValidator] cross-checks each
  * recorded digit against the computed value and emits
- * [`MrzCheckDigitMismatch`][io.lightine.tessera.domain.errors.MrzCheckDigitMismatch] on
+ * [`MrzCheckDigitMismatch`][io.lightine.tessera.types.errors.MrzCheckDigitMismatch] on
  * mismatch.
  *
  * [optionalData] is nullable because not every format has an optional-data check digit

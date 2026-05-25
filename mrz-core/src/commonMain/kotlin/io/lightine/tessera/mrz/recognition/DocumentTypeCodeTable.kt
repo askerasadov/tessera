@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.recognition
 
-import io.lightine.tessera.domain.vocabulary.DocumentCategory
+import io.lightine.tessera.types.vocabulary.DocumentCategory
 
 /**
  * The SDK's recognized document type codes for MRZ document type fields.
@@ -23,7 +23,7 @@ import io.lightine.tessera.domain.vocabulary.DocumentCategory
  * completeness").
  *
  * Codes not present in this table surface as
- * [`MrzUnknownDocumentTypeCode`][io.lightine.tessera.domain.errors.MrzUnknownDocumentTypeCode]
+ * [`MrzUnknownDocumentTypeCode`][io.lightine.tessera.types.errors.MrzUnknownDocumentTypeCode]
  * warnings rather than validation failures, per
  * [ADR-013](https://github.com/askerasadov/Tessera/blob/main/docs/decisions/0013-recognition-failures-are-warnings.md).
  */

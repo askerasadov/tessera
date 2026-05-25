@@ -1,10 +1,5 @@
 package io.lightine.tessera.mrz.generation
 
-import io.lightine.tessera.domain.errors.MrzGenerationNumericInNameField
-import io.lightine.tessera.domain.errors.MrzGenerationUnsupportedCharacters
-import io.lightine.tessera.domain.vocabulary.MrzField
-import io.lightine.tessera.domain.vocabulary.MrzFormat
-import io.lightine.tessera.domain.vocabulary.Sex
 import io.lightine.tessera.mrz.model.MrvA
 import io.lightine.tessera.mrz.model.MrvB
 import io.lightine.tessera.mrz.model.TD1
@@ -14,6 +9,11 @@ import io.lightine.tessera.mrz.parsing.MrzParser
 import io.lightine.tessera.mrz.parsing.ParseResult
 import io.lightine.tessera.mrz.transliteration.AzeTransliterationProfile
 import io.lightine.tessera.mrz.transliteration.IcaoDefaultTransliterationProfile
+import io.lightine.tessera.types.errors.MrzGenerationNumericInNameField
+import io.lightine.tessera.types.errors.MrzGenerationUnsupportedCharacters
+import io.lightine.tessera.types.vocabulary.MrzField
+import io.lightine.tessera.types.vocabulary.MrzFormat
+import io.lightine.tessera.types.vocabulary.Sex
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -168,7 +168,7 @@ class MrzGeneratorPrimitiveInputTest {
                 override fun toMrzAlphabet(normalizedInput: String): io.lightine.tessera.mrz.transliteration.TransliterationResult =
                     io.lightine.tessera.mrz.transliteration.TransliterationResult.Failure(
                         normalizedInput.mapIndexed { idx, c ->
-                            io.lightine.tessera.domain.vocabulary
+                            io.lightine.tessera.types.vocabulary
                                 .UnmappedCharacter(c, idx)
                         },
                     )

@@ -2,6 +2,8 @@
 
 **Status:** Accepted
 
+> **Note on naming:** This ADR was written when the shared-types module was named `domain`. That module has since been renamed to `types` (per ADR-016's executed Follow-up Cleanup). All references to "the `domain` module" throughout this ADR's reasoning should be read as "the `types` module" — the substance of the decision (which classes live where, why, and the dependency-graph constraints) is unchanged.
+
 ---
 
 ## Context

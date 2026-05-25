@@ -17,7 +17,7 @@ private val WEIGHTS = intArrayOf(7, 3, 1)
  * @throws IllegalArgumentException if [input] contains any character outside the MRZ
  *   alphabet (`A`–`Z`, `0`–`9`, `<`). Callers receiving raw consumer input should
  *   validate the alphabet first; the parser does this and translates the throw into
- *   [`MrzCharacterSetViolation`][io.lightine.tessera.domain.errors.MrzCharacterSetViolation].
+ *   [`MrzCharacterSetViolation`][io.lightine.tessera.types.errors.MrzCharacterSetViolation].
  */
 public fun computeCheckDigit(input: String): Char {
     var sum = 0

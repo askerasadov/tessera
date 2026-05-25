@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.recognition
 
-import io.lightine.tessera.domain.vocabulary.CountryCodeCategory
+import io.lightine.tessera.types.vocabulary.CountryCodeCategory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

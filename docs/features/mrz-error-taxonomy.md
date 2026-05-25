@@ -207,7 +207,7 @@ This means the taxonomy grows safely over time. A consumer's exhaustive matching
 
 ## Where the Taxonomy Lives in Code
 
-The error types are defined in the `domain` module (per `architecture.md`), which is the foundation module depended on by all other MRZ-related modules. This placement allows any module that produces or consumes MRZ data to reference the same error types without circular dependencies.
+The error types are defined in the `types` module (per `architecture.md`), which is the foundation module depended on by all other MRZ-related modules. This placement allows any module that produces or consumes MRZ data to reference the same error types without circular dependencies.
 
 The `mrz-core` module produces the parsing, generation, and validation errors. Future platform I/O modules (`mrz-camera-*`, `emrtd-nfc-*`) may produce their own platform-specific errors, defined in their own modules but conforming to the same three-tier categorization.
 

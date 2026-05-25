@@ -1,14 +1,14 @@
 package io.lightine.tessera.mrz.generation
 
-import io.lightine.tessera.domain.errors.MrzGenerationUnsupportedCharacters
-import io.lightine.tessera.domain.vocabulary.MrzField
-import io.lightine.tessera.domain.vocabulary.MrzFormat
-import io.lightine.tessera.domain.vocabulary.UnmappedCharacter
 import io.lightine.tessera.mrz.model.TD3
 import io.lightine.tessera.mrz.parsing.MrzParser
 import io.lightine.tessera.mrz.parsing.ParseResult
 import io.lightine.tessera.mrz.recognition.CountryCode
 import io.lightine.tessera.mrz.recognition.DocumentType
+import io.lightine.tessera.types.errors.MrzGenerationUnsupportedCharacters
+import io.lightine.tessera.types.vocabulary.MrzField
+import io.lightine.tessera.types.vocabulary.MrzFormat
+import io.lightine.tessera.types.vocabulary.UnmappedCharacter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

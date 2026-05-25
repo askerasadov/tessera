@@ -1,6 +1,6 @@
 package io.lightine.tessera.mrz.recognition
 
-import io.lightine.tessera.domain.vocabulary.CountryCodeCategory
+import io.lightine.tessera.types.vocabulary.CountryCodeCategory
 
 /**
  * The SDK's recognized country codes for MRZ issuing state and nationality positions.
@@ -18,7 +18,7 @@ import io.lightine.tessera.domain.vocabulary.CountryCodeCategory
  * package) embed identical content. The ICAO §5 extensions are read from Doc 9303 Part 3.
  *
  * Codes not present in this table surface as
- * [`MrzUnknownCountryCode`][io.lightine.tessera.domain.errors.MrzUnknownCountryCode]
+ * [`MrzUnknownCountryCode`][io.lightine.tessera.types.errors.MrzUnknownCountryCode]
  * warnings rather than validation failures, per
  * [ADR-013](https://github.com/askerasadov/Tessera/blob/main/docs/decisions/0013-recognition-failures-are-warnings.md).
  *
