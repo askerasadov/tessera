@@ -515,6 +515,16 @@ The Claude Code optimization audit in PR [#66](https://github.com/askerasadov/te
 
 **Trigger:** During the Pre-Release Tech-Stack Review for `0.2.0` (per the [`pre-release-tech-stack-review`](../.claude/skills/pre-release-tech-stack-review/SKILL.md) skill). Decide: ship a domain-aware subagent in `.claude/agents/security-reviewer.md`, OR confirm the built-in skill remains sufficient. The decision becomes load-bearing once sensitive code starts landing.
 
+### Dokka multi-module aggregation and hosted docs site
+
+The Dokka 2 wiring shipped with publishing infrastructure slice 2 generates per-module HTML javadoc jars (`tessera-types-<v>-javadoc.jar`, `tessera-mrz-core-<v>-javadoc.jar`, etc.) — one self-contained docs set per artifact, matching how Maven Central distributes attached files. The trade-off: KDoc cross-references that span modules (e.g., a `[MrzParser]` reference in `types/vocabulary/ReadMethod.kt` pointing at a class in `mrz-core`) cannot be resolved by Dokka when documenting `types` in isolation, so they render as plain text instead of clickable links in the published HTML. ~5-7 such references exist at 0.1.1; Dokka emits non-fatal warnings during `publishToMavenLocal` for each. IDE navigation (IntelliJ project model) is unaffected — only the published HTML loses click-to-navigate for these references.
+
+The proper fix is **Dokka multi-module aggregation** + a **hosted docs site**: configure a root-level `dokka { }` block that treats all modules as one project, generate a unified HTML site with full cross-linking, and host it (GitHub Pages, Netlify, or a project-owned subdomain like `docs.lightine.io`). Per-module javadoc jars then become either minimal (own pages only) or `JavadocJar.Empty()` since the real docs live at the hosted URL referenced from each module's POM `url`. This is what major Kotlin ecosystem libraries do (kotlinx.coroutines, kotlinx.serialization at `kotlinlang.org/api/...`).
+
+Deferred because at the project's current scale (single maintainer, narrow 0.1.x public API surface) the few unlinked cross-references in published HTML are a mild UX paper-cut, not a broken experience — and the proper fix requires standing up docs-hosting infrastructure that is its own multi-decision conversation (where the site lives, how versioning works in URLs, what CI publishes it, what versions stay alive at the hosted endpoint). That conversation deserves its own slice rather than getting wedged into a publishing-infrastructure PR.
+
+**Trigger:** When public-API browsing UX matters enough to justify the infrastructure work — typically around the `1.0.0` polish pass (public stability commitment lands; the API is wide enough to benefit from rich cross-module navigation; the project is mature enough to deserve a real docs site). Could also trigger earlier if external integrators provide feedback that the per-module HTML is hard to navigate. Decision form: an ADR locking the docs-hosting target + a publishing-infrastructure slice wiring up aggregation + CI deployment.
+
 ---
 
 ## How to Use This Document

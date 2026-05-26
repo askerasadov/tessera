@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.spotless)
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.maven.publish) apply false
+    alias(libs.plugins.dokka) apply false
 }
 
 allprojects {
@@ -16,15 +17,18 @@ allprojects {
 // subproject that has the vanniktech maven-publish plugin applied. Per-module identity
 // (artifactId, pom name, pom description) is set in each module's build.gradle.kts.
 //
-// Coordinates and publication scope locked under ADR-016. JavadocJar.None() for now —
-// Dokka will land in a follow-up PR and swap this to JavadocJar.Dokka(...). sourcesJar
-// is enabled by default; consumers get source attachments without further config.
+// Coordinates and publication scope locked under ADR-016. JavadocJar.Dokka points at
+// Dokka 2's `dokkaGeneratePublicationHtml` task — Maven Central requires a `*-javadoc.jar`
+// for non-snapshot releases, and the modern Dokka HTML output is what we ship inside it
+// (browsable Kotlin-aware docs; consumers can still fetch the jar as a "javadoc" attachment
+// the way IDEs and Maven Central UI expect). sourcesJar is enabled so consumers get source
+// attachments automatically.
 subprojects {
     plugins.withId("com.vanniktech.maven.publish") {
         extensions.configure<MavenPublishBaseExtension> {
             configure(
                 KotlinMultiplatform(
-                    javadocJar = JavadocJar.None(),
+                    javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml"),
                     sourcesJar = true,
                 ),
             )
