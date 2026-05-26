@@ -1,3 +1,4 @@
+import com.vanniktech.maven.publish.JavaPlatform
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinMultiplatform
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
@@ -17,22 +18,18 @@ allprojects {
 // subproject that has the vanniktech maven-publish plugin applied. Per-module identity
 // (artifactId, pom name, pom description) is set in each module's build.gradle.kts.
 //
-// Coordinates and publication scope locked under ADR-016. JavadocJar.Dokka points at
-// Dokka 2's `dokkaGeneratePublicationHtml` task — Maven Central requires a `*-javadoc.jar`
-// for non-snapshot releases, and the modern Dokka HTML output is what we ship inside it
-// (browsable Kotlin-aware docs; consumers can still fetch the jar as a "javadoc" attachment
-// the way IDEs and Maven Central UI expect). sourcesJar is enabled so consumers get source
-// attachments automatically.
+// Two publication shapes are supported:
+//   - KMP modules (types, mrz-core, emrtd-core, telemetry, logging) get
+//     `configure(KotlinMultiplatform(...))` with Dokka-backed javadoc jars and sources jars.
+//     JavadocJar.Dokka points at Dokka 2's `dokkaGeneratePublicationHtml` task — Maven Central
+//     requires a `*-javadoc.jar` for non-snapshot releases.
+//   - The BOM module (java-platform) gets `configure(JavaPlatform())` — no jar, no sources,
+//     no javadoc, just a POM with `<dependencyManagement>` per ADR-016's BOM decision.
+//
+// Coordinates and publication scope locked under ADR-016.
 subprojects {
     plugins.withId("com.vanniktech.maven.publish") {
         extensions.configure<MavenPublishBaseExtension> {
-            configure(
-                KotlinMultiplatform(
-                    javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml"),
-                    sourcesJar = true,
-                ),
-            )
-
             pom {
                 url.set("https://github.com/askerasadov/tessera")
                 inceptionYear.set("2026")
@@ -63,6 +60,23 @@ subprojects {
                     system.set("GitHub")
                     url.set("https://github.com/askerasadov/tessera/issues")
                 }
+            }
+        }
+
+        plugins.withId("org.jetbrains.kotlin.multiplatform") {
+            extensions.configure<MavenPublishBaseExtension> {
+                configure(
+                    KotlinMultiplatform(
+                        javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml"),
+                        sourcesJar = true,
+                    ),
+                )
+            }
+        }
+
+        plugins.withId("java-platform") {
+            extensions.configure<MavenPublishBaseExtension> {
+                configure(JavaPlatform())
             }
         }
     }
