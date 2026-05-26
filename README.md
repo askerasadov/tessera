@@ -87,6 +87,10 @@ The project's documentation is structured for two audiences: integrators (who wa
 - [`docs/decisions/`](docs/decisions/) — Architecture Decision Records capturing the reasoning behind major choices
 - [`docs/open-questions.md`](docs/open-questions.md) — decisions that have been deliberately deferred, tracked so they are not forgotten
 
+### For maintainers
+
+- [`docs/publishing-setup.md`](docs/publishing-setup.md) — one-time setup for publishing to Maven Central (PGP signing key, Sonatype Central Portal user token, Gradle credential storage). Maintainer-only; contributors do not need this
+
 ---
 
 ## Platforms
