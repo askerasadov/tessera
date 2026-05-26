@@ -30,7 +30,7 @@ This namespace is fixed. Sub-package structure beneath the root (the next level 
 
 ## Module List
 
-The project is composed of the following modules. Working names are used here; final naming will be locked when modules are first published.
+The project is composed of the following modules. The names below are the Gradle project names; the published Maven Central artifactId prefixes each name with `tessera-` (e.g., `mrz-core` → `tessera-mrz-core`) per [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md). The full coordinate is `io.lightine.tessera:tessera-<module>:<version>`.
 
 ### Core Logic Modules
 

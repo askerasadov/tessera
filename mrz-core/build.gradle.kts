@@ -1,5 +1,19 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.maven.publish)
+}
+
+mavenPublishing {
+    coordinates(group.toString(), "tessera-mrz-core", version.toString())
+
+    pom {
+        name.set("tessera-mrz-core")
+        description.set(
+            "MRZ (Machine Readable Zone) parsing, validation, and generation for all ICAO Doc 9303 " +
+                "document formats — TD1, TD2, TD3, MRV-A, and MRV-B. Reader-not-oracle: extracts data " +
+                "verbatim and reports observations; consumers make trust decisions.",
+        )
+    }
 }
 
 kotlin {
