@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- `tessera-bom` Bill of Materials artifact (`io.lightine.tessera:tessera-bom:<version>`), the third slice of the publishing infrastructure committed in [ADR-016](docs/decisions/0016-maven-coordinates-and-first-publish.md). New `bom/` Gradle subproject using the built-in `java-platform` plugin; published via vanniktech. The BOM is a POM-only artifact (no jar, no sources, no javadoc) whose `<dependencyManagement>` section pins every Tessera module to the lockstep version. Consumers `import` it once and reference Tessera modules without specifying per-module versions:
+
+  ```kotlin
+  dependencies {
+      implementation(platform("io.lightine.tessera:tessera-bom:0.1.1"))
+      implementation("io.lightine.tessera:tessera-mrz-core")  // no version
+      implementation("io.lightine.tessera:tessera-types")     // no version
+  }
+  ```
+
+  - **New module wired in `settings.gradle.kts`** as `include(":bom")` after the 5 KMP modules
+  - **`bom/build.gradle.kts`** applies `java-platform` plus vanniktech `maven-publish`; declares constraints as explicit coordinate strings (`"${project.group}:tessera-types:${project.version}"`) rather than `project(":types")` — the `project(...)` form would record the Gradle project name (`types`), but the published artifactId is `tessera-types`, so the explicit string is more correct
+  - **Root `build.gradle.kts` reshape:** the shared `subprojects { plugins.withId("com.vanniktech.maven.publish") { ... } }` block now branches on which Gradle plugin is also applied — `org.jetbrains.kotlin.multiplatform` modules get `configure(KotlinMultiplatform(javadocJar = ..., sourcesJar = true))`, the `java-platform` module gets `configure(JavaPlatform())`. The shared POM metadata (license, url, developer, scm) still applies to both. Two publication shapes, one shared block
+  - **Validation:** `./gradlew publishToMavenLocal` produces `~/.m2/repository/io/lightine/tessera/tessera-bom/0.1.1/tessera-bom-0.1.1.pom` with `<packaging>pom</packaging>`, a complete `<dependencyManagement>` block listing all 5 Tessera modules at `0.1.1`, plus the standard shared metadata block; `./gradlew check` continues to pass (all 577 tests + Spotless clean). The aggregate `publishToMavenLocal` task now invokes `:bom:publishToMavenLocal` alongside the 5 KMP modules' publish tasks
 - Dokka 2 (`org.jetbrains.dokka`, `2.2.0`) wired into the publishing flow, the second slice of the publishing infrastructure committed in [ADR-016](docs/decisions/0016-maven-coordinates-and-first-publish.md). `./gradlew publishToMavenLocal` now produces real Dokka HTML javadoc jars for each published artifact (e.g., `tessera-mrz-core-0.1.1-javadoc.jar` is ~1.3 MB / 451 files of browsable HTML — Kotlin-aware with proper navigation, types/functions index, SVG icons). Maven Central requires a non-empty `*-javadoc.jar` for every non-snapshot release; this slice satisfies that requirement.
   - **Plugin wired via the version catalog** (`gradle/libs.versions.toml` adds `dokka = "2.2.0"`); applied per-module (`alias(libs.plugins.dokka)`) in each of the 5 module `build.gradle.kts` files; declared `apply false` in the root `build.gradle.kts` plugins block alongside the other publishing plugins
   - **Vanniktech's `JavadocJar.Dokka("dokkaGeneratePublicationHtml")`** in the shared `subprojects { }` block of root `build.gradle.kts` (replacing the prior `JavadocJar.None()`) tells vanniktech to pull Dokka's HTML output into each module's javadoc jar. The `dokkaGeneratePublicationHtml` task is Dokka 2's standard per-module HTML generator
