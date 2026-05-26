@@ -135,6 +135,20 @@ This avoids both extremes: the monolith that grows without internal structure, a
 
 ---
 
+## Module Boundaries
+
+Each module's name describes what belongs in it. The `types` module is types-only — classes (data, value, sealed, abstract), interfaces (regular, sealed, fun), enums, type aliases, and the companion objects belonging to those types. No top-level functions, no top-level non-const properties, no extension functions on third-party types. Top-level `object` declarations are allowed only when they represent a singleton instance of a type (e.g., a case of a `sealed interface`), not as namespaces for functions.
+
+This matters because broadly-named modules — `common`, `core`, `utils` — accumulate unrelated helpers over years until no one remembers the original boundary. The result is a junk drawer that every module depends on and no module should. Once that has happened, splitting the module back apart is a substantial migration; preventing it costs one Gradle file at the moment the temptation first appears.
+
+When shared non-type code is needed, the convention is to create a new module (e.g., `tessera-utils`) rather than relaxing the discipline. The cost of a new module is one directory, one `build.gradle.kts`, and one `include(":...")` line in `settings.gradle.kts`. The name describes what the module is for; contributors know where to look and where not to look.
+
+The published artifactId at first Maven Central release is the deliberately-chosen `tessera-types`, locked under [ADR-007](decisions/0007-strict-backward-compat-from-0x.md) once 0.1.1 ships per [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md); the discipline rule preserves the meaning the name promises.
+
+Full operational detail in the [`types-module-discipline`](../.claude/rules/types-module-discipline.md) rule (path-scoped to `types/**`, auto-loaded when working in the types module).
+
+---
+
 ## Adding a New MRZ Format
 
 Adding a new MRZ format (beyond the ICAO Doc 9303 formats already supported) is a multi-phase exercise. Each phase is its own PR; the format moves from "data class only" through "readable" through "generatable" through "auto-detected" in deliberate increments. The phasing keeps reviews focused on one concern at a time and lets consumers benefit from partial coverage earlier than under a single monolithic PR.
