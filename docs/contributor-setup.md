@@ -51,7 +51,14 @@ Using `--local` (not `--global`) keeps these settings scoped to this repository,
 
 ## 3. SSH signing setup — pick your platform
 
-Branch protection on `main` requires every commit and every release tag to be signed by a key registered to a GitHub account with push permission. The rest of this section is platform-specific. Jump to yours:
+Branch protection on `main` requires every commit and every release tag to be signed by a key registered to a GitHub account with push permission.
+
+**Choose your path:**
+
+- **Already have an SSH key you want to use for signing** (most commonly `~/.ssh/id_ed25519` from prior SSH setup): skip step 3a in your platform's section below. The same key file works for both authentication and signing — GitHub treats them as separate registrations, so you can register one key under both types. Continue from step 3b.
+- **Setting up from scratch**: start with step 3a in your platform's section.
+
+Jump to yours:
 
 - [macOS](#macos)
 - [Linux](#linux)
@@ -63,21 +70,23 @@ If you already have a GPG signing setup you prefer, GitHub supports that too; su
 
 ### macOS
 
-#### 3a. Generate a dedicated signing key
+#### 3a. Generate an SSH signing key (skip if you already have one)
 
 ```sh
-ssh-keygen -t ed25519 -f ~/.ssh/tessera_signing -C "tessera-signing"
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -C "you@example.com"
 ```
 
-Set a passphrase when prompted. You'll cache it in your login Keychain in step 3e so you only enter it once.
+Replace `you@example.com` with your real email — it's stored as the key's comment field and helps you identify the key in `ssh-add -l` and similar listings.
+
+Set a passphrase when prompted. You'll cache it in your login Keychain in step 3e so you only enter it once. Store the passphrase in a password manager — losing it means regenerating the key.
 
 #### 3b. Configure Git to sign with that key
 
-From inside the Tessera checkout:
+From inside the Tessera checkout (substitute your key's path if you generated it under a different name):
 
 ```sh
 git config --local gpg.format ssh
-git config --local user.signingkey ~/.ssh/tessera_signing.pub
+git config --local user.signingkey ~/.ssh/id_ed25519.pub
 git config --local commit.gpgsign true
 git config --local tag.gpgsign true
 ```
@@ -87,17 +96,17 @@ git config --local tag.gpgsign true
 Go to **Settings → SSH and GPG keys → New SSH key** (<https://github.com/settings/ssh/new> when logged in). Change the **Key type** dropdown from the default **Authentication Key** to **Signing Key**, then paste the contents of:
 
 ```sh
-cat ~/.ssh/tessera_signing.pub
+cat ~/.ssh/id_ed25519.pub
 ```
 
-The distinction matters: **Authentication Key** lets the key push to repositories, while **Signing Key** lets GitHub verify the signature it sees on a commit or tag. They are independent slots; the same key can be registered as both but each registration is separate.
+The distinction matters: **Authentication Key** lets the key push to repositories, while **Signing Key** lets GitHub verify the signature it sees on a commit or tag. They are independent slots; the same key can be registered as both but each registration is separate. If you're reusing an existing key already registered as Authentication Key, register it again as Signing Key — same key contents, different type.
 
 #### 3d. (Optional) Set up local verification
 
 GitHub will show "Verified" on signed commits and tags it can verify against a registered Signing Key. If you also want `git log --show-signature` and `git tag -v` to verify locally — useful for due diligence on commits you receive from others — set up an allowed-signers file:
 
 ```sh
-echo "you@example.com $(cat ~/.ssh/tessera_signing.pub)" >> ~/.ssh/allowed_signers
+echo "you@example.com $(cat ~/.ssh/id_ed25519.pub)" >> ~/.ssh/allowed_signers
 git config --local gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
 ```
 
@@ -108,14 +117,14 @@ The file format is one line per signer: `<email> <ssh-public-key>`. Add entries 
 Without this step, every signed commit prompts for the passphrase.
 
 ```sh
-ssh-add --apple-use-keychain ~/.ssh/tessera_signing
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519
 ```
 
 You'll be prompted once; macOS stores the passphrase in your login Keychain. **The `~/.ssh/config` block below is required, not optional** — without it, you'd have to run `ssh-add` manually every new login to repopulate the agent (macOS clears the agent on every reboot regardless of this block; the block makes the repopulation automatic on first SSH client use). Add to `~/.ssh/config`:
 
 ```
 Host *
-  IdentityFile ~/.ssh/tessera_signing
+  IdentityFile ~/.ssh/id_ed25519
   UseKeychain yes
   AddKeysToAgent yes
 ```
@@ -136,21 +145,23 @@ You should see `Good "git" signature for you@example.com with ED25519 key SHA256
 
 ### Linux
 
-#### 3a. Generate a dedicated signing key
+#### 3a. Generate an SSH signing key (skip if you already have one)
 
 ```sh
-ssh-keygen -t ed25519 -f ~/.ssh/tessera_signing -C "tessera-signing"
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -C "you@example.com"
 ```
 
-Set a passphrase when prompted. You'll load it into `ssh-agent` in step 3e to avoid re-entering it on every commit.
+Replace `you@example.com` with your real email — it's stored as the key's comment field and helps you identify the key in `ssh-add -l` and similar listings.
+
+Set a passphrase when prompted. You'll load it into `ssh-agent` in step 3e to avoid re-entering it on every commit. Store the passphrase in a password manager — losing it means regenerating the key.
 
 #### 3b. Configure Git to sign with that key
 
-From inside the Tessera checkout:
+From inside the Tessera checkout (substitute your key's path if you generated it under a different name):
 
 ```sh
 git config --local gpg.format ssh
-git config --local user.signingkey ~/.ssh/tessera_signing.pub
+git config --local user.signingkey ~/.ssh/id_ed25519.pub
 git config --local commit.gpgsign true
 git config --local tag.gpgsign true
 ```
@@ -160,17 +171,17 @@ git config --local tag.gpgsign true
 Go to **Settings → SSH and GPG keys → New SSH key** (<https://github.com/settings/ssh/new> when logged in). Change the **Key type** dropdown from the default **Authentication Key** to **Signing Key**, then paste the contents of:
 
 ```sh
-cat ~/.ssh/tessera_signing.pub
+cat ~/.ssh/id_ed25519.pub
 ```
 
-The distinction matters: **Authentication Key** lets the key push to repositories, while **Signing Key** lets GitHub verify the signature it sees on a commit or tag. They are independent slots; the same key can be registered as both but each registration is separate.
+The distinction matters: **Authentication Key** lets the key push to repositories, while **Signing Key** lets GitHub verify the signature it sees on a commit or tag. They are independent slots; the same key can be registered as both but each registration is separate. If you're reusing an existing key already registered as Authentication Key, register it again as Signing Key — same key contents, different type.
 
 #### 3d. (Optional) Set up local verification
 
 GitHub will show "Verified" on signed commits and tags it can verify against a registered Signing Key. If you also want `git log --show-signature` and `git tag -v` to verify locally — useful for due diligence on commits you receive from others — set up an allowed-signers file:
 
 ```sh
-echo "you@example.com $(cat ~/.ssh/tessera_signing.pub)" >> ~/.ssh/allowed_signers
+echo "you@example.com $(cat ~/.ssh/id_ed25519.pub)" >> ~/.ssh/allowed_signers
 git config --local gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
 ```
 
@@ -182,13 +193,13 @@ Without this step, every signed commit prompts for the passphrase.
 
 ```sh
 eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/tessera_signing
+ssh-add ~/.ssh/id_ed25519
 ```
 
 You'll be prompted once per agent session. Unlike macOS, Linux `ssh-agent` doesn't persist across reboots on its own. The right way to make it persistent depends on your distribution and desktop environment:
 
 - Most desktop environments (GNOME, KDE, etc.) start an `ssh-agent` automatically and integrate with the system keyring. Check `echo "$SSH_AUTH_SOCK"` — if it's set on login, you're already set; just `ssh-add` once per login.
-- For headless or minimal setups, the [`keychain`](https://www.funtoo.org/Keychain) wrapper is the common solution. Install via your package manager, then add `eval "$(keychain --eval --quiet ~/.ssh/tessera_signing)"` to your shell rc.
+- For headless or minimal setups, the [`keychain`](https://www.funtoo.org/Keychain) wrapper is the common solution. Install via your package manager, then add `eval "$(keychain --eval --quiet ~/.ssh/id_ed25519)"` to your shell rc.
 - See the [Arch wiki SSH keys page](https://wiki.archlinux.org/title/SSH_keys#SSH_agents) for a thorough overview.
 
 #### 3f. Verify with a test commit
@@ -209,21 +220,23 @@ OpenSSH is included with Windows 10 (1809) and later as an optional feature; on 
 
 The commands below assume PowerShell. Adjust quoting if you're using Git Bash or another shell.
 
-#### 3a. Generate a dedicated signing key
+#### 3a. Generate an SSH signing key (skip if you already have one)
 
 ```powershell
-ssh-keygen -t ed25519 -f $HOME\.ssh\tessera_signing -C "tessera-signing"
+ssh-keygen -t ed25519 -f $HOME\.ssh\id_ed25519 -C "you@example.com"
 ```
 
-Set a passphrase when prompted. You'll load it into the OpenSSH Authentication Agent service in step 3e to avoid re-entering it on every commit.
+Replace `you@example.com` with your real email — it's stored as the key's comment field and helps you identify the key in `ssh-add -l` and similar listings.
+
+Set a passphrase when prompted. You'll load it into the OpenSSH Authentication Agent service in step 3e to avoid re-entering it on every commit. Store the passphrase in a password manager — losing it means regenerating the key.
 
 #### 3b. Configure Git to sign with that key
 
-From inside the Tessera checkout:
+From inside the Tessera checkout (substitute your key's path if you generated it under a different name):
 
 ```powershell
 git config --local gpg.format ssh
-git config --local user.signingkey "$HOME\.ssh\tessera_signing.pub"
+git config --local user.signingkey "$HOME\.ssh\id_ed25519.pub"
 git config --local commit.gpgsign true
 git config --local tag.gpgsign true
 ```
@@ -233,17 +246,17 @@ git config --local tag.gpgsign true
 Go to **Settings → SSH and GPG keys → New SSH key** (<https://github.com/settings/ssh/new> when logged in). Change the **Key type** dropdown from the default **Authentication Key** to **Signing Key**, then paste the contents of:
 
 ```powershell
-Get-Content $HOME\.ssh\tessera_signing.pub
+Get-Content $HOME\.ssh\id_ed25519.pub
 ```
 
-The distinction matters: **Authentication Key** lets the key push to repositories, while **Signing Key** lets GitHub verify the signature it sees on a commit or tag. They are independent slots; the same key can be registered as both but each registration is separate.
+The distinction matters: **Authentication Key** lets the key push to repositories, while **Signing Key** lets GitHub verify the signature it sees on a commit or tag. They are independent slots; the same key can be registered as both but each registration is separate. If you're reusing an existing key already registered as Authentication Key, register it again as Signing Key — same key contents, different type.
 
 #### 3d. (Optional) Set up local verification
 
 GitHub will show "Verified" on signed commits and tags it can verify against a registered Signing Key. If you also want `git log --show-signature` and `git tag -v` to verify locally — useful for due diligence on commits you receive from others — set up an allowed-signers file:
 
 ```powershell
-$pub = Get-Content $HOME\.ssh\tessera_signing.pub
+$pub = Get-Content $HOME\.ssh\id_ed25519.pub
 Add-Content -Path $HOME\.ssh\allowed_signers -Value "you@example.com $pub"
 git config --local gpg.ssh.allowedSignersFile "$HOME\.ssh\allowed_signers"
 ```
@@ -262,7 +275,7 @@ Start-Service ssh-agent
 Then, from a regular (non-admin) PowerShell:
 
 ```powershell
-ssh-add $HOME\.ssh\tessera_signing
+ssh-add $HOME\.ssh\id_ed25519
 ```
 
 The agent persists across reboots because it runs as a service. You'll only re-enter the passphrase if the key changes or the agent's stored keys are cleared.
@@ -297,8 +310,8 @@ Symptom: a commit hangs with no output (interactive terminal), or fails with an 
 
 The agent is empty and `git`'s call into `ssh-keygen -Y sign` has no key to sign with. ssh-keygen falls back to prompting for the passphrase on a TTY — which hangs interactively, or reads garbage from a missing stdin and fails with `incorrect passphrase` in non-interactive contexts. The fix is platform-specific:
 
-- **macOS** — usually the `~/.ssh/config` block from step 3e is missing, or your Keychain passphrase entry was cleared. Re-do step 3e. To confirm Keychain has the passphrase: `ssh-add -D && ssh-add --apple-use-keychain ~/.ssh/tessera_signing` should not prompt; if it does, enter the passphrase once and Keychain will store it. Note: the `security find-generic-password` CLI may report "not found" even when an iCloud or data-protection keychain entry exists — trust the empirical `ssh-add` test over the CLI query. **Edge case — the bridge is fine but hasn't fired yet:** the `~/.ssh/config` block populates the agent on first ssh *client* operation (`git push`, `git fetch`, `ssh`), not on signing. If your first SSH operation in a session happens to be a commit (common in scripted, IDE-driven, or agentic flows), the agent will still be empty even with the bridge correctly configured. One manual `ssh-add --apple-use-keychain ~/.ssh/tessera_signing` (silent if Keychain holds the passphrase) populates the agent and unblocks signing; or just run any `git pull` / `git fetch` first.
-- **Linux** — your DE's keyring integration or the `keychain` wrapper didn't start on this login. Re-do step 3e for the current session (`eval "$(ssh-agent -s)" && ssh-add ~/.ssh/tessera_signing`). For permanent persistence, pick one of the mechanisms listed in step 3e (DE keyring auto-start, or the `keychain` wrapper invoked from your shell rc) so future logins don't repeat the problem.
+- **macOS** — usually the `~/.ssh/config` block from step 3e is missing, or your Keychain passphrase entry was cleared. Re-do step 3e. To confirm Keychain has the passphrase: `ssh-add -D && ssh-add --apple-use-keychain ~/.ssh/id_ed25519` should not prompt; if it does, enter the passphrase once and Keychain will store it. Note: the `security find-generic-password` CLI may report "not found" even when an iCloud or data-protection keychain entry exists — trust the empirical `ssh-add` test over the CLI query. **Edge case — the bridge is fine but hasn't fired yet:** the `~/.ssh/config` block populates the agent on first ssh *client* operation (`git push`, `git fetch`, `ssh`), not on signing. If your first SSH operation in a session happens to be a commit (common in scripted, IDE-driven, or agentic flows), the agent will still be empty even with the bridge correctly configured. One manual `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` (silent if Keychain holds the passphrase) populates the agent and unblocks signing; or just run any `git pull` / `git fetch` first.
+- **Linux** — your DE's keyring integration or the `keychain` wrapper didn't start on this login. Re-do step 3e for the current session (`eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_ed25519`). For permanent persistence, pick one of the mechanisms listed in step 3e (DE keyring auto-start, or the `keychain` wrapper invoked from your shell rc) so future logins don't repeat the problem.
 - **Windows** — verify `Get-Service ssh-agent` reports both `Running` and `Automatic`. If you use Git for Windows, also verify `git config --get core.sshCommand` points at the system OpenSSH; mismatched agents is the most common Windows-specific failure per step 3e's note.
 
 ### "Good 'git' signature" locally but GitHub shows "Unverified"
@@ -322,6 +335,24 @@ GitHub-side verification works independent of this file; the setting is purely f
 ### Push rejected with "Commits must have verified signatures"
 
 The remote saw an unsigned commit in the range you're pushing. Check `git log --show-signature <range>`; the unsigned commit needs to be re-signed (rebase / amend, depending on where it sits) before the push will be accepted. The branch-protection rule has no bypass, including for repo admins.
+
+### Squash-merged commits show "Unverified" or "committed by GitHub" in IntelliJ
+
+You merged a PR via GitHub's "Squash and merge" button. Locally, the merged commit shows up with **committer: `GitHub <noreply@github.com>`** and IntelliJ's commit panel reports **GPG signature unverified**. This is normal and not a problem.
+
+What's happening:
+
+- When you click "Squash and merge" on github.com, GitHub's servers create a **new** squash commit on their end and **sign it with GitHub's own GPG key**. That commit's *author* is preserved as you, but the *committer* becomes `GitHub <noreply@github.com>`.
+- On github.com, that commit shows a green **Verified** badge — GitHub knows its own key.
+- Locally, IntelliJ doesn't have GitHub's public GPG key in your GnuPG keyring, so it can't verify the signature and labels it "Unverified."
+
+If you want IntelliJ to recognize these as verified locally, import GitHub's public signing key once:
+
+```sh
+curl https://github.com/web-flow.gpg | gpg --import
+```
+
+After that, `git log --show-signature` (and IntelliJ, after a restart) will report "Good signature from 'GitHub <noreply@github.com>'." Purely cosmetic; doesn't change anything about security.
 
 ---
 
