@@ -118,6 +118,39 @@ Public APIs are designed to be stable across the lifetime of a major version (Pr
 
 ---
 
+## Scope Honesty: Identity-Level vs Project-Level
+
+A persistent risk in this project is conflating *project-level* concerns (the codebase, its module structure, its POM metadata, its namespace) with *identity-level* concerns (the developer's signing keys, accounts, personal tooling) — or worse, naming the second as if it were the first. The result is documentation that quietly imposes project-specific patterns on things that are actually about the contributor as a person, and naming that misleads future contributors (and future-you) about what scope a decision actually has.
+
+When proposing or documenting any artifact, naming convention, or instruction, the question to ask is:
+
+> *"Is this scoped to this project, or to the developer working on it?"*
+
+Two distinct categories emerge cleanly:
+
+- **Project-level** — the project's published namespace (`io.lightine` per [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md)), Maven coordinates, POM metadata, build configuration, module structure, ADRs. These follow the project; they should be project-named where naming is required.
+- **Identity-level** — signing keys (SSH for commits, PGP for artifacts), credential stores, account credentials, personal tooling preferences. These follow the developer across any project they work on; they should be identity-named or scope-agnostic, not project-named.
+
+There is also a middle ground worth recognizing:
+
+- **Maintainer-level for this project** — things like "the Sonatype token used to publish this project's artifacts." The *account* is identity-level; the *token's use* is project-publishing-specific. Naming should reflect the immediate scope (the token name can be environment-scoped, e.g., `publishing-laptop` vs `publishing-ci`) while the account itself is treated as identity-level.
+
+When the discipline reveals an existing inconsistency (something named project-specifically that should be identity-level, or the reverse), the resolution is to align name, configuration, and documentation together — not pick one and leave the others mismatched. Mixed signals are worse than either honest choice.
+
+### Dual-path contributor docs for identity-level setup
+
+When a contributor-facing setup document covers an identity-level thing (an SSH signing key, a GPG key, a developer account), the document is written with two paths at the top:
+
+> **Choose your path:**
+> - Already have X set up and want to reuse it? → [quick setup, brief steps]
+> - Setting up from scratch? → [full walkthrough]
+
+Both paths converge at the project-specific configuration steps. The contributor picks their own path; the document does not assume what they already have.
+
+This pattern is the operational expression of [Principle 1 — Reader, not oracle](principles.md) applied to documentation: the document presents the information; the contributor makes their own trust decisions about their own setup. Forcing every contributor down a from-scratch path treats an identity-level decision (which keys they want to use) as if it were a project mandate, which is exactly the inconsistency this convention exists to prevent.
+
+---
+
 ## Internal Packages First
 
 The project follows Principle 11: new features start as internal packages within existing modules. They are promoted to standalone modules only when at least one of the following clearly applies:
