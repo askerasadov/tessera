@@ -15,11 +15,11 @@ Tessera reads Machine Readable Zones (MRZ) from passports, national ID cards, re
 
 ## What it does
 
-- **Reads MRZ** from live camera, pre-captured images, manual entry, or NFC chip (NFC support arrives in a later release)
 - **Parses all ICAO Doc 9303 MRZ formats**: TD1, TD2, TD3, MRV-A, MRV-B
 - **Validates** structurally, by check digit, and semantically — without making trust decisions
 - **Generates** valid MRZs from structured input, supporting round-trip use cases
 - **Exposes everything it extracts** — raw fields, computed values, validation results, and warnings — so the consumer always knows what was observed and what was inferred
+- **Reading MRZ from live camera, pre-captured images, manual entry, or NFC chip** is planned for later releases (camera `0.2.0`, pre-captured image `0.3.0`, manual entry `0.4.0`, NFC `0.6.0` — see the [roadmap](docs/scope.md)). At `0.1.1` you supply the MRZ string and Tessera does the rest.
 - **Runs anywhere the core technology stack supports** — initial mobile targets (Android, iOS) plus future support for backend, desktop, and web
 
 ---
