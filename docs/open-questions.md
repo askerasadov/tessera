@@ -547,6 +547,18 @@ Three realistic options when this is revisited:
 
 **Trigger:** When **both** conditions are true: (a) a second active project exists under `io.lightine` (actual code, actual work — not just an idea), and (b) cross-project visibility or coordination cost becomes a real felt pain. Until both hold, the existing infrastructure is sufficient.
 
+### Mechanical guard against reading credential-bearing files into AI context
+
+On 2026-05-29 an assistant Read the whole of `~/.gradle/gradle.properties` (to check one non-secret line), pulling the maintainer's PGP signing key, its passphrase, and the Sonatype token into the session transcript — an unintended, persistent exposure. This is a general risk for *any* contributor's AI tooling, not one machine: credential-bearing files (`~/.gradle/gradle.properties`, `.env`, `*.pem`, SSH keys) can be read whole by mistake.
+
+Current mitigations are **advisory only** — the "Reading a Whole Credential-Bearing File" pitfall in `.claude/known-pitfalls.md` and a grep-only flag in the maintainer's `reference_local_jdk_setup` auto-memory. By the project's own "Prescribe the path, prohibit the border" pattern, an advisory rule relies on the assistant remembering; the durable fix is **mechanical enforcement**, like the existing `Bash(git push *)` private-content-scan hook and the `block-screenshot.sh` PreToolUse hook.
+
+Candidate design (for a dedicated session): a PreToolUse hook that blocks or warns when a tool call targets a known secret-bearing path (a denylist of globs — `~/.gradle/gradle.properties`, `**/.env*`, `**/*.pem`, `~/.ssh/id_*`, etc.), steering the assistant to a grep-the-one-line alternative; fail-open and human-terminal-unaffected, mirroring the screenshot hook. Honest open design points: whether a PreToolUse hook can intercept the **Read tool** at all (the screenshot and private-content hooks guard **Bash** — so `cat` / `grep -r` are covered there, but a Read-tool guard may need a different mechanism), the denylist scope, and block-vs-warn.
+
+**Source:** 2026-05-29 0.2.0-review session — the exposure described above, plus the user's request to address it generally (for all contributors), not per-machine.
+
+**Trigger:** A dedicated session, separate from feature work, when there's appetite to design the guard. Security-relevant but low-urgency; until then the advisory pitfall + memory flag are the interim mitigation.
+
 ---
 
 ## How to Use This Document
