@@ -525,6 +525,18 @@ Deferred because at the project's current scale (single maintainer, narrow 0.1.x
 
 **Trigger:** When public-API browsing UX matters enough to justify the infrastructure work — typically around the `1.0.0` polish pass (public stability commitment lands; the API is wide enough to benefit from rich cross-module navigation; the project is mature enough to deserve a real docs site). Could also trigger earlier if external integrators provide feedback that the per-module HTML is hard to navigate. Decision form: an ADR locking the docs-hosting target + a publishing-infrastructure slice wiring up aggregation + CI deployment.
 
+### Cross-project planning tool (YouTrack vs GitHub Projects vs current setup)
+
+When future projects under `io.lightine` start (potentially with shared contributors), unified visibility across projects may justify a dedicated project-management tool. The current setup (GitHub Issues + `docs/open-questions.md`, `.handoffs/`, ADRs, `CHANGELOG.md`) is sufficient for a single active project; adding tooling now would create stale data and split the source of truth across more places (Principle 11 — internal/simple first, promote when justified).
+
+Three realistic options when this is revisited:
+
+- **Stay with current setup** — GitHub Issues per repo + the existing markdown infrastructure. Lowest overhead; works fine if cross-project coordination stays informal.
+- **GitHub Projects** — free, integrated, supports cross-repo boards under a GitHub organization. Provides backlog and roadmap views without adopting a new tool or new login.
+- **YouTrack** (JetBrains) — free for up to 10 users on cloud. Strongest for customizable workflows and serious project management. Highest overhead.
+
+**Trigger:** When **both** conditions are true: (a) a second active project exists under `io.lightine` (actual code, actual work — not just an idea), and (b) cross-project visibility or coordination cost becomes a real felt pain. Until both hold, the existing infrastructure is sufficient.
+
 ---
 
 ## How to Use This Document
