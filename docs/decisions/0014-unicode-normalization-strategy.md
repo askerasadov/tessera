@@ -19,7 +19,7 @@ The failure mode is silent: the consumer gets `MrzGenerationUnsupportedCharacter
 
 Normalization forms vary by source platform in practice. macOS uses NFD on the filesystem (HFS+'s legacy decision), Windows and most Linux tools default to NFC, Web browsers vary by input method, and mobile keyboards can produce either form. Real consumer input will arrive in mixed normalization forms.
 
-This decision was deferred until the pre-release tech-stack review (per the "Pre-Release Tech-Stack Review" rule in [`CLAUDE.md`](../../CLAUDE.md), landed in PR [#31](https://github.com/askerasadov/tessera/pull/31)) because committing to a Unicode strategy locks foundational infrastructure under [ADR-007](0007-strict-backward-compat-from-0x.md) once `0.1.0` ships. The review was conducted in the 2026-05-17 session before any transliteration code was written.
+This decision was deferred until the pre-release tech-stack review (per the "Pre-Release Tech-Stack Review" rule in [`CLAUDE.md`](../../CLAUDE.md), landed in PR [#31](https://github.com/lightine-io/tessera/pull/31)) because committing to a Unicode strategy locks foundational infrastructure under [ADR-007](0007-strict-backward-compat-from-0x.md) once `0.1.0` ships. The review was conducted in the 2026-05-17 session before any transliteration code was written.
 
 ---
 

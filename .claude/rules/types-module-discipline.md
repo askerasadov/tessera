@@ -45,4 +45,4 @@ Applies to source under `types/src/` — both `commonMain` and platform-specific
 - Human-facing summary lives in [`../../docs/conventions.md`](../../docs/conventions.md) under "Module Boundaries."
 - Module structure described in [`../../docs/architecture.md`](../../docs/architecture.md).
 - Naming and `tessera-<module>` artifact pattern in [`../../docs/decisions/0016-maven-coordinates-and-first-publish.md`](../../docs/decisions/0016-maven-coordinates-and-first-publish.md).
-- The original "name your modules deliberately" reasoning sits in the conversation that produced ADR-016 and the `domain` → `types` rename (PRs [#76](https://github.com/askerasadov/tessera/pull/76) and [#78](https://github.com/askerasadov/tessera/pull/78)).
+- The original "name your modules deliberately" reasoning sits in the conversation that produced ADR-016 and the `domain` → `types` rename (PRs [#76](https://github.com/lightine-io/tessera/pull/76) and [#78](https://github.com/lightine-io/tessera/pull/78)).

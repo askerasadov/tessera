@@ -18,14 +18,14 @@ import io.lightine.tessera.types.vocabulary.DocumentCategory
  * the issuing state's discretion. This table ships only the unambiguously-defined
  * codes (`I`, `AC`) on that side; state-specific second characters are not
  * enumerable. Adding entries is a non-breaking change. See
- * [`docs/features/lookup-tables.md`](https://github.com/askerasadov/Tessera/blob/main/docs/features/lookup-tables.md)
+ * [`docs/features/lookup-tables.md`](https://github.com/lightine-io/tessera/blob/main/docs/features/lookup-tables.md)
  * for the design and `docs/open-questions.md` for tracking ("Document type code table
  * completeness").
  *
  * Codes not present in this table surface as
  * [`MrzUnknownDocumentTypeCode`][io.lightine.tessera.types.errors.MrzUnknownDocumentTypeCode]
  * warnings rather than validation failures, per
- * [ADR-013](https://github.com/askerasadov/Tessera/blob/main/docs/decisions/0013-recognition-failures-are-warnings.md).
+ * [ADR-013](https://github.com/lightine-io/tessera/blob/main/docs/decisions/0013-recognition-failures-are-warnings.md).
  */
 public object DocumentTypeCodeTable {
     private val entries: List<DocumentTypeCodeEntry> =

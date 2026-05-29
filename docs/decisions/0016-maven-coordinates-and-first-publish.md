@@ -6,7 +6,7 @@
 
 ## Context
 
-With the `io.lightine` Sonatype namespace claimed and verified (banked in PR [#75](https://github.com/askerasadov/tessera/pull/75) as a partial resolution of the "Distribution channels" entry in [`open-questions.md`](../open-questions.md)), Maven Central is the confirmed distribution channel for the JVM target. Several follow-on decisions interlock and need a single coherent resolution:
+With the `io.lightine` Sonatype namespace claimed and verified (banked in PR [#75](https://github.com/lightine-io/tessera/pull/75) as a partial resolution of the "Distribution channels" entry in [`open-questions.md`](../open-questions.md)), Maven Central is the confirmed distribution channel for the JVM target. Several follow-on decisions interlock and need a single coherent resolution:
 
 1. **Coordinate shape** — what is the published groupId, and what convention do artifactIds follow?
 2. **Versioning strategy** — do modules version independently or in lockstep?

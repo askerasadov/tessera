@@ -13,7 +13,7 @@ This document is living. As the publishing process evolves (CI takes over, rotat
 Before the SDK can publish to Maven Central:
 
 1. A **PGP signing key** in the maintainer's local GnuPG keyring, with its public key uploaded to a public keyserver
-2. Sonatype Central Publishing Portal **account access** for the `io.lightine` namespace (already done — the namespace was claimed and verified during the [Distribution channels deferral resolution](open-questions.md), banked in PR [#75](https://github.com/askerasadov/tessera/pull/75) and locked under [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md))
+2. Sonatype Central Publishing Portal **account access** for the `io.lightine` namespace (already done — the namespace was claimed and verified during the [Distribution channels deferral resolution](open-questions.md), banked in PR [#75](https://github.com/lightine-io/tessera/pull/75) and locked under [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md))
 3. A Sonatype Central Portal **user token** (generated; distinct from the account login password)
 4. **Credentials stored** where Gradle can read them — either user-level `gradle.properties` or environment variables
 
@@ -150,7 +150,7 @@ The token pair (username + password) is what Gradle uses to authenticate publish
 
 ## 4. Store credentials where Gradle can read them
 
-Vanniktech's `gradle-maven-publish-plugin` (wired up in PR [#80](https://github.com/askerasadov/tessera/pull/80)) reads five credential values:
+Vanniktech's `gradle-maven-publish-plugin` (wired up in PR [#80](https://github.com/lightine-io/tessera/pull/80)) reads five credential values:
 
 | What | Gradle property | Env var (cross-platform) |
 |---|---|---|
@@ -271,4 +271,4 @@ The Actions workflow maps secrets to `ORG_GRADLE_PROJECT_*` env vars before invo
 - [`decisions/0016-maven-coordinates-and-first-publish.md`](decisions/0016-maven-coordinates-and-first-publish.md) — coordinate shape, lockstep versioning, BOM, first-publish version and scope; the umbrella decision this setup serves
 - [`contributor-setup.md`](contributor-setup.md) — per-contributor machine setup (SSH signing key, JDK toolchain, IDE config); the contributor-side counterpart to this document
 - [`conventions.md`](conventions.md) — module naming, package conventions, including the "Module Boundaries" rule that constrains what each published artifact contains
-- The publishing infrastructure slices to date: PR [#80](https://github.com/askerasadov/tessera/pull/80) (vanniktech plugin + POM metadata + lockstep version), PR [#81](https://github.com/askerasadov/tessera/pull/81) (Dokka 2 for javadoc jars), PR [#82](https://github.com/askerasadov/tessera/pull/82) (`tessera-bom`); the signing + Sonatype-Central + 0.1.1-tag slices land after the setup in this document is complete
+- The publishing infrastructure slices to date: PR [#80](https://github.com/lightine-io/tessera/pull/80) (vanniktech plugin + POM metadata + lockstep version), PR [#81](https://github.com/lightine-io/tessera/pull/81) (Dokka 2 for javadoc jars), PR [#82](https://github.com/lightine-io/tessera/pull/82) (`tessera-bom`); the signing + Sonatype-Central + 0.1.1-tag slices land after the setup in this document is complete

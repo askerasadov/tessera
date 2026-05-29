@@ -14,7 +14,7 @@ These are universal across platforms:
 
 - **Git 2.34 or later.** `git --version` to check. SSH signing requires 2.34+.
 - **JDK 21.** The project compiles to JDK 21 (`jvmToolchain(21)` in every module's `build.gradle.kts`) and CI runs on JDK 21. The Gradle daemon itself is pinned to JDK 17 (`gradle/gradle-daemon-jvm.properties`); foojay-resolver auto-provisions it on first build if it's missing locally, so installing JDK 21 alone is enough — expect a one-time JDK 17 download the first time you run `./gradlew`. [Adoptium Temurin](https://adoptium.net/) is a safe default on any platform.
-- **A GitHub account** with permission to fork or push to [askerasadov/Tessera](https://github.com/askerasadov/Tessera).
+- **A GitHub account** with permission to fork or push to [lightine-io/tessera](https://github.com/lightine-io/tessera).
 - **(Optional) The GitHub CLI** (`gh`). Useful for opening PRs from the command line; see [the GitHub CLI docs](https://cli.github.com/). The per-PR workflow in [`.claude/git-workflow.md`](../.claude/git-workflow.md) uses `gh` in its examples.
 
 You do not need a Sonatype account, a GPG key for artifact signing, or any other release-time tooling. Those are author-only concerns.
@@ -24,14 +24,14 @@ You do not need a Sonatype account, a GPG key for artifact signing, or any other
 ## 1. Clone the repository
 
 ```sh
-git clone https://github.com/askerasadov/Tessera.git
+git clone https://github.com/lightine-io/tessera.git
 cd Tessera
 ```
 
 If you plan to contribute via fork, fork on GitHub first and clone your fork; you can add the upstream remote afterwards:
 
 ```sh
-git remote add upstream https://github.com/askerasadov/Tessera.git
+git remote add upstream https://github.com/lightine-io/tessera.git
 ```
 
 ---
