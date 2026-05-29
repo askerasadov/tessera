@@ -30,6 +30,15 @@ allprojects {
 subprojects {
     plugins.withId("com.vanniktech.maven.publish") {
         extensions.configure<MavenPublishBaseExtension> {
+            // Sign every published artifact (jar, sources, javadoc, pom, module, and the BOM
+            // pom) with the maintainer's PGP key. Maven Central rejects non-snapshot releases
+            // that lack a `.asc` signature for each artifact. vanniktech wires up the Gradle
+            // signing plugin automatically when this is called; credentials are read from
+            // `signingInMemoryKey` / `signingInMemoryKeyId` / `signingInMemoryKeyPassword`
+            // (set per-machine in `~/.gradle/gradle.properties`, never committed — see
+            // `docs/publishing-setup.md`).
+            signAllPublications()
+
             pom {
                 url.set("https://github.com/askerasadov/tessera")
                 inceptionYear.set("2026")

@@ -78,7 +78,13 @@ uid                 [ultimate] Asker Asadov (Maven Central signing) <asker.asado
 ssb   rsa4096/0987654321FEDCBA 2026-05-27 [E]
 ```
 
-The 16-character ID after `rsa4096/` on the `sec` line is your **signing key ID** (`ABCD1234EF567890` in the example above). You'll need this in step 4. The full fingerprint on the next line is what keyservers and Maven Central look up.
+The 16-character ID after `rsa4096/` on the `sec` line is your **long key ID** (`ABCD1234EF567890` in the example above); the full fingerprint on the next line is what keyservers and Maven Central look up. The `<KEY_ID>` placeholder in the `gpg` commands throughout this document accepts the long ID, the short ID, or the full fingerprint interchangeably.
+
+For the `signingInMemoryKeyId` Gradle property in step 4, however, you need the **short key ID** specifically — the last 8 characters of the long ID (`EF567890` in the example above). The Gradle signing plugin validates that field as an 8-hex-digit value and rejects the 16-character long form (`The key ID must be in a valid form (eg 00B5050F or 0x00B5050F)`). Print the short form directly with:
+
+```bash
+gpg --list-secret-keys --keyid-format SHORT
+```
 
 ### Back up the secret key
 
@@ -149,7 +155,7 @@ Vanniktech's `gradle-maven-publish-plugin` (wired up in PR [#80](https://github.
 | What | Gradle property | Env var (cross-platform) |
 |---|---|---|
 | Signing key (ASCII-armored, multi-line as `\n`-joined single line) | `signingInMemoryKey` | `ORG_GRADLE_PROJECT_signingInMemoryKey` |
-| Signing key ID | `signingInMemoryKeyId` | `ORG_GRADLE_PROJECT_signingInMemoryKeyId` |
+| Signing key ID (short, 8-char) | `signingInMemoryKeyId` | `ORG_GRADLE_PROJECT_signingInMemoryKeyId` |
 | Signing key passphrase | `signingInMemoryKeyPassword` | `ORG_GRADLE_PROJECT_signingInMemoryKeyPassword` |
 | Sonatype token username | `mavenCentralUsername` | `ORG_GRADLE_PROJECT_mavenCentralUsername` |
 | Sonatype token password | `mavenCentralPassword` | `ORG_GRADLE_PROJECT_mavenCentralPassword` |
@@ -163,7 +169,8 @@ The user-level Gradle properties file is per-machine and is never committed to a
 ```properties
 # Tessera Maven Central publishing — credentials, do not share
 signingInMemoryKey=-----BEGIN PGP PRIVATE KEY BLOCK-----\n\nlQc...\n-----END PGP PRIVATE KEY BLOCK-----
-signingInMemoryKeyId=ABCD1234EF567890
+# short 8-char key ID (last 8 of the long ID), NOT the 16-char long form
+signingInMemoryKeyId=EF567890
 signingInMemoryKeyPassword=<your passphrase>
 mavenCentralUsername=<token username from step 3>
 mavenCentralPassword=<token password from step 3>
@@ -191,7 +198,7 @@ gpg --export-secret-keys --armor <KEY_ID> | awk '{printf "%s\\n", $0}' | xclip -
 
 ```bash
 export ORG_GRADLE_PROJECT_signingInMemoryKey="$(gpg --export-secret-keys --armor <KEY_ID>)"
-export ORG_GRADLE_PROJECT_signingInMemoryKeyId="ABCD1234EF567890"
+export ORG_GRADLE_PROJECT_signingInMemoryKeyId="EF567890"  # short 8-char key ID
 export ORG_GRADLE_PROJECT_signingInMemoryKeyPassword="<passphrase>"
 export ORG_GRADLE_PROJECT_mavenCentralUsername="<token username>"
 export ORG_GRADLE_PROJECT_mavenCentralPassword="<token password>"
@@ -252,7 +259,7 @@ Once the maintainer-driven first publish lands and the workflow is proven, futur
 | `MAVEN_CENTRAL_USERNAME` | Sonatype token username |
 | `MAVEN_CENTRAL_PASSWORD` | Sonatype token password |
 | `SIGNING_KEY` | ASCII-armored secret key (multi-line preserved — env vars handle it natively) |
-| `SIGNING_KEY_ID` | Signing key ID |
+| `SIGNING_KEY_ID` | Signing key ID (short, 8-char) |
 | `SIGNING_KEY_PASSWORD` | Signing key passphrase |
 
 The Actions workflow maps secrets to `ORG_GRADLE_PROJECT_*` env vars before invoking Gradle. That's a separate slice (currently uncaptured); add it when the maintainer decides to move publishing to CI.
