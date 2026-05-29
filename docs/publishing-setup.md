@@ -1,6 +1,6 @@
 # Publishing Setup (Maintainer Guide)
 
-This document is for the person who publishes Tessera artifacts to Maven Central — currently the project maintainer. It walks through the one-time setup that has to happen before the signing slice ([slice 4 of the publishing infrastructure committed in ADR-016](decisions/0016-maven-coordinates-and-first-publish.md)) can be wired up, and before the first staging publish to the Sonatype Central Publishing Portal can run.
+This document is for the person who publishes Tessera artifacts to Maven Central — currently the project maintainer. It walks through the one-time setup behind publishing Tessera: a PGP signing key, Sonatype Central Portal access and a user token, and credential storage. This setup was completed for the first publish (`v0.1.1`, the publishing infrastructure committed in [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md)); the guide now serves as the reference for recreating it — credential rotation, a new maintainer's machine, or moving publishing to CI.
 
 This document is living. As the publishing process evolves (CI takes over, rotations happen, additional registries are added), this document updates.
 
@@ -17,7 +17,7 @@ Before the SDK can publish to Maven Central:
 3. A Sonatype Central Portal **user token** (generated; distinct from the account login password)
 4. **Credentials stored** where Gradle can read them — either user-level `gradle.properties` or environment variables
 
-Steps below cover each in order. Once all four exist, the signing slice (PR 4) becomes unblocked and the staging-publish slice (PR 5) can run end-to-end.
+Steps below cover each in order. All four are in place as of `v0.1.1` — signing and Sonatype Central Portal publishing are wired and the first publish has shipped. The steps are the reference for recreating this setup on a new machine, after a key or token rotation, or when moving publishing to CI.
 
 ---
 
@@ -203,7 +203,7 @@ export ORG_GRADLE_PROJECT_signingInMemoryKeyPassword="<passphrase>"
 export ORG_GRADLE_PROJECT_mavenCentralUsername="<token username>"
 export ORG_GRADLE_PROJECT_mavenCentralPassword="<token password>"
 
-./gradlew publishToMavenCentral  # (slice 5 will introduce this task)
+./gradlew publishToMavenCentral  # uploads a staged deployment to the Central Portal
 ```
 
 Env vars don't persist across shells; you set them each release. Pair with a secrets manager (1Password CLI, AWS Secrets Manager, etc.) to populate them on demand. The multi-line PGP key works naturally with env vars (no `\n` escaping needed).
@@ -214,9 +214,9 @@ Option A (`~/.gradle/gradle.properties`) is the path of least friction for the f
 
 ---
 
-## 5. Verification before slice 4 ships
+## 5. Verification
 
-These are sanity checks the maintainer can do before the signing-slice PR opens:
+These are sanity checks the maintainer can run after setup, or after a key/token rotation:
 
 ```bash
 # Confirm the key is in the local keyring
@@ -227,12 +227,11 @@ gpg --list-secret-keys --keyid-format LONG
 gpg --keyserver keys.openpgp.org --recv-keys <KEY_ID>
 # Should retrieve cleanly, not "key not found"
 
-# Confirm Gradle reads the credentials (after slice 4 wires the signing plugin —
-# this command currently runs without signing, so it succeeds either way)
+# Confirm Gradle reads the credentials and signs (signing is wired as of v0.1.1)
 ./gradlew publishToMavenLocal --console=plain
 ```
 
-Once slice 4 lands, the same `publishToMavenLocal` invocation will produce `.asc` signature files alongside each artifact, e.g.:
+The `publishToMavenLocal` invocation produces `.asc` signature files alongside each artifact, e.g.:
 
 ```
 ~/.m2/repository/io/lightine/tessera/tessera-mrz-core/0.1.1/tessera-mrz-core-0.1.1.jar
@@ -271,4 +270,4 @@ The Actions workflow maps secrets to `ORG_GRADLE_PROJECT_*` env vars before invo
 - [`decisions/0016-maven-coordinates-and-first-publish.md`](decisions/0016-maven-coordinates-and-first-publish.md) — coordinate shape, lockstep versioning, BOM, first-publish version and scope; the umbrella decision this setup serves
 - [`contributor-setup.md`](contributor-setup.md) — per-contributor machine setup (SSH signing key, JDK toolchain, IDE config); the contributor-side counterpart to this document
 - [`conventions.md`](conventions.md) — module naming, package conventions, including the "Module Boundaries" rule that constrains what each published artifact contains
-- The publishing infrastructure slices to date: PR [#80](https://github.com/lightine-io/tessera/pull/80) (vanniktech plugin + POM metadata + lockstep version), PR [#81](https://github.com/lightine-io/tessera/pull/81) (Dokka 2 for javadoc jars), PR [#82](https://github.com/lightine-io/tessera/pull/82) (`tessera-bom`); the signing + Sonatype-Central + 0.1.1-tag slices land after the setup in this document is complete
+- The publishing infrastructure slices (all shipped): PR [#80](https://github.com/lightine-io/tessera/pull/80) (vanniktech plugin + POM metadata + lockstep version), PR [#81](https://github.com/lightine-io/tessera/pull/81) (Dokka 2 for javadoc jars), PR [#82](https://github.com/lightine-io/tessera/pull/82) (`tessera-bom`), PR [#88](https://github.com/lightine-io/tessera/pull/88) (PGP signing), PR [#89](https://github.com/lightine-io/tessera/pull/89) (Sonatype Central Portal + first publish), PR [#90](https://github.com/lightine-io/tessera/pull/90) (`v0.1.1` release)

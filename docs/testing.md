@@ -49,7 +49,7 @@ Security and adversarial testing covers:
 - **Unicode and character set edge cases** — inputs containing characters outside the MRZ alphabet (lowercase, accented, non-Latin scripts, control characters, zero-width characters). The parser must reject these as character set violations rather than handling them inconsistently.
 - **Resource exhaustion probes** — inputs designed to trigger excessive memory use, infinite loops, or unbounded recursion if the parser has those vulnerabilities.
 
-Security tests live in dedicated test files (e.g., `MrzParserFuzzTest.kt`, `MrzParserAdversarialTest.kt`) and run as part of the regular test suite. They are not deferred to a separate "security pass" — defensive behavior is part of correctness.
+These checks are integrated across the parser, format, and generator test suites rather than living in separate dedicated security-test files — for example, character-set violations in `MrzAlphabetTest.kt`, and boundary and adversarial cases throughout the `MrzParser*`, `MrzValidator*`, and `MrzGenerator*` tests. They run as part of the regular suite, not a separate "security pass" — defensive behavior is part of correctness. (Consolidating them into a dedicated fuzz/adversarial suite, and filling gaps such as systematic input fuzzing, is a candidate future improvement.)
 
 The pre-public-release security review pass (tracked in `docs/open-questions.md`) is a separate, larger activity that examines areas the regular test suite cannot fully cover (side channels, dependency integrity, etc.).
 
@@ -242,7 +242,7 @@ Examples of names that would be revised:
 
 Tests are organized by the public API they exercise, not by the internal implementation. A test for the parser lives in `MrzParserTest.kt`, regardless of which internal class actually contains the logic being exercised.
 
-Property-based tests live in dedicated files (`MrzRoundTripPropertyTest.kt`, etc.) because their structure is different from example-based tests.
+Property-based tests live in dedicated files (e.g., `CheckDigitPropertyTest.kt`) because their structure is different from example-based tests.
 
 ---
 

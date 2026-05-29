@@ -52,6 +52,10 @@ A check digit computed across multiple MRZ fields (rather than a single field). 
 
 A three-letter code identifying a country, organization, or other entity that issues travel documents. The MRZ uses these codes for both the issuing state and the holder's nationality. Country codes follow ISO 3166-1 alpha-3 with extensions defined in ICAO Doc 9303 Part 3 Section 5. See `lookup-tables.md`.
 
+### Country Code Category
+
+An SDK enum (`CountryCodeCategory`) classifying a recognized country code as a `STATE` (an ISO 3166-1 alpha-3 country), `ORGANIZATION` (a UN-style international organization), `STATELESS`, `REFUGEE`, `HISTORICAL` (a dissolved or renamed state whose documents may still circulate), or `OTHER`. Exposed on `CountryCode.category` for codes found in the SDK's country-code lookup table; the special-purpose categories follow ICAO Doc 9303 Part 3 Section 5. See `lookup-tables.md`.
+
 ---
 
 ## D
@@ -59,6 +63,10 @@ A three-letter code identifying a country, organization, or other entity that is
 ### Data Group (DG)
 
 A structured section of data on an electronic travel document chip. Data groups are defined by ICAO Doc 9303 Part 10 and are numbered (DG1, DG2, etc.). DG1 contains the MRZ; DG2 contains the facial image; other data groups contain various biometric and biographic data depending on what the issuing state populated.
+
+### Document Category
+
+An SDK enum (`DocumentCategory`) giving a coarse classification of a document — `PASSPORT`, `IDENTITY_CARD`, `RESIDENCE_PERMIT`, `VISA`, or `OTHER` — derived from the MRZ document type code via the document-type lookup table. Exposed on `DocumentType.category`; it is `null` when the raw type code is not in the SDK's (deliberately non-exhaustive) lookup table. See `lookup-tables.md`.
 
 ### Document Type Code
 

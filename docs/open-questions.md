@@ -403,13 +403,13 @@ Cryptographic verification of NFC chip signatures requires trust anchors (typica
 
 ### Distribution channels (Maven Central, CocoaPods, SPM)
 
-**JVM coordinate shape, lockstep versioning, BOM, first-publish version, and first-publish scope are resolved by [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md).** The published groupId is `io.lightine.tessera` (backed by the verified Sonatype namespace at `io.lightine`); artifactIds follow the `tessera-<module>` convention; modules version in lockstep with a `tessera-bom` artifact for version alignment; the first Maven Central publication ships at 0.1.1 with all five current modules plus the BOM; no snapshot builds at 0.x.
+**JVM coordinate shape, lockstep versioning, BOM, first-publish version, and first-publish scope are resolved by [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md).** The published groupId is `io.lightine.tessera` (backed by the verified Sonatype namespace at `io.lightine`); artifactIds follow the `tessera-<module>` convention; modules version in lockstep with a `tessera-bom` artifact for version alignment; the first Maven Central publication shipped at 0.1.1 (published 2026-05-29) with all five current modules plus the BOM; no snapshot builds at 0.x.
 
 What remains open under this entry: iOS distribution channel (CocoaPods vs Swift Package Manager). The iOS target activates per `docs/scope.md` when Xcode availability allows; channel selection is decided alongside.
 
 **Source:** Implicit; not yet referenced.
 
-**Resolution:** JVM distribution fully resolved by [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md). iOS distribution channel to decide before iOS target activates.
+**Resolution:** JVM distribution resolved by [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md) and **executed** — `io.lightine.tessera:*:0.1.1` was published to Maven Central on 2026-05-29 (publishing slices in PRs [#88](https://github.com/lightine-io/tessera/pull/88)–[#90](https://github.com/lightine-io/tessera/pull/90)). iOS distribution channel (CocoaPods vs SPM) remains to decide before the iOS target activates.
 
 ### LICENSE file at project root
 
