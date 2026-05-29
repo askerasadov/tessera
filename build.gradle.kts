@@ -30,6 +30,15 @@ allprojects {
 subprojects {
     plugins.withId("com.vanniktech.maven.publish") {
         extensions.configure<MavenPublishBaseExtension> {
+            // Target the Sonatype Central Portal (central.sonatype.com) for `publishToMavenCentral`.
+            // No SonatypeHost argument: as of the vanniktech plugin 0.36.x, the no-arg / boolean-only
+            // form defaults to the Central Portal (the old OSSRH `S01`/`DEFAULT` hosts are legacy).
+            // `automaticRelease = false` uploads the artifacts as a deployment that sits VALIDATED
+            // but unpublished — a maintainer manually clicks "Publish" in the portal UI to release it
+            // to Maven Central. Coordinates lock under ADR-007 only at that manual release, not at
+            // upload, so a staged deployment can be dropped and redone freely.
+            publishToMavenCentral(automaticRelease = false)
+
             // Sign every published artifact (jar, sources, javadoc, pom, module, and the BOM
             // pom) with the maintainer's PGP key. Maven Central rejects non-snapshot releases
             // that lack a `.asc` signature for each artifact. vanniktech wires up the Gradle
