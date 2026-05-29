@@ -25,7 +25,7 @@ Steps below cover each in order. Once all four exist, the signing slice (PR 4) b
 
 ### Why this is separate from the SSH signing key
 
-The project already uses an SSH key (`~/.ssh/tessera_signing`) for signing git commits — set up per [`contributor-setup.md`](contributor-setup.md) macOS step 3 and described in [`.claude/git-workflow.md`](../.claude/git-workflow.md). Maven Central requires a **PGP/GnuPG** key for signing published artifacts: different algorithm family (RSA/ECC under the OpenPGP standard), different toolchain (`gpg`), different file format, different keyserver infrastructure. The two have nothing to do with each other.
+The project already uses an SSH signing key for git commits (set up per [`contributor-setup.md`](contributor-setup.md) section 3 and described in [`.claude/git-workflow.md`](../.claude/git-workflow.md)). Maven Central requires a **PGP/GnuPG** key for signing published artifacts: different algorithm family (RSA/ECC under the OpenPGP standard), different toolchain (`gpg`), different file format, different keyserver infrastructure. The two have nothing to do with each other.
 
 Do not try to convert or reuse the SSH key. Generate the PGP key fresh.
 
@@ -60,7 +60,7 @@ When prompted:
   - Recommendation: `2y` with a calendar reminder to renew at the 22-month mark
 - **Real name:** `Asker Asadov` (matches the POM `<developer><name>` field)
 - **Email:** `asker.asadov@gmail.com` (matches the POM `<developer><email>` field)
-- **Comment:** `Tessera Maven Central signing` (helps you identify the key in `gpg --list-keys` output later)
+- **Comment:** `Maven Central signing` (optional; helps you identify the key in `gpg --list-keys` output later — leave blank if you prefer a UID without a comment)
 - **Passphrase:** Strong. Save in your password manager. Required every time you sign a release (Gradle can cache for a daemon session if you configure `gpg-agent`)
 
 ### Find your key ID
@@ -74,7 +74,7 @@ Output looks like:
 ```
 sec   rsa4096/ABCD1234EF567890 2026-05-27 [SC]
       0123456789ABCDEF0123456789ABCDEF01234567
-uid                 [ultimate] Asker Asadov (Tessera Maven Central signing) <asker.asadov@gmail.com>
+uid                 [ultimate] Asker Asadov (Maven Central signing) <asker.asadov@gmail.com>
 ssb   rsa4096/0987654321FEDCBA 2026-05-27 [E]
 ```
 
