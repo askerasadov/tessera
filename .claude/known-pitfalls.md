@@ -229,6 +229,20 @@ The MrzCheckDigitMismatch type currently uses the qualifying approach: `${this.f
 
 ---
 
+## Claiming a Gap Without Verifying the Files
+
+When reviewing for missing or stale content, it is tempting to assert "X is missing" or "Y is wrong" from memory or from a derived summary. The "a no-issues-found verification is suspicious" rule has a mirror: **a *found* issue is just as suspicious until verified against the actual file.** In the 0.2.0 work, two confident "this is a gap" calls were wrong — `reading-risks.md` already had a Live-Camera section, and the JDK-17 daemon pin (`gradle-daemon-jvm.properties`) already existed — caught only because the files were re-read before acting. Asserting a gap that isn't there wastes a fix cycle and risks "correcting" something already right.
+
+**Fix:** Before asserting something is missing, wrong, or stale, open the actual file (or run the actual check) and confirm. Found-issues need the same verification as no-issues. State confidence honestly: "I believe X is missing" vs "X is missing (verified at `file:line`)."
+
+## Reading a Whole Credential-Bearing File
+
+Some files hold secrets even though you need only one non-secret line — notably `~/.gradle/gradle.properties`, which carries the PGP signing key + passphrase and the Sonatype token alongside ordinary Gradle settings. Reading the whole file pulls those secrets into the session transcript (an unintended, persistent exposure surface) when a single `grep` would have answered the question. This happened during the 0.2.0 work — reading the file to check one `installations.paths` line exposed the signing key.
+
+**Fix:** Treat credential-bearing files as **grep-only** — extract the specific non-secret line (e.g. `grep installations.paths ~/.gradle/gradle.properties`), never Read or `cat` the whole file. Know which files are secret-bearing before touching them (`~/.gradle/gradle.properties` is flagged in the `reference_local_jdk_setup` memory). If secrets do reach the transcript, surface it immediately and let the user decide on rotation.
+
+---
+
 ## Maintaining This Document
 
 This document grows when new pitfalls are observed during ongoing work. The bar for adding an entry: *has this mistake actually been made on this project, or is it close enough that it could be?* If yes, document it concretely with the specific pattern. If no, do not add speculative pitfalls — `reading-risks.md` and the principles already cover those.

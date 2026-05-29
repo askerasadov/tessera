@@ -182,6 +182,24 @@ This matters because servile collaboration produces worse output than peer colla
 
 ---
 
+## Decision & Authoring Patterns
+
+These concern how decisions get made and how guidance gets written — distinct from SDK-design (Technical) and user-AI dynamics (Collaboration). They were named during the 0.2.0 pre-release review.
+
+### Expose, don't decide
+
+When a feature tempts the SDK to make a judgment — "this image is too blurry," "this `O` is probably a `0`," "this code isn't in our table" — the reader-not-oracle-compatible move is to **surface the observation and let the consumer decide**, never to silently gate, refuse, or overwrite. The raw value stays the source of truth; computed and quality signals ride alongside as exposed metadata. This is the *constructive* form of Principle 1: not just "don't be an oracle," but "here's what to do instead." It recurred three times in the 0.2.0 design (tolerant parsing, quality thresholds, OCR disambiguation) — the same resolution each time.
+
+### Prescribe the path, prohibit the border
+
+Prefer **prescription** ("do this") for *method and behavior*, made **complete** so it covers the tempting case — a "don't do X" is usually a crutch for an incomplete positive, and a bare prohibition leaves everything-but-X permitted (loophole-prone). Reserve **prohibition** ("never do X") for **bright-line, high-stakes borders**, and **enforce it mechanically** (a hook) rather than by wording, so habit can't reintroduce it. Strictness comes from *completeness + enforceability*, not from which grammatical form you pick — prescription is strict about the road, prohibition about the cliff edge. The screenshot rule is the model: a complete positive method (drive via CLI, inspect state as text) plus a hook-enforced border (no `screencap`).
+
+### Vendor-align ecosystem-facing defaults
+
+For external-facing defaults — minimum platform versions, distribution channels, anything consumers inherit — check what the **platform vendors / ecosystem actually do** (AndroidX's own minSdk, Apple's new-product norm, npm/SPM/Maven conventions), not just the project's own docs or a self-chosen metric. Vendor practice encodes hard-won reach/compatibility trade-offs; a "cover X% of the market" target usually does not. In the 0.2.0 review this flipped an instinct: aggressive minSdk is *app* thinking, but Google keeps *library* minSdk low — so the data pointed the opposite way. Complements "Pre-commitment alignment check" (verify primary docs) by adding: for ecosystem-facing decisions, verify the ecosystem too.
+
+---
+
 ## Maintaining This Document
 
 These patterns evolved from observation during the project's design phase. They will continue to evolve. New patterns can be added when they are observed; outdated patterns can be removed when they are no longer relevant.
