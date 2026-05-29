@@ -372,5 +372,6 @@ Purely cosmetic; it changes nothing about security. (If IntelliJ still shows "Un
 
 - [`CONTRIBUTING.md`](../CONTRIBUTING.md) — the contributor's entry point; this document is the one-time setup that supports it
 - [`.claude/git-workflow.md`](../.claude/git-workflow.md) — the per-PR workflow (branch, commit, push, PR) once setup is done
+- [`docs/development-setup.md`](development-setup.md) — the build/dev toolchain (JDK, Android SDK, Xcode, agent tooling); set this up when you build or run beyond the pure-JVM core
 - [`docs/conventions.md`](conventions.md) — naming conventions, code style, documentation rules
 - [`docs/decisions/0007-strict-backward-compat-from-0x.md`](decisions/0007-strict-backward-compat-from-0x.md) — why discipline around the main branch matters even in `0.x`

@@ -267,6 +267,12 @@ The review surfaces: foundational architectural choices that may need revisiting
 
 Full operational detail in the [`pre-release-tech-stack-review`](../.claude/skills/pre-release-tech-stack-review/SKILL.md) skill, with a short summary in [`CLAUDE.md`](../CLAUDE.md).
 
+### Development Setup & Mobile Workflow
+
+The local build/dev toolchain — JDK, Android SDK, Xcode, the agent-facing CLI/MCP tooling — is documented in [`development-setup.md`](development-setup.md): a tiered (core / Android / iOS), per-OS, living sibling of [`contributor-setup.md`](contributor-setup.md) (Git identity and signing) and [`publishing-setup.md`](publishing-setup.md) (release credentials). You set up only the tier you work in.
+
+Mobile development is **CLI-driven and text-first**: Android via Google's Android CLI, iOS via the Xcode MCP, with device and screen state inspected as text rather than screenshots (a screenshot pulled into an AI assistant's context can exceed size limits and destroy the session). The AI-facing operational form of this is the path-scoped [`mobile-dev-workflow`](../.claude/rules/mobile-dev-workflow.md) rule, enforced by a screenshot-blocking hook in [`.claude/settings.json`](../.claude/settings.json); `development-setup.md` is the human-facing counterpart.
+
 ### Pre-commitment alignment check
 
 When making a foundational decision — tech-stack choices, scope-defining wording, architectural commitments, anything ADR-007 backward-compatibility will lock at `0.1.0` — verify alignment with the primary docs (`scope.md`, ADRs, `open-questions.md`, feature docs) before committing. Derived sources (recaps, summaries, prior interpretations) can drift from the primary over time; acting on a drifted derived source propagates the drift forward into new decisions.

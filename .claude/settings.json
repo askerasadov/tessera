@@ -9,6 +9,10 @@
             "if": "Bash(git push *)",
             "command": "${CLAUDE_PROJECT_DIR}/scripts/private-content-scan.sh",
             "statusMessage": "Scanning for private content before push..."
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/scripts/block-screenshot.sh"
           }
         ]
       }

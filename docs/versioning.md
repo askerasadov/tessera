@@ -60,6 +60,8 @@ Some changes are not breaking, even though they may seem to be:
 
 The boundary between breaking and non-breaking is occasionally subtle. When uncertain, the project errs on the side of treating a change as breaking — a false positive (calling something breaking when it isn't) is harmless; a false negative (treating a breaking change as non-breaking) damages consumer trust.
 
+**Platform minimums — the managed-raise policy.** Raising a minimum platform version is breaking (above), but external forces — a vendor end-of-life, an unpatched security issue at the old floor, or a toolchain floor (such as Kotlin/Native's minimum iOS deployment target) rising past ours — can compel one. Such a raise is handled as a **documented breaking release**: release-noted, with prior artifacts left published so existing consumers are not retroactively broken. It is done *only when forced*, not as a routine per-release bump; lowering a minimum stays non-breaking. The committed minimums and the full rationale are in [ADR-018](decisions/0018-platform-minimums-and-managed-raise.md).
+
 ---
 
 ## Deprecation Policy

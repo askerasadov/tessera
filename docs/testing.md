@@ -184,6 +184,18 @@ The synthetic generation approach is sufficient for all testing needs.
 
 ---
 
+## Camera Reading Testing
+
+Live camera reading (release 0.2.0) is the first feature with a real platform-I/O surface, so its testing follows the Integration-test and Platform-specific categories above, in three layers:
+
+- **Host (JVM), no device** — the *glue logic* we own (frame → MRZ-region crop → call OCR → map candidate string → `mrz-core` parse, plus the `Camera…` error paths) is tested with **injected frames and a mock/stub OCR engine**. This is the bulk of the coverage and runs on CI on every commit, with no device or emulator.
+- **Emulator / Simulator — real OCR on a still image** — a synthetic MRZ rendered to an image is fed to the real platform OCR engine (ML Kit / Apple Vision) to confirm the wiring end-to-end without a camera. The iOS Simulator has no camera but runs Apple Vision on a supplied image. These are instrumented / platform tests.
+- **Physical device — live lens** — the only place a real camera stream is validated end-to-end; run locally/manually (the Android emulator's camera is synthetic; the iOS Simulator has none). Not a CI gate.
+
+What we commit to testing here is **our** code: region detection/cropping, frame-to-result mapping, parsing-mode behavior (strict default + lenient), quality-signal exposure, and every `Camera…` error path. What we do **not** test is the OCR engine itself (ML Kit / Apple Vision) — already an explicit non-commitment above; we test our *integration* with it (error handling, callback/Flow patterns, edge cases), not its recognition accuracy. The injected-frame and still-image layers cover everything that is ours to verify.
+
+Synthetic fixtures still apply: camera test inputs are generated MRZs (rendered to images where an image is needed), never real document captures.
+
 ## Forward-Looking Note: Cryptographic Protocol Testing
 
 When NFC chip reading is implemented (release 0.6.0 target), the testing scope expands significantly. Cryptographic protocols (BAC, PACE) have specific testing concerns that are not covered by the categories above:

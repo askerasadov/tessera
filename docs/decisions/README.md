@@ -28,6 +28,10 @@ The format is documented in `conventions.md`. ADRs are *fixed* once accepted: if
 | [014](0014-unicode-normalization-strategy.md) | Unicode normalization via platform-native normalizers (expect/actual) | Accepted |
 | [015](0015-telemetry-contract-only-at-0-1-0.md) | Telemetry interface ships as contract-only at 0.1.0 with an open event hierarchy | Accepted |
 | [016](0016-maven-coordinates-and-first-publish.md) | Maven Central coordinates, lockstep versioning, and first publication at 0.1.1 | Accepted |
+| [017](0017-mobile-targets-and-build-stack.md) | Mobile target enablement and build stack (0.2.0) | Accepted |
+| [018](0018-platform-minimums-and-managed-raise.md) | Platform minimums and the managed-raise policy | Accepted |
+| [019](0019-ios-distribution-via-spm.md) | iOS distribution via Swift Package Manager | Accepted |
+| [020](0020-camera-reading-architecture.md) | Camera reading architecture | Accepted |
 
 ---
 
