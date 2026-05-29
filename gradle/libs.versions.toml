@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.3.21"
-spotless = "8.5.1"
+spotless = "8.6.0"
 ktlint = "1.8.0"
 kotest = "6.1.11"
 kotlinx-datetime = "0.8.0"
