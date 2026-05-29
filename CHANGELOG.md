@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-05-29
+
+The first release published to Maven Central (`io.lightine.tessera`), distributing all five current modules plus the `tessera-bom` Bill of Materials. `v0.1.0` was the internal milestone; `v0.1.1` lands the full publishing infrastructure — Maven publishing via the vanniktech plugin, Dokka-generated javadoc jars, the BOM, PGP signing, and the Sonatype Central Portal target — alongside the `domain` → `types` module rename, the scope-honesty convention, and assorted documentation and tooling refinements. The published API remains identical to `0.1.0` and is held to strict backward compatibility per [ADR-007](docs/decisions/0007-strict-backward-compat-from-0x.md).
+
 ### Added
 
 - Sonatype Central Portal publishing wired via vanniktech's `publishToMavenCentral(automaticRelease = false)`, the fifth slice of the publishing infrastructure committed in [ADR-016](docs/decisions/0016-maven-coordinates-and-first-publish.md). The call sits in the shared `subprojects { plugins.withId("com.vanniktech.maven.publish") { ... } }` block of the root `build.gradle.kts`, next to `signAllPublications()`. As of the vanniktech plugin 0.36.x, the no-argument / boolean-only form targets the Sonatype Central Portal (`central.sonatype.com`) by default — no `SonatypeHost` argument is needed (the legacy OSSRH `S01`/`DEFAULT` hosts are deprecated). `automaticRelease = false` means `./gradlew publishToMavenCentral` builds, signs, and uploads all six modules as a single aggregated deployment that validates in the portal and then waits for a manual "Publish" click rather than auto-releasing — the controlled default for a release. This slice carried out the SDK's first real publish: the `io.lightine.tessera:*:0.1.1` deployment was staged, validated (signatures, required POM fields, and `io.lightine` namespace ownership all green), and manually released to Maven Central, locking those coordinates under [ADR-007](docs/decisions/0007-strict-backward-compat-from-0x.md).
@@ -414,5 +418,6 @@ These are documented commitments that are explicitly *not* in this `[Unreleased]
 - iOS targets, Android targets (waiting on Xcode install / 0.2.0 platform I/O work)
 - Platform I/O modules (`mrz-camera-*`, `emrtd-nfc-*`, `mrz-camera-ui-*`)
 
-[Unreleased]: https://github.com/askerasadov/tessera/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/askerasadov/tessera/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/askerasadov/tessera/releases/tag/v0.1.1
 [0.1.0]: https://github.com/askerasadov/tessera/releases/tag/v0.1.0
