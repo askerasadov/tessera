@@ -120,7 +120,7 @@ The parser currently operates in strict mode only. Lenient mode (tolerating real
 
 **Source:** `mrz-parsing.md` ("Strictness")
 
-**Resolution:** Design and implement these modes in a future release when camera reading is added (lenient mode is most relevant when input comes from OCR).
+**Resolution:** Partially resolved (2026-05-29 0.2.0 pre-release review, [ADR-020](decisions/0020-camera-reading-architecture.md)). **Lenient mode ships in 0.2.0** alongside live camera — consumer-chosen, with strict remaining the default and raw values always preserved; lenient forgives benign format noise without changing any value. **Tolerant mode** (check-digit-guided OCR disambiguation) is deferred to **0.3.0** (pre-captured still-image reading, where there is no next frame to retry) and, when built, must *surface* candidate corrections rather than silently overwrite (reader-not-oracle). Live camera handles OCR noise via strict-parse-and-retry across frames.
 
 ### Sex field encoding choice (`<` vs `X`)
 
@@ -198,7 +198,7 @@ Core modules are scaffolded with the JVM target only. The Android target is inte
 
 **Source:** Pre-implementation scaffolding session; aligns with Principles 2 and 11.
 
-**Resolution:** When 0.2.0 platform I/O work begins, add `androidTarget()` to each core module's `kotlin { ... }` block alongside introducing AGP and `mrz-camera-android`. Verify common code compiles for Android. Remove this entry.
+**Resolution:** Resolved (2026-05-29 0.2.0 pre-release review) — the Android target is enabled on the core modules per [ADR-017](decisions/0017-mobile-targets-and-build-stack.md), implemented in the 0.2.0 build-foundation slice. **The `androidTarget()` approach in this entry's original resolution is superseded:** on Kotlin 2.3.21 + AGP 9 the `androidTarget` block errors, so the target is added via Google's `com.android.kotlin.multiplatform.library` plugin instead.
 
 ### Platform I/O and UI module scaffolding
 
@@ -206,7 +206,7 @@ The pre-implementation checklist names `mrz-camera-{platform}`, `emrtd-nfc-{plat
 
 **Source:** Pre-implementation scaffolding session; aligns with `architecture.md` ("as appropriate" wording in the checklist) and Principle 11.
 
-**Resolution:** Scaffold each platform I/O and UI module together with its first implementation work, on its own release schedule per the roadmap in `scope.md` (camera I/O at 0.2.0, NFC I/O at 0.6.0, UI per platform alongside the corresponding I/O). Remove this entry once all named modules are either scaffolded or struck from the architecture.
+**Resolution:** Partially resolved (2026-05-29) — the **camera I/O modules (`mrz-camera-android`, `mrz-camera-ios`) are scaffolded in 0.2.0** with their first implementation, per [ADR-017](decisions/0017-mobile-targets-and-build-stack.md) and [ADR-020](decisions/0020-camera-reading-architecture.md). The remaining named modules stay on their roadmap schedule (NFC I/O `emrtd-nfc-{platform}` at 0.6.0; UI `mrz-camera-ui-{platform}` at 0.5.0). Keep this entry until those land.
 
 ---
 
@@ -405,11 +405,11 @@ Cryptographic verification of NFC chip signatures requires trust anchors (typica
 
 **JVM coordinate shape, lockstep versioning, BOM, first-publish version, and first-publish scope are resolved by [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md).** The published groupId is `io.lightine.tessera` (backed by the verified Sonatype namespace at `io.lightine`); artifactIds follow the `tessera-<module>` convention; modules version in lockstep with a `tessera-bom` artifact for version alignment; the first Maven Central publication shipped at 0.1.1 (published 2026-05-29) with all five current modules plus the BOM; no snapshot builds at 0.x.
 
-What remains open under this entry: iOS distribution channel (CocoaPods vs Swift Package Manager). The iOS target activates per `docs/scope.md` when Xcode availability allows; channel selection is decided alongside.
+What remained open under this entry — the iOS distribution channel (CocoaPods vs Swift Package Manager) — is now resolved (see Resolution). The only distribution question still future is the **web (JS/Wasm) channel (npm)**, decided when/if the web target activates.
 
 **Source:** Implicit; not yet referenced.
 
-**Resolution:** JVM distribution resolved by [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md) and **executed** — `io.lightine.tessera:*:0.1.1` was published to Maven Central on 2026-05-29 (publishing slices in PRs [#88](https://github.com/lightine-io/tessera/pull/88)–[#90](https://github.com/lightine-io/tessera/pull/90)). iOS distribution channel (CocoaPods vs SPM) remains to decide before the iOS target activates.
+**Resolution:** JVM distribution resolved by [ADR-016](decisions/0016-maven-coordinates-and-first-publish.md) and **executed** — `io.lightine.tessera:*:0.1.1` was published to Maven Central on 2026-05-29 (publishing slices in PRs [#88](https://github.com/lightine-io/tessera/pull/88)–[#90](https://github.com/lightine-io/tessera/pull/90)). iOS distribution is resolved (2026-05-29) — **Swift Package Manager** (Kotlin/Native XCFramework wrapped as a Swift package; CocoaPods rejected as legacy) per [ADR-019](decisions/0019-ios-distribution-via-spm.md), within a **one-channel-per-ecosystem** model (Maven Central for JVM/Android/desktop, SPM for iOS, npm for web when that target activates); execution lands in the 0.2.0 iOS slice.
 
 ### LICENSE file at project root
 
@@ -451,7 +451,7 @@ Core modules (`mrz-core`, `emrtd-core`, `types`, `telemetry`, `logging`) are sca
 
 **Source:** Pre-implementation scaffolding session; depends on Xcode install.
 
-**Resolution:** When Xcode is installed (any version supporting the project's iOS 15.0 minimum), add the three iOS targets to each core module's `kotlin { ... }` block, verify common code compiles on Konan, and remove this entry.
+**Resolution:** Resolved (2026-05-29 0.2.0 pre-release review) — **Xcode is now present** (26.5 on the development machine), lifting the toolchain gate noted above ("not installed" is no longer true). The three iOS targets are enabled on the core modules per [ADR-017](decisions/0017-mobile-targets-and-build-stack.md), with the Normalization `expect`/`actual` ([ADR-014](decisions/0014-unicode-normalization-strategy.md)) gaining an iOS `actual`; the committed iOS deployment minimum is **18** ([ADR-018](decisions/0018-platform-minimums-and-managed-raise.md)), not the 15.0 this entry's original text referenced. Implementation lands in the 0.2.0 iOS build-foundation slice.
 
 ---
 
@@ -493,6 +493,14 @@ Once implementation has produced idiomatic code in the project, consider whether
 
 **Trigger:** After 0.1.0 lands, if Claude Code consistently produces non-idiomatic code that requires correction.
 
+### Runnable camera sample app
+
+A small runnable sample app (Android first, iOS later) that integrates the headless camera reader end-to-end — points the camera at a synthetic MRZ and prints the parsed result. It would double as the on-device test harness for the 0.2.0 camera work *and* as living integration documentation (ties to "Code precedent examples" above). 0.2.0 ships written integration docs (snippets + a standalone guide) instead; a runnable sample is deferred to keep 0.2.0 scoped to the headless SDK plus docs.
+
+**Source:** 2026-05-29 0.2.0 pre-release review ([ADR-020](decisions/0020-camera-reading-architecture.md)); deferred from PR-F (consumer integration docs).
+
+**Trigger:** When the headless camera reader is stable on a platform and a runnable demo would add more than the written snippets + integration guide already provide — likely late in 0.2.0 or alongside the 0.5.0 UI.
+
 ### CONTRIBUTING.md at project root
 
 GitHub recognizes a top-level `CONTRIBUTING.md` and surfaces it on PR creation. The current `docs/conventions.md` covers what a CONTRIBUTING.md would cover. A small top-level file pointing to conventions.md may be useful when the project goes public on GitHub.
@@ -514,6 +522,8 @@ The project commits to Keep a Changelog format (see `docs/versioning.md`). The a
 The Claude Code optimization audit in PR [#66](https://github.com/lightine-io/tessera/pull/66) identified a security-reviewer subagent as a candidate AI-tooling addition. Deferred because at `0.1.0` (pure parsing/validation/generation) the security surface is narrow — limited to PII handling in logs/error messages, input validation on MRZ parsers, dependency hygiene, and avoiding hardcoded real-looking document data in tests. The built-in `security-review` skill that ships with Claude Code is generic-but-sufficient for this surface. Designing a Tessera-specific subagent now would produce a thin prompt-only artifact without enough code to ground its guidance against. The real security surface arrives in `0.2.0` (camera + image processing), `0.5.0` (BAC), `0.6.0` (PACE/NFC crypto), at which point a domain-aware subagent has actual patterns to enforce.
 
 **Trigger:** During the Pre-Release Tech-Stack Review for `0.2.0` (per the [`pre-release-tech-stack-review`](../.claude/skills/pre-release-tech-stack-review/SKILL.md) skill). Decide: ship a domain-aware subagent in `.claude/agents/security-reviewer.md`, OR confirm the built-in skill remains sufficient. The decision becomes load-bearing once sensitive code starts landing.
+
+**Resolution:** Resolved (2026-05-29 0.2.0 pre-release review) — **ship it.** A Tessera-specific `.claude/agents/security-reviewer.md` is added (read-only; *advise-don't-dictate*) with a broad mandate: PII in logs/errors, input validation, camera-buffer memory hygiene, supply-chain (dependency vulnerabilities, licenses, plugin provenance), publishing (signing, POM, no committed secrets), and repo/GitHub settings. It is paired with mechanical CI checks (dependency CVEs, secret scanning) so coverage does not depend on a session remembering to invoke it. The 0.2.0 camera/image surface is where a domain-aware reviewer earns its keep.
 
 ### Dokka multi-module aggregation and hosted docs site
 

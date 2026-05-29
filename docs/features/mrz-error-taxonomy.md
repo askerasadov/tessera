@@ -209,7 +209,7 @@ This means the taxonomy grows safely over time. A consumer's exhaustive matching
 
 The error types are defined in the `types` module (per `architecture.md`), which is the foundation module depended on by all other MRZ-related modules. This placement allows any module that produces or consumes MRZ data to reference the same error types without circular dependencies.
 
-The `mrz-core` module produces the parsing, generation, and validation errors. Future platform I/O modules (`mrz-camera-*`, `emrtd-nfc-*`) may produce their own platform-specific errors, defined in their own modules but conforming to the same three-tier categorization.
+The `mrz-core` module produces the parsing, generation, and validation errors. Future platform I/O modules (`mrz-camera-*`, `emrtd-nfc-*`) may produce their own platform-specific errors, defined in their own modules but conforming to the same three-tier categorization. The first such set is the **`Camera…` capture-error family** planned for 0.2.0 (camera-unavailable / permission-denied / hardware failures, surfaced as a sealed result distinct from the `MrzError` taxonomy) — see [`mrz-camera-reading.md`](mrz-camera-reading.md) and [ADR-020](../decisions/0020-camera-reading-architecture.md). Its concrete members are enumerated here when they land in code (with tests), per the project's new-error-type rule.
 
 ---
 
