@@ -346,13 +346,25 @@ What's happening:
 - On github.com, that commit shows a green **Verified** badge — GitHub knows its own key.
 - Locally, IntelliJ doesn't have GitHub's public GPG key in your GnuPG keyring, so it can't verify the signature and labels it "Unverified."
 
-If you want IntelliJ to recognize these as verified locally, import GitHub's public signing key once:
+If you want IntelliJ to recognize these as verified locally, it takes three steps — importing the key alone is **not** enough (the key arrives untrusted, and IntelliJ treats a valid-but-untrusted signature as "Unverified"):
 
-```sh
-curl https://github.com/web-flow.gpg | gpg --import
-```
+1. **Import** GitHub's public signing key:
 
-After that, `git log --show-signature` (and IntelliJ, after a restart) will report "Good signature from 'GitHub <noreply@github.com>'." Purely cosmetic; doesn't change anything about security.
+   ```sh
+   curl https://github.com/web-flow.gpg | gpg --import
+   ```
+
+2. **Locally certify (trust)** it so gpg marks the key valid. GitHub rotates this key, so look up the current key ID first — `gpg --list-keys noreply@github.com`, or read it from the `using RSA key …` line of your own `git log --show-signature` output — then:
+
+   ```sh
+   gpg --lsign-key <github-web-flow-key-id>
+   ```
+
+   After this, `git log --show-signature` reports `Good signature from "GitHub <noreply@github.com>" [full]` with no "not certified" warning. **Skip this step and the key stays `[unknown]`, so IntelliJ keeps showing "Unverified"** — importing alone is the common mistake.
+
+3. **Refresh IntelliJ:** File → Invalidate Caches… → Invalidate and Restart. A plain restart can reuse the cached verification result; invalidating forces a fresh check.
+
+Purely cosmetic; it changes nothing about security. (If IntelliJ still shows "Unverified" after all three, that's a known IntelliJ quirk — github.com shows these Verified regardless, and your *authorship* signature was never in question.)
 
 ---
 
