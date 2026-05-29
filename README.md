@@ -1,10 +1,15 @@
 # Tessera
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.lightine.tessera/tessera-bom?label=Maven%20Central)](https://central.sonatype.com/artifact/io.lightine.tessera/tessera-bom)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![CI](https://github.com/askerasadov/tessera/actions/workflows/check.yml/badge.svg)](https://github.com/askerasadov/tessera/actions/workflows/check.yml)
+[![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin-Multiplatform-blue.svg?logo=kotlin)](https://kotlinlang.org/docs/multiplatform.html)
+
 A vendor-neutral SDK for reading, validating, and generating identity document data.
 
 Tessera reads Machine Readable Zones (MRZ) from passports, national ID cards, residence permits, machine-readable visas, and similar travel documents conforming to ICAO Doc 9303. It returns extracted data verbatim, with structured validation results — leaving all trust decisions to the integrating application.
 
-> **Status:** In active `0.x` development. `v0.1.0` released 2026-05-19 — see [`CHANGELOG.md`](CHANGELOG.md). The `1.0.0` milestone marks the public-stability and open-source release commitment per [ADR-011](docs/decisions/0011-open-source-at-public-release.md); pre-`1.0.0` releases follow the same strict backward-compatibility commitments as post-`1.0.0` releases. See [`docs/versioning.md`](docs/versioning.md) for the policy.
+> **Status:** In active `0.x` development. `v0.1.1` is the first release published to Maven Central (`io.lightine.tessera`) — see [Installation](#installation) and [`CHANGELOG.md`](CHANGELOG.md). The `1.0.0` milestone marks the public-stability and open-source release commitment per [ADR-011](docs/decisions/0011-open-source-at-public-release.md); pre-`1.0.0` releases follow the same strict backward-compatibility commitments as post-`1.0.0` releases. See [`docs/versioning.md`](docs/versioning.md) for the policy.
 
 ---
 
@@ -62,6 +67,43 @@ when (result) {
 ```
 
 The result type makes the three possible outcomes explicit. The consumer cannot accidentally treat a `PartialSuccess` as a `Success`.
+
+---
+
+## Installation
+
+Tessera is published to Maven Central under the `io.lightine.tessera` group. The current release is `0.1.1` (JVM).
+
+### Gradle (Kotlin DSL)
+
+Use the BOM to keep every Tessera module on one version:
+
+```kotlin
+dependencies {
+    implementation(platform("io.lightine.tessera:tessera-bom:0.1.1"))
+    implementation("io.lightine.tessera:tessera-mrz-core")  // MRZ parsing, validation, generation
+}
+```
+
+Or pin the module version directly, without the BOM:
+
+```kotlin
+implementation("io.lightine.tessera:tessera-mrz-core:0.1.1")
+```
+
+`tessera-mrz-core` pulls in `tessera-types` transitively — most integrators need only this one module.
+
+### Maven
+
+```xml
+<dependency>
+    <groupId>io.lightine.tessera</groupId>
+    <artifactId>tessera-mrz-core</artifactId>
+    <version>0.1.1</version>
+</dependency>
+```
+
+> **JVM only at `0.1.1`.** Published artifacts target the JVM today; Android and iOS activate in later releases as the corresponding reading methods land — see [Platforms](#platforms).
 
 ---
 

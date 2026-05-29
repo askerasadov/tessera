@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `README.md` — practical refresh now that `0.1.1` is on Maven Central. Adds (1) status badges at the top — Maven Central version, license, CI, and Kotlin Multiplatform; (2) a new **Installation** section showing both the BOM-based and direct dependency declarations (Gradle Kotlin DSL + Maven) with the `io.lightine.tessera:tessera-mrz-core:0.1.1` coordinates and a JVM-only note; and (3) a status-line refresh naming `v0.1.1` as the first Maven Central release and linking to the new section. The Maven Central version badge points at `tessera-bom` rather than a single module because the project versions in lockstep (per [ADR-016](docs/decisions/0016-maven-coordinates-and-first-publish.md)), so the BOM is the honest representative of "the Tessera release version." The separately-parked README voice/personality rework is untouched and remains deferred.
+
 ## [0.1.1] - 2026-05-29
 
 The first release published to Maven Central (`io.lightine.tessera`), distributing all five current modules plus the `tessera-bom` Bill of Materials. `v0.1.0` was the internal milestone; `v0.1.1` lands the full publishing infrastructure — Maven publishing via the vanniktech plugin, Dokka-generated javadoc jars, the BOM, PGP signing, and the Sonatype Central Portal target — alongside the `domain` → `types` module rename, the scope-honesty convention, and assorted documentation and tooling refinements. The published API remains identical to `0.1.0` and is held to strict backward compatibility per [ADR-007](docs/decisions/0007-strict-backward-compat-from-0x.md).
