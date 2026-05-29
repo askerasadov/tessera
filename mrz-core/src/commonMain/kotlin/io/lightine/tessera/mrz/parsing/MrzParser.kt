@@ -55,7 +55,7 @@ import kotlin.time.Instant
  * don't depend on the wall clock.
  *
  * See
- * [`docs/features/mrz-parsing.md`](https://github.com/askerasadov/Tessera/blob/main/docs/features/mrz-parsing.md)
+ * [`docs/features/mrz-parsing.md`](https://github.com/lightine-io/tessera/blob/main/docs/features/mrz-parsing.md)
  * for the full feature description.
  */
 public object MrzParser {

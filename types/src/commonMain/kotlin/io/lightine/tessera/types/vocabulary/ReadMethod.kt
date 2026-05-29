@@ -8,7 +8,7 @@ package io.lightine.tessera.types.vocabulary
  * 0.1.0 SDK code only produces results via direct string input (see
  * [BACKEND_STRING_INPUT]); the other values are committed for use by later releases as
  * the corresponding reading methods activate. See
- * [`docs/scope.md`](https://github.com/askerasadov/Tessera/blob/main/docs/scope.md)
+ * [`docs/scope.md`](https://github.com/lightine-io/tessera/blob/main/docs/scope.md)
  * for the release timeline.
  */
 public enum class ReadMethod {

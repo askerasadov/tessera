@@ -24,7 +24,7 @@ import io.lightine.tessera.types.vocabulary.ReadMethod
  *   determined.
  * - [transliterationDetails] — populated only by the primitive-input generator methods
  *   when a transliteration profile applied (see
- *   [`docs/features/transliteration.md`](https://github.com/askerasadov/Tessera/blob/main/docs/features/transliteration.md)).
+ *   [`docs/features/transliteration.md`](https://github.com/lightine-io/tessera/blob/main/docs/features/transliteration.md)).
  *   `null` for parse paths and for generation paths that took no profile.
  */
 public data class ResultMetadata(

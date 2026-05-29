@@ -57,10 +57,10 @@ import kotlinx.datetime.LocalDate
  *    primary and secondary identifiers are run through it before encoding, and the
  *    per-field audit trail is surfaced on
  *    [`ResultMetadata.transliterationDetails`][io.lightine.tessera.mrz.parsing.ResultMetadata]
- *    per Principle 5 ([ADR-014](https://github.com/askerasadov/Tessera/blob/main/docs/decisions/0014-unicode-normalization-strategy.md)).
+ *    per Principle 5 ([ADR-014](https://github.com/lightine-io/tessera/blob/main/docs/decisions/0014-unicode-normalization-strategy.md)).
  *
  * See
- * [`docs/features/mrz-generation.md`](https://github.com/askerasadov/Tessera/blob/main/docs/features/mrz-generation.md)
+ * [`docs/features/mrz-generation.md`](https://github.com/lightine-io/tessera/blob/main/docs/features/mrz-generation.md)
  * for the full feature description.
  */
 public object MrzGenerator {

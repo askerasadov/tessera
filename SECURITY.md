@@ -17,7 +17,7 @@ Until `1.0.0` (the public-stability commitment per [ADR-010](docs/decisions/0010
 
 Use one of the following private channels:
 
-1. **Preferred: GitHub's "Report a vulnerability" feature.** Go to the [repository Security tab](https://github.com/askerasadov/tessera/security) → *Advisories* → *Report a vulnerability*. This opens a private security advisory visible only to the project maintainer.
+1. **Preferred: GitHub's "Report a vulnerability" feature.** Go to the [repository Security tab](https://github.com/lightine-io/tessera/security) → *Advisories* → *Report a vulnerability*. This opens a private security advisory visible only to the project maintainer.
 2. **Alternative: email** asker.asadov@gmail.com with `[Tessera Security]` in the subject line.
 
 Include in your report:

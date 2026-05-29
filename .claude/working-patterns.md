@@ -149,7 +149,7 @@ This is not "verify everything." Most decisions are routine and the default ("tr
 - **Trigger the check on:** anything ADR-007 will lock at tag time, tech-stack decisions, scope-defining language, decisions surfaced during a Pre-Release Tech-Stack Review.
 - **Don't trigger on:** routine implementation slices, well-trodden patterns, doc fixes within established conventions, anything cheaply reversible.
 
-**Working example.** PR [#33](https://github.com/askerasadov/tessera/pull/33) (May 2026). The pre-`0.1.0` recap (derived source) had over-stated 0.1.0's mobile-target requirements. `scope.md` (primary) actually said target enablement is per-release. The recap drift had been carried forward into the Path-A vs Path-B discussion before the user surfaced it. The fix was a 6-line `scope.md` tightening that prevents the same misreading from recurring. The pattern was named in the same session that produced the catch.
+**Working example.** PR [#33](https://github.com/lightine-io/tessera/pull/33) (May 2026). The pre-`0.1.0` recap (derived source) had over-stated 0.1.0's mobile-target requirements. `scope.md` (primary) actually said target enablement is per-release. The recap drift had been carried forward into the Path-A vs Path-B discussion before the user surfaced it. The fix was a 6-line `scope.md` tightening that prevents the same misreading from recurring. The pattern was named in the same session that produced the catch.
 
 ### Align before propose
 

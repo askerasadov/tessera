@@ -49,7 +49,7 @@ subprojects {
             signAllPublications()
 
             pom {
-                url.set("https://github.com/askerasadov/tessera")
+                url.set("https://github.com/lightine-io/tessera")
                 inceptionYear.set("2026")
 
                 licenses {
@@ -69,14 +69,14 @@ subprojects {
                 }
 
                 scm {
-                    url.set("https://github.com/askerasadov/tessera")
-                    connection.set("scm:git:git://github.com/askerasadov/tessera.git")
-                    developerConnection.set("scm:git:ssh://git@github.com/askerasadov/tessera.git")
+                    url.set("https://github.com/lightine-io/tessera")
+                    connection.set("scm:git:git://github.com/lightine-io/tessera.git")
+                    developerConnection.set("scm:git:ssh://git@github.com/lightine-io/tessera.git")
                 }
 
                 issueManagement {
                     system.set("GitHub")
-                    url.set("https://github.com/askerasadov/tessera/issues")
+                    url.set("https://github.com/lightine-io/tessera/issues")
                 }
             }
         }
