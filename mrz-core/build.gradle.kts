@@ -1,7 +1,10 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.maven.publish)
+    // dokka must be applied before maven.publish: signAllPublications() (root build.gradle.kts)
+    // forces eager realization of the Dokka javadoc jar during maven.publish's apply, which looks
+    // up the `dokkaGeneratePublicationHtml` task — so that task must already exist.
     alias(libs.plugins.dokka)
+    alias(libs.plugins.maven.publish)
 }
 
 mavenPublishing {
