@@ -76,14 +76,23 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      # ubuntu-latest ships the Android SDK (ANDROID_SDK_ROOT set). Accept licenses and ensure the
-      # compileSdk platform is present; AGP resolves build-tools itself once licenses are accepted.
-      # Using the preinstalled sdkmanager keeps CI on first-party actions only (no third-party
-      # setup-android action on the supply chain).
-      - name: Ensure Android platform 37
+      # ubuntu-latest ships the Android SDK (ANDROID_SDK_ROOT set) and a preinstalled cmdline-tools,
+      # but that cmdline-tools' package index can predate a brand-new stable platform (API 37), so a
+      # bare `sdkmanager "platforms;android-37"` reports "Failed to find package". Refresh
+      # cmdline-tools to latest first so the index includes API 37, then install it. Using the
+      # preinstalled sdkmanager keeps CI on first-party actions only (no third-party setup-android
+      # action on the supply chain). AGP resolves build-tools itself once licenses are accepted.
+      - name: Ensure Android SDK platform 37
         run: |
-          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
-          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37"
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          echo "--- preinstalled platforms ---"; ls -1 "$ANDROID_SDK_ROOT/platforms" 2>/dev/null || echo "(none)"
+          # `yes` feeds the license prompts; its broken-pipe on the reader's exit is harmless, hence 2>/dev/null.
+          yes 2>/dev/null | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" --install "cmdline-tools;latest" > /dev/null 2>&1 || true
+          yes 2>/dev/null | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          echo "--- android-37 availability ---"; "$SDKMANAGER" --list 2>/dev/null | grep -i 'android-37' || echo "(android-37 not listed by sdkmanager)"
+          "$SDKMANAGER" --install "platforms;android-37"
+          echo "--- platforms after setup ---"; ls -1 "$ANDROID_SDK_ROOT/platforms"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
