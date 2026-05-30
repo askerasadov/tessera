@@ -15,14 +15,20 @@ package io.lightine.tessera.mrz.camera
  * owns-the-camera-session layer ([MrzCameraScanner]) adds the capture-availability failures
  * [CameraUnavailable], [PermissionDenied], and [CameraInUse] — each surfaced when the camera cannot
  * be started, never thrown. Their host-reproducible trigger is the scanner surfacing them as a sealed
- * result; the platform mapping from a real CameraX failure to the right member is verified on a device
- * (the live-device slice).
+ * result; the platform mapping from a real CameraX failure to the right member was verified on a device
+ * (the live-device slice) for the [PermissionDenied] and [CameraUnavailable] paths — [CameraInUse]'s
+ * code-mapping is in place but its live scenario (another client holding the camera) is not yet
+ * device-exercised.
  */
 public sealed interface CameraError {
     /** A stable, switch-on-able English code (e.g. `"camera.ocr_failed"`). Consumers localize it. */
     public val code: String
 
-    /** Human-readable diagnostic detail (not for display, never document data). */
+    /**
+     * Human-readable diagnostic detail — for diagnostics, not display, and never document data. On some
+     * paths it carries raw platform exception text, so treat it as opaque: do not forward it verbatim to
+     * a remote log sink.
+     */
     public val message: String
 
     /**

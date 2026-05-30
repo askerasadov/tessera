@@ -81,6 +81,8 @@ The result surfaces the natural signals the pipeline produces — whether an MRZ
 
 Capture-layer failures are a **separate `Camera…` typed family**, distinct from the `mrz-core` parse/validation taxonomy ([mrz-error-taxonomy.md](mrz-error-taxonomy.md)). They are surfaced as a **sealed result** (not thrown, never crashing or hanging), with stable English codes the consumer localizes — e.g. camera unavailable, permission denied, camera in use. **Permission requests and camera availability are the consumer's responsibility** (scope.md "permission boundary"); the SDK only reports clearly-typed errors when a capture cannot proceed. The exact `Camera…` set grows through implementation (per the "new error → taxonomy + test" rule).
 
+On Android, a failed camera *open* surfaces **asynchronously through CameraX's camera state**, not as a bind-time exception — the owns-session scanner observes that state and emits the matching `CaptureError` on `results` rather than going silent. One reader-not-oracle nuance verified on a device: CameraX collapses a *permission* denial into a generic fatal state error with no cause, so the scanner reads the (observable) `CAMERA` permission state — read-only, never requesting it — to report `PermissionDenied` rather than a vague unavailability when permission is the actionable cause.
+
 ## Status of Implementation
 
 | Capability | Status |
@@ -89,9 +91,9 @@ Capture-layer failures are a **separate `Camera…` typed family**, distinct fro
 | Android ML Kit recognizer (bundled model) | Implemented (0.2.0) — compiled on CI; device/emulator OCR verified in a later slice |
 | Strict + lenient modes | Implemented (0.2.0) |
 | Quality signals as metadata | Implemented (0.2.0) |
-| `Camera…` error family | Implemented (0.2.0) — `OcrFailed` (analyse-frame) + `CameraUnavailable` / `PermissionDenied` / `CameraInUse` (owns-session) |
+| `Camera…` error family | Implemented (0.2.0) — `OcrFailed` (analyse-frame) + `CameraUnavailable` / `PermissionDenied` / `CameraInUse` (owns-session); async camera-state surfacing device-verified, `CameraInUse` live scenario pending |
 | Streaming engine (`scan`) + `MrzCameraScanner` contract | Implemented (0.2.0) — host-tested; the frame-source-agnostic contract iOS mirrors |
-| Owns-camera-session convenience (Android, `CameraXMrzScanner`) | Implemented (0.2.0) — CameraX wiring compiled on CI; device-verified in a later slice |
+| Owns-camera-session convenience (Android, `CameraXMrzScanner`) | Implemented (0.2.0) — **device-verified** (live-device slice): back-camera open, frame streaming, `ImageProxy` lifecycle, and async camera-state error surfacing |
 | Analyse-frame core + convenience (iOS) | Planned (0.2.0, after Android) |
 | Tolerant mode; richer quality scorer | Deferred (0.3.0) |
 | Scanner UI | Deferred (0.5.0) |

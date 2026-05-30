@@ -218,6 +218,26 @@ The platform-agnostic camera-reading contract — the `MrzCameraScanner` interfa
 
 **Trigger:** Start of the `mrz-camera-ios` slice.
 
+### `CameraInUse` live verification on Android
+
+`CameraXMrzScanner` surfaces capture-open failures from CameraX's camera state (the live-device slice — see [`mrz-error-taxonomy.md`](features/mrz-error-taxonomy.md)). The `PermissionDenied` / `CameraUnavailable` paths were device-verified (revoke the `CAMERA` permission → `PermissionDenied`; granted → clean streaming, no spurious error). The `CameraInUse` mapping (`ERROR_CAMERA_IN_USE` / `ERROR_MAX_CAMERAS_IN_USE` → `CameraError.CameraInUse`) is in place but was **not** device-exercised, because reproducing it needs a second client holding the camera. Two things stay unverified: (1) that CameraX reports an in-use *open* as one of those codes on a real device, and (2) whether surfacing it as a **terminal** `CaptureError` (the current model — the stream ends, the consumer restarts) is the right contract for a *recoverable* condition CameraX would otherwise keep retrying.
+
+**Status:** Open — `CameraInUse` code-mapping is in place; the live in-use scenario and the terminal-vs-recoverable contract are not yet device-exercised.
+
+**Source:** 2026-05-30 Android live-device slice.
+
+**Trigger:** A device test with a second camera client, or the first real consumer that hits camera contention; revisit the terminal-vs-recoverable contract then.
+
+### Camera MRZ-candidate detection vs real OCR output
+
+The analyse-frame core locates an MRZ by finding a run of consecutive recognized lines whose count and length exactly match a known ICAO shape (TD3/MRV-A 2×44, TD1 3×30, etc.). The Android live-device slice showed this exact-shape match is brittle against the bundled ML Kit general-Latin recognizer reading a screen-rendered MRZ: line 1's long `<` filler run is **collapsed** (ML Kit does not emit long runs of identical `<`, and reads `<<` as `«`), so the line never reaches its nominal length and no candidate is found — while *any* two consecutive equal-length lines of surrounding prose can spuriously match. Line 2 (few fillers) read at exact length reliably. No clean `Decoded` → `Success` was achieved on the screen/monospace target; the parser correctly *rejected* the garbage reads (`MrzCharacterSetViolation` on the `«`), which is reader-not-oracle working as intended. Caveat: a screen-rendered generic-monospace MRZ is a weak proxy — real OCR-B on paper, or a region-cropped frame, may behave differently. The finding suggests the deferred refinements — an image-level ROI crop to the MRZ band before OCR, and/or a length-tolerant / sliding-window candidate matcher — are likely *necessary* for the Android convenience layer to actually decode, not merely nice-to-have. Relates to the tolerant-mode work deferred to 0.3.0 (see "Lenient and tolerant parsing modes" above).
+
+**Status:** Open — exact-shape matching is insufficient against real ML Kit output; an ROI crop and/or a length-tolerant matcher is the likely resolution, designed with the tolerant-mode work.
+
+**Source:** 2026-05-30 Android live-device slice.
+
+**Trigger:** When the Android convenience layer needs to reliably decode — the 0.3.0 still-image / tolerant-mode work, or earlier if device testing against a printed OCR-B sample or a real document is pursued.
+
 ---
 
 ## Deferred to a Future Document
