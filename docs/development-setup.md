@@ -67,6 +67,7 @@ Skills install **user-global** (e.g. `~/.claude/skills/`), so they apply across 
 
 ### Environment
 - Point the build at the SDK with **either** `ANDROID_HOME` (and `$ANDROID_HOME/platform-tools`, `$ANDROID_HOME/emulator` on `PATH`) **or** a gitignored `local.properties` at the repo root containing `sdk.dir=/path/to/Android/sdk`. AGP auto-detects the default macOS location, but pinning it is more explicit. The CLI finds the default SDK location on its own; to point it at a non-default path, add `--sdk=/path/to/Android/sdk` to `~/.androidrc`.
+- **adb** ships *inside* the SDK's `platform-tools` package — it is not a separate install. Verify it's present and that you're using the SDK's binary, not a stray one: `android sdk list` should show `platform-tools`, and the authoritative binary is `"$(android info sdk)/platform-tools/adb"` (run `… version` to confirm). Because `command -v adb` can resolve to a *different* `adb` on some machines, putting `$ANDROID_HOME/platform-tools` on `PATH` (above) ensures `adb logcat` / `adb shell` hit the SDK's binary. The Android CLI has no `adb` verb, so adb is the path for logs and device shell.
 - `compileSdk` tracks the latest stable Android API; `minSdk` is 23 — see [ADR-017](decisions/0017-mobile-targets-and-build-stack.md) / [ADR-018](decisions/0018-platform-minimums-and-managed-raise.md).
 
 **Verify:** `android info` reports the SDK location; `android emulator start <name>` boots; while it runs, `adb devices` lists it as `device` and `adb version` works.
@@ -113,6 +114,7 @@ Camera reading is throughput-sensitive, so the camera modules follow these from 
 ## Related documents
 - [`contributor-setup.md`](contributor-setup.md) — Git identity and commit/tag signing (do this first).
 - [`publishing-setup.md`](publishing-setup.md) — maintainer-only release credentials.
+- [`mobile/android.md`](mobile/android.md) — the Android development environment: the CLI/skills/Knowledge-Base model, what the tooling does and doesn't do, and the working method. This doc is the *install commands*; that one is the *model and method*.
 - [`.claude/rules/mobile-dev-workflow.md`](../.claude/rules/mobile-dev-workflow.md) — the AI-facing CLI/MCP working method.
 - [`conventions.md`](conventions.md) — project conventions (cross-references this doc).
 - [ADR-017](decisions/0017-mobile-targets-and-build-stack.md), [ADR-018](decisions/0018-platform-minimums-and-managed-raise.md) — build stack and platform minimums.

@@ -12,6 +12,8 @@ paths:
 
 This rule loads when working on Tessera's mobile (Android / iOS) code. It defines **how mobile development is driven** here. The human-facing setup counterpart is [`docs/development-setup.md`](../../docs/development-setup.md).
 
+The full Android model and method — the CLI / skills / Knowledge-Base distinction, what the tooling does and doesn't do, and how to work with it — live in [`docs/mobile/android.md`](../../docs/mobile/android.md). This rule is the **enforced operating subset** of that (the screenshot border, text-first inspection, testing layers); when in doubt about *how* to use the Android CLI, read that doc.
+
 ## Drive everything from the command line / agent tooling
 
 - **Android** — drive via Google's **Android CLI** (the agent-optimized tool wrapping `sdkmanager` / `avdmanager` / `adb`) plus its Skills and Knowledge Base. Use `./gradlew` for builds and tests.
@@ -37,5 +39,6 @@ A screenshot pulled into an assistant's context can blow past image-size limits 
 - **Physical device** — the only place a live lens is validated end-to-end.
 
 ## Cross-references
+- Full Android model + method: [`docs/mobile/android.md`](../../docs/mobile/android.md).
 - Human setup + toolchain: [`docs/development-setup.md`](../../docs/development-setup.md).
 - Document map: [`CLAUDE.md`](../../CLAUDE.md).

@@ -50,6 +50,7 @@ If you are looking for...
 | Session handoff template | [`.claude/session-handoff-template.md`](.claude/session-handoff-template.md) |
 | Git and GitHub workflow (branch naming, PR flow, gh CLI usage) | [`.claude/git-workflow.md`](.claude/git-workflow.md) |
 | Local build/dev toolchain & mobile (CLI/MCP) workflow | [`docs/development-setup.md`](docs/development-setup.md) |
+| The Android development environment (CLI, skills, Knowledge Base, how to work) | [`docs/mobile/android.md`](docs/mobile/android.md) |
 
 ---
 
