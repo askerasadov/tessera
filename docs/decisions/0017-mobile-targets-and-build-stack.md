@@ -23,7 +23,7 @@ The minimum supported Android/iOS *versions* (`minSdk`, iOS deployment target) a
 - **Android target via Google's `com.android.kotlin.multiplatform.library` plugin** (AGP 9.x), *not* the Kotlin plugin's legacy `androidTarget()` block. This supersedes the `androidTarget()` guidance in `open-questions.md`.
 - **iOS targets** `iosArm64`, `iosSimulatorArm64`, `iosX64` on the core modules; the single existing `expect`/`actual` pair (Unicode normalization, [ADR-014](0014-unicode-normalization-strategy.md)) gains an iOS `actual`.
 - **JDK:** Gradle daemon stays pinned to **JDK 17** (`gradle-daemon-jvm.properties`); compile toolchain stays **JDK 21** (`jvmToolchain(21)`, foojay-provisioned). No per-machine JDK pin is required.
-- **Build against the latest stable SDKs:** Android `compileSdk` at the latest stable API (API 36 / Android 16 as of this writing); iOS built against the latest iOS SDK (26, per Xcode 26).
+- **Build against the latest stable SDKs:** Android `compileSdk` at the latest stable API (**API 37 / Android 17** — the current stable, confirmed for the `0.2.0` build; this ADR originally cited API 36, which was current at the time of writing); iOS built against the latest iOS SDK (26, per Xcode 26).
 - **Dependency posture:** track **latest *stable*** releases only — never alpha/beta — because [ADR-007](0007-strict-backward-compat-from-0x.md) makes the public API a standing commitment from `0.x`.
 
 ## Consequences

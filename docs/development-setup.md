@@ -66,10 +66,25 @@ android emulator stop  <name>
 Skills install **user-global** (e.g. `~/.claude/skills/`), so they apply across all your projects rather than landing in this repo. Other operating systems and install methods (curl, winget, apt) are on the [official download page](https://developer.android.com/tools/agents/android-cli/download); the SDK can alternatively come from a full Android Studio install, which the CLI then just drives.
 
 ### Environment
-- Point the build at the SDK with **either** `ANDROID_HOME` (and `$ANDROID_HOME/platform-tools`, `$ANDROID_HOME/emulator` on `PATH`) **or** a gitignored `local.properties` at the repo root containing `sdk.dir=/path/to/Android/sdk`. AGP auto-detects the default macOS location, but pinning it is more explicit. The CLI finds the default SDK location on its own; to point it at a non-default path, add `--sdk=/path/to/Android/sdk` to `~/.androidrc`.
-- `compileSdk` tracks the latest stable Android API; `minSdk` is 23 — see [ADR-017](decisions/0017-mobile-targets-and-build-stack.md) / [ADR-018](decisions/0018-platform-minimums-and-managed-raise.md).
 
-**Verify:** `android info` reports the SDK location; `android emulator start <name>` boots; while it runs, `adb devices` lists it as `device` and `adb version` works.
+Using the Android CLI, there is **almost nothing to set up here** — the CLI auto-detects the SDK (`android info sdk` returns the path with no `ANDROID_HOME` set) and runs the emulator via `android emulator …`.
+
+The one setup item is **making `adb` reachable**. Reading device logs and shell state is done with `adb logcat` / `adb shell` — the standard Android command-line tools (per [Google's logcat docs](https://developer.android.com/tools/logcat)), which the CLI doesn't re-wrap. adb ships in the SDK's `platform-tools`, but installing the SDK does **not** put it on your `PATH` — do that once:
+
+```sh
+android info sdk          # find the SDK path (default macOS: ~/Library/Android/sdk)
+# macOS / zsh — append platform-tools to PATH (adjust the path if `android info sdk` differs):
+echo 'export PATH="$PATH:$HOME/Library/Android/sdk/platform-tools"' >> ~/.zprofile
+source ~/.zprofile        # or open a new terminal
+command -v adb            # should print a path UNDER the SDK (not a stray adb)
+adb version              # should run
+```
+
+Other shells/OSes: add that same `platform-tools` directory to `PATH` in your shell profile. Or skip `PATH` entirely and call adb by full path: `"$(android info sdk)/platform-tools/adb" logcat`.
+
+Pointing the **Gradle build** at the SDK (`local.properties` `sdk.dir`, or `ANDROID_HOME`) only becomes relevant once the Android targets are enabled in the build — that is part of the `0.2.0` Android build work and is set up and verified there, not now. Platform minimums (`compileSdk`, `minSdk`) live in [`mobile/android.md`](mobile/android.md) and [ADR-017](decisions/0017-mobile-targets-and-build-stack.md) / [ADR-018](decisions/0018-platform-minimums-and-managed-raise.md).
+
+**Verify:** `android info` reports the SDK; `android emulator start <name>` boots; while it's running, `adb devices` lists it and `adb version` works.
 
 ---
 
@@ -113,6 +128,7 @@ Camera reading is throughput-sensitive, so the camera modules follow these from 
 ## Related documents
 - [`contributor-setup.md`](contributor-setup.md) — Git identity and commit/tag signing (do this first).
 - [`publishing-setup.md`](publishing-setup.md) — maintainer-only release credentials.
+- [`mobile/android.md`](mobile/android.md) — the Android development environment: the CLI/skills/Knowledge-Base model, what the tooling does and doesn't do, and the working method. This doc is the *install commands*; that one is the *model and method*.
 - [`.claude/rules/mobile-dev-workflow.md`](../.claude/rules/mobile-dev-workflow.md) — the AI-facing CLI/MCP working method.
 - [`conventions.md`](conventions.md) — project conventions (cross-references this doc).
 - [ADR-017](decisions/0017-mobile-targets-and-build-stack.md), [ADR-018](decisions/0018-platform-minimums-and-managed-raise.md) — build stack and platform minimums.
