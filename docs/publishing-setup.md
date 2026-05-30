@@ -265,6 +265,12 @@ The Actions workflow maps secrets to `ORG_GRADLE_PROJECT_*` env vars before invo
 
 ---
 
+## iOS distribution (Swift Package Manager)
+
+This guide covers **Maven Central** (JVM + Android). The iOS modules (`mrz-camera-*`) are **not** published to Maven Central — iOS distributes through **Swift Package Manager**, a different channel with no PGP/Sonatype credentials ([ADR-019](decisions/0019-ios-distribution-via-spm.md)). The packaging is wired (`./gradlew :mrz-camera-ios:packTesseraXCFramework` produces `build/distributions/Tessera.xcframework.zip`); the release-time steps — attach the zip to the GitHub release, `swift package compute-checksum` it, and write `Package.swift` in the dedicated distribution repo — are in the [ADR-019 execution notes](decisions/0019-ios-distribution-via-spm.md#execution-notes-020-ios-slice) and land with the `0.2.0` release cut. A full SPM-release runbook section is added here when that step is executed.
+
+---
+
 ## Cross-references
 
 - [`decisions/0016-maven-coordinates-and-first-publish.md`](decisions/0016-maven-coordinates-and-first-publish.md) — coordinate shape, lockstep versioning, BOM, first-publish version and scope; the umbrella decision this setup serves
