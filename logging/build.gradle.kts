@@ -1,5 +1,8 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
+    // Android target via Google's KMP-library plugin (ADR-017). Applied right after the Kotlin
+    // Multiplatform plugin so the `android {}` target is available inside the `kotlin {}` block.
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     // dokka must be applied before maven.publish: signAllPublications() (root build.gradle.kts)
     // forces eager realization of the Dokka javadoc jar during maven.publish's apply, which looks
     // up the `dokkaGeneratePublicationHtml` task — so that task must already exist.
@@ -23,6 +26,14 @@ kotlin {
     jvmToolchain(21)
 
     jvm()
+
+    // Android target. compileSdk tracks the latest stable API (37); minSdk 23 per ADR-018.
+    // namespace scopes the generated AAR manifest package.
+    android {
+        namespace = "io.lightine.tessera.logging"
+        compileSdk = 37
+        minSdk = 23
+    }
 
     sourceSets {
         commonTest {
