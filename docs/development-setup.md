@@ -66,12 +66,14 @@ android emulator stop  <name>
 Skills install **user-global** (e.g. `~/.claude/skills/`), so they apply across all your projects rather than landing in this repo. Other operating systems and install methods (curl, winget, apt) are on the [official download page](https://developer.android.com/tools/agents/android-cli/download); the SDK can alternatively come from a full Android Studio install, which the CLI then just drives.
 
 ### Environment
-- **Point the build at the SDK.** Set either `ANDROID_HOME` — adding `$ANDROID_HOME/platform-tools` and `$ANDROID_HOME/emulator` to your `PATH` — **or** a gitignored `local.properties` at the repo root containing `sdk.dir=/path/to/Android/sdk`. AGP also auto-detects the default macOS location (`~/Library/Android/sdk`), so this is optional but makes the path explicit.
-- **adb** ships inside the SDK's `platform-tools` package — not a separate install. The `PATH` entry above is what makes `adb logcat` / `adb shell` work (the one job the Android CLI has no verb for). Confirm you're calling the SDK's binary, not a stray one elsewhere on `PATH`: the authoritative one is `"$(android info sdk)/platform-tools/adb"`.
 
-**Verify:** `android info` reports the SDK location; `android emulator start <name>` boots; while it's running, `adb devices` lists it and `adb version` works.
+Using the Android CLI, there is **almost nothing to set up here** — the CLI auto-detects the SDK (`android info sdk` returns the path with no `ANDROID_HOME` set) and runs the emulator via `android emulator …`.
 
-The Android platform minimums (`compileSdk`, `minSdk`) are build configuration, not environment setup — they live in [`mobile/android.md`](mobile/android.md) and [ADR-017](decisions/0017-mobile-targets-and-build-stack.md) / [ADR-018](decisions/0018-platform-minimums-and-managed-raise.md).
+The one genuine item is **adb** — the only tool the CLI has no verb for. adb lives in the SDK's `platform-tools` and is only reachable if that directory is on your `PATH` (otherwise `adb` isn't found). For the text-first inspection path (`adb logcat`, `adb shell`), put the SDK's `platform-tools` on `PATH` — the SDK path is whatever `android info sdk` reports — or call adb by its full path, `"$(android info sdk)/platform-tools/adb"`. Watch for a stray `adb` shadowing the SDK's.
+
+Pointing the **Gradle build** at the SDK (`local.properties` `sdk.dir`, or `ANDROID_HOME`) only becomes relevant once the Android targets are enabled in the build — that is part of the `0.2.0` Android build work and is set up and verified there, not now. Platform minimums (`compileSdk`, `minSdk`) live in [`mobile/android.md`](mobile/android.md) and [ADR-017](decisions/0017-mobile-targets-and-build-stack.md) / [ADR-018](decisions/0018-platform-minimums-and-managed-raise.md).
+
+**Verify:** `android info` reports the SDK; `android emulator start <name>` boots; while it's running, `adb devices` lists it and `adb version` works.
 
 ---
 
