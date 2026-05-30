@@ -3,9 +3,14 @@
 # "Require status checks to pass before merging" has something meaningful to
 # wait on.
 #
-# Scope kept minimal at 0.1.0:
-# - JVM-only (no Android, iOS, JS, Wasm yet — they're per-release-activated
-#   per docs/scope.md "Supported Platforms")
+# Scope:
+# - Runs the JVM `check` only. As of 0.2.0's build-foundation slice the core
+#   modules also declare an Android target (ADR-017), but `gradle check` does
+#   NOT compile it — the Android target compiles via `assemble`/`build`, not
+#   `check`, and CI has no Android SDK provisioned. Compiling the Android
+#   target on CI is tracked in docs/open-questions.md ("CI compile coverage
+#   for the mobile targets"). iOS / JS / Wasm remain per-release-activated per
+#   docs/scope.md "Supported Platforms".
 # - JDK 21 to match each module's jvmToolchain(21)
 # - Gradle 9.5.1 via the project's wrapper
 

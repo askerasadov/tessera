@@ -501,6 +501,17 @@ A small runnable sample app (Android first, iOS later) that integrates the headl
 
 **Trigger:** When the headless camera reader is stable on a platform and a runnable demo would add more than the written snippets + integration guide already provide — likely late in 0.2.0 or alongside the 0.5.0 UI.
 
+### CI and repository hardening for the mobile build
+
+Two non-blocking hardening items surfaced by the security review of the 0.2.0 build-foundation slice (the slice that enabled the Android target on the core modules, [ADR-017](decisions/0017-mobile-targets-and-build-stack.md)):
+
+1. **CI does not compile the Android target.** The `check` workflow runs `./gradlew check`, which compiles and tests only the JVM target; the Android target compiles via `assemble`/`build`, not `check`, and the CI runner has no Android SDK provisioned. So a `commonMain` change that breaks Android compilation — or a future `androidMain` source file that does not compile — would pass CI and surface only on a developer machine. At the build-foundation slice the exposure is minimal (the sole `androidMain` source is a one-line `actual` identical to the JVM one), but it widens as the camera slices add real `androidMain` code. Closing it means a CI job that provisions the Android SDK and runs `./gradlew compileAndroidMain` (compile-only, no emulator), kept separate from the fast JVM `check`.
+2. **`google()` repository has no content filter.** `settings.gradle.kts` adds Google's Maven repository without a `content { includeGroupByRegex(...) }` filter, so Gradle may consult it for any group, not just the Google-owned ones (`com.android.*` / `com.google.*` / `androidx.*`). With a locked version catalog and `FAIL_ON_PROJECT_REPOS` already set, the risk is low; the best-practice hardening is to scope each `google()` declaration to those groups.
+
+**Source:** 2026-05-30 build-foundation-slice security review (`security-reviewer` subagent); both rated low / info.
+
+**Trigger:** The camera slice (`mrz-camera-android`), when CameraX + ML Kit pull in the full set of `androidx.*` / `com.google.*` groups — add the content filter once the group set is known, and stand up the Android-compile CI job alongside the first real `androidMain` code. Could trigger earlier if a `commonMain` change silently breaks Android compilation.
+
 ### CONTRIBUTING.md at project root
 
 GitHub recognizes a top-level `CONTRIBUTING.md` and surfaces it on PR creation. The current `docs/conventions.md` covers what a CONTRIBUTING.md would cover. A small top-level file pointing to conventions.md may be useful when the project goes public on GitHub.

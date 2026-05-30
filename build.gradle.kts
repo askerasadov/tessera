@@ -6,6 +6,9 @@ import com.vanniktech.maven.publish.MavenPublishBaseExtension
 plugins {
     alias(libs.plugins.spotless)
     alias(libs.plugins.kotlin.multiplatform) apply false
+    // Android target for the core modules via Google's KMP-library plugin (ADR-017). Declared here
+    // with `apply false` so the alias is available to subprojects; each core module applies it.
+    alias(libs.plugins.android.kotlin.multiplatform.library) apply false
     alias(libs.plugins.maven.publish) apply false
     alias(libs.plugins.dokka) apply false
 }

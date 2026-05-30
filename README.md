@@ -145,8 +145,8 @@ Enabled in `0.1.0`:
 
 Planned per the roadmap:
 
-- **Android** — activates alongside camera reading. Minimum API level 26 (Android 8.0)
-- **iOS** — activates when Xcode availability allows. Minimum iOS 15.0
+- **Android** — activates alongside camera reading. Minimum API level 23 (Android 6.0), per [ADR-018](docs/decisions/0018-platform-minimums-and-managed-raise.md)
+- **iOS** — activates alongside camera reading. Minimum deployment target iOS 18, per [ADR-018](docs/decisions/0018-platform-minimums-and-managed-raise.md)
 
 The architecture supports further targets — Web (JS / Wasm), Desktop (JVM and native) — without changes to the core logic. They are not part of the initial releases but can be activated when there is a use case.
 
