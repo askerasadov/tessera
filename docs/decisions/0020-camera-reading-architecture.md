@@ -49,6 +49,7 @@
 - [ADR-013](0013-recognition-failures-are-warnings.md) — surface-don't-fail precedent for uncertain signals.
 - [ADR-017](0017-mobile-targets-and-build-stack.md) — the targets this runs on.
 - [ADR-019](0019-ios-distribution-via-spm.md) — the Swift-friendly surface the iOS API must present.
+- [ADR-021](0021-shared-mrz-camera-core-module.md) — extracts this contract into the shared `mrz-camera-core` module the platform modules depend on.
 
 ## Related Documents
 

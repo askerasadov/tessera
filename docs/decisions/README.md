@@ -32,6 +32,7 @@ The format is documented in `conventions.md`. ADRs are *fixed* once accepted: if
 | [018](0018-platform-minimums-and-managed-raise.md) | Platform minimums and the managed-raise policy | Accepted |
 | [019](0019-ios-distribution-via-spm.md) | iOS distribution via Swift Package Manager | Accepted |
 | [020](0020-camera-reading-architecture.md) | Camera reading architecture | Accepted |
+| [021](0021-shared-mrz-camera-core-module.md) | Shared `mrz-camera-core` module | Accepted |
 
 ---
 

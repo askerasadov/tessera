@@ -5,24 +5,21 @@ plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library)
 }
 
-// Intentionally NOT published in this slice. This module's Maven coordinates, BOM entry, and
-// publishing wiring are a release-slice concern (locked at the 0.2.0 tag), so the vanniktech
-// maven-publish and dokka plugins are deliberately not applied yet. The module builds and is
-// host-tested without them; nothing here is published until 0.2.0 is cut.
+// The Android platform-I/O module: CameraX + ML Kit wiring on top of the platform-agnostic
+// mrz-camera-core contract (ADR-021). Since the analyse-frame core, the scan() engine, and the
+// MrzCameraScanner interface now live in mrz-camera-core, this module is Android-only — it declares
+// no jvm() target (the host tests moved with the contract to mrz-camera-core, which runs them on the
+// JVM `check` runner). Intentionally NOT published in this slice; coordinates and the BOM entry are a
+// 0.2.0-release-slice concern, so maven-publish and dokka are deliberately not applied yet.
 
 kotlin {
     explicitApi()
 
     jvmToolchain(21)
 
-    // The JVM target carries the host tests for the platform-agnostic analyse-frame core, so they run
-    // on the existing JVM `check` CI runner with no Android SDK. It is a build/test target here, not a
-    // declared publication shape — what this module publishes is decided at the 0.2.0 release slice.
-    jvm()
-
     // Android target. compileSdk tracks the latest stable API (37); minSdk 23 per ADR-018. The
-    // androidMain ML Kit recognizer compiles here and is verified by the separate Android-compile CI
-    // job (a Linux `check` runner has no Android SDK, so it cannot compile this target).
+    // androidMain CameraX / ML Kit code compiles here and is verified by the android-compile CI job
+    // (a Linux `check` runner has no Android SDK, so it cannot compile this target).
     android {
         namespace = "io.lightine.tessera.mrz.camera"
         compileSdk = 37
@@ -30,21 +27,13 @@ kotlin {
     }
 
     sourceSets {
-        commonMain {
-            dependencies {
-                // ParseResult / MrzParser (mrz-core), the MrzFormat & error vocabulary (types), and
-                // TelemetrySink / TelemetryEvent (telemetry) all surface in this module's public API,
-                // so they are `api` dependencies — consumers see them transitively.
-                api(project(":types"))
-                api(project(":mrz-core"))
-                api(project(":telemetry"))
-                // The owns-session contract exposes Flow<MrzScanResult> (MrzCameraScanner.results) and
-                // the scan() streaming engine, so coroutines is part of the public API, not internal.
-                api(libs.kotlinx.coroutines.core)
-            }
-        }
         androidMain {
             dependencies {
+                // The platform-agnostic contract: CameraXMrzScanner implements MrzCameraScanner and
+                // MlKitMrzTextRecognizer implements MrzTextRecognizer<ImageProxy>, both from
+                // mrz-camera-core, and the scanner's results expose core types — so the core is `api`,
+                // seen transitively (it re-exports types / mrz-core / telemetry / coroutines in turn).
+                api(project(":mrz-camera-core"))
                 // CameraX camera-core supplies the ImageProxy frame type the Android recognizer reads;
                 // ML Kit text-recognition is the bundled-model variant — the Latin recognition model
                 // ships in the app, so OCR needs no runtime model download or network. (It still pulls
@@ -59,13 +48,6 @@ kotlin {
                 // The Camera2 backend CameraX selects at runtime on a device — needed to actually open a
                 // camera, but it has no compile surface here, so it stays off the compile classpath.
                 runtimeOnly(libs.androidx.camera.camera2)
-            }
-        }
-        commonTest {
-            dependencies {
-                implementation(kotlin("test"))
-                // runTest — exercises the suspend analyse() function on the host with a mock recognizer.
-                implementation(libs.kotlinx.coroutines.test)
             }
         }
     }

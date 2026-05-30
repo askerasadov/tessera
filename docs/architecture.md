@@ -49,8 +49,8 @@ Shared types and vocabulary used across modules: format enumerations (`MrzFormat
 
 These modules bridge core logic to platform-specific inputs and outputs. Each is implemented separately per target platform; their public contracts are aligned so consumers see a consistent shape across platforms.
 
-**`mrz-camera-{platform}`**
-Camera frame analysis: receives camera frames from a platform-specific source, detects the MRZ region, performs OCR using the platform's text recognition framework, and passes candidate strings to `mrz-core` for parsing. The core is the **analyse-frame** API (frame in → result out) built on a generic OCR seam (`MrzTextRecognizer<F>`) — the deliberate extension point that keeps the parsing pipeline platform-agnostic and lets any frame source feed it (per [ADR-020](decisions/0020-camera-reading-architecture.md)); a streaming **owns-the-camera-session convenience** (`MrzCameraScanner`) is layered on top of a frame-source-agnostic `scan(Flow)` engine, so the same contract drives a CameraX stream, an AVFoundation stream, or any other frame source. Platform-specific implementations include `mrz-camera-android` and `mrz-camera-ios`; additional frame sources can be added without changing the core logic. As of `0.2.0`, **`mrz-camera-android` exists** with the analyse-frame core, the bundled ML Kit recognizer, and the owns-the-camera-session scanner (`CameraXMrzScanner`, CameraX `ImageAnalysis` + `bindToLifecycle`); it depends on `mrz-core`, `telemetry`, and `types`, and is the first real `telemetry` emitter.
+**`mrz-camera-core` + `mrz-camera-{platform}`**
+Camera frame analysis, split across a platform-agnostic core and thin per-platform I/O modules ([ADR-021](decisions/0021-shared-mrz-camera-core-module.md)). **`mrz-camera-core`** holds the whole platform-agnostic contract: the **analyse-frame** API (frame in → result out) built on a generic OCR seam (`MrzTextRecognizer<F>`) — the deliberate extension point that keeps the parsing pipeline platform-agnostic and lets any frame source feed it (per [ADR-020](decisions/0020-camera-reading-architecture.md)) — plus the streaming **owns-the-camera-session convenience** (`MrzCameraScanner`) layered on a frame-source-agnostic `scan(Flow)` engine, so the same contract drives a CameraX stream, an AVFoundation stream, or any other frame source. It carries **no platform camera dependency**, passes candidate strings to `mrz-core` for parsing, depends on `mrz-core`, `telemetry`, and `types`, and is the first real `telemetry` emitter. The **`mrz-camera-{platform}`** modules are thin I/O layers on top of it: each receives camera frames from a platform-specific source, performs OCR with the platform's text-recognition framework, and runs the camera session, by implementing the OCR seam and the scanner for its frame type — so a new frame source is added without changing the core. As of `0.2.0`, **`mrz-camera-core` and `mrz-camera-android` exist** (the latter with the bundled ML Kit recognizer and the owns-the-camera-session scanner `CameraXMrzScanner`, CameraX `ImageAnalysis` + `bindToLifecycle`); **`mrz-camera-ios`** (AVFoundation + Apple Vision) mirrors the contract on the same core in the following slice.
 
 **`emrtd-nfc-{platform}`**
 NFC chip access: receives a platform-specific NFC tag handle, executes the BAC or PACE authentication protocol against the chip, reads requested data groups, and passes raw bytes to `emrtd-core` for parsing. Platform-specific implementations include `emrtd-nfc-android` and `emrtd-nfc-ios`.
@@ -84,6 +84,7 @@ graph TD
     UI_IOS[mrz-camera-ui-ios]
     CAM_AND[mrz-camera-android]
     CAM_IOS[mrz-camera-ios]
+    CAM_CORE[mrz-camera-core]
     NFC_AND[emrtd-nfc-android]
     NFC_IOS[emrtd-nfc-ios]
     MRZ[mrz-core]
@@ -94,14 +95,14 @@ graph TD
 
     UI_AND --> CAM_AND
     UI_IOS --> CAM_IOS
-    CAM_AND --> MRZ
-    CAM_IOS --> MRZ
+    CAM_AND --> CAM_CORE
+    CAM_IOS --> CAM_CORE
+    CAM_CORE --> MRZ
     NFC_AND --> EMRTD
     NFC_IOS --> EMRTD
     MRZ --> TYPES
     EMRTD --> TYPES
-    CAM_AND --> TEL
-    CAM_IOS --> TEL
+    CAM_CORE --> TEL
     NFC_AND --> TEL
     NFC_IOS --> TEL
     MRZ --> LOG
