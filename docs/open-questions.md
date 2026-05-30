@@ -218,6 +218,8 @@ The platform-agnostic camera-reading contract — the `MrzCameraScanner` interfa
 
 **Trigger:** Start of the `mrz-camera-ios` slice.
 
+**Resolution:** Resolved (2026-05-30, start of the `mrz-camera-ios` slice) — **the contract was extracted into `mrz-camera-core`**, per [ADR-021](decisions/0021-shared-mrz-camera-core-module.md) (the "likely outcome" above). `mrz-camera-android` becomes an Android-only platform-I/O module depending on the core; `mrz-camera-ios` mirrors it. The contract shape was validated against AVFoundation/Vision first — it holds unchanged (the iOS frame type binds `F = CMSampleBufferRef`, mirroring Android's `F = ImageProxy`). The deciding factor beyond the awkward-dependency forcing function: a dependency-free `mrz-camera-core` lets ADR-020's analyse-frame extension seam (USB / desktop / web frame sources) be consumed without dragging either platform's camera stack.
+
 ### `CameraInUse` live verification on Android
 
 `CameraXMrzScanner` surfaces capture-open failures from CameraX's camera state (the live-device slice — see [`mrz-error-taxonomy.md`](features/mrz-error-taxonomy.md)). The `PermissionDenied` / `CameraUnavailable` paths were device-verified (revoke the `CAMERA` permission → `PermissionDenied`; granted → clean streaming, no spurious error). The `CameraInUse` mapping (`ERROR_CAMERA_IN_USE` / `ERROR_MAX_CAMERAS_IN_USE` → `CameraError.CameraInUse`) is in place but was **not** device-exercised, because reproducing it needs a second client holding the camera.

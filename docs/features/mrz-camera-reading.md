@@ -87,7 +87,7 @@ On Android, a failed camera *open* surfaces **asynchronously through CameraX's c
 
 | Capability | Status |
 |---|---|
-| Analyse-frame core (Android) | Implemented (0.2.0, `mrz-camera-android`) — host-tested with mock OCR |
+| Analyse-frame core (platform-agnostic) | Implemented (0.2.0, `mrz-camera-core`) — host-tested with mock OCR on JVM + iOS simulator |
 | Android ML Kit recognizer (bundled model) | Implemented (0.2.0) — compiled on CI; device/emulator OCR verified in a later slice |
 | Strict + lenient modes | Implemented (0.2.0) |
 | Quality signals as metadata | Implemented (0.2.0) |

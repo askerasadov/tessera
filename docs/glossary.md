@@ -42,7 +42,7 @@ A usage pattern where the SDK is invoked on a string in a server environment, wi
 
 ### CameraX
 
-Google's Jetpack camera library for Android. The `mrz-camera-android` module depends on CameraX `camera-core` for the `ImageProxy` frame type its analyse-frame core reads; the owns-the-camera-session convenience (`CameraXMrzScanner`, 0.2.0) runs a CameraX capture session internally (`camera-lifecycle`'s `ProcessCameraProvider` + an `ImageAnalysis` use case bound to a lifecycle), with `camera-camera2` as the runtime backend. See `mrz-camera-reading.md`.
+Google's Jetpack camera library for Android. The `mrz-camera-android` module depends on CameraX `camera-core` for the `ImageProxy` frame type its ML Kit recognizer reads and feeds to the shared `mrz-camera-core` analyse-frame core; the owns-the-camera-session convenience (`CameraXMrzScanner`, 0.2.0) runs a CameraX capture session internally (`camera-lifecycle`'s `ProcessCameraProvider` + an `ImageAnalysis` use case bound to a lifecycle), with `camera-camera2` as the runtime backend. See `mrz-camera-reading.md`.
 
 ### Check Digit
 
