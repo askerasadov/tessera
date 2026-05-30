@@ -235,6 +235,31 @@ When reviewing for missing or stale content, it is tempting to assert "X is miss
 
 **Fix:** Before asserting something is missing, wrong, or stale, open the actual file (or run the actual check) and confirm. Found-issues need the same verification as no-issues. State confidence honestly: "I believe X is missing" vs "X is missing (verified at `file:line`)."
 
+---
+
+## Verifying Against Transient State Instead Of The Committed Source Of Truth
+
+**The pitfall:** Asserting that something is true, done, or removed after checking a *transient* form of the state — the working tree at this moment, a machine-local file, the first location you guessed — rather than the *durable, authoritative* form that actually governs: what is committed and tracked, what survives a fresh clone, what the build or tool actually reads. The check happens, so it feels verified — but the wrong state was checked.
+
+This is the sibling of "Claiming a Gap Without Verifying the Files" above. That entry says *verify before asserting*. This one says: **even when you verify, confirm you are looking at the state that matters.** A check against a snapshot that won't survive a clone — or against the wrong location — is a check that lies.
+
+**Why it happens:** The transient state is the one in front of you. The working tree, the current machine's filesystem, the first path you looked at — immediate and cheap to inspect. The authoritative state takes a deliberate extra step (`git show HEAD:path`, `git ls-files`, reading the config the build actually consumes, checking the tool's default location rather than a guessed one). Under momentum, the immediate check quietly substitutes for the authoritative one.
+
+**What's wrong with it:** A decision recorded only in a machine-local note (gitignored memory, a `.handoffs/` file, an uncommitted edit) does not survive a fresh clone — a new-machine session re-derives it wrongly or contradicts it. An assertion about "what's installed/removed" based on one guessed path is wrong when the real artifact lives elsewhere. The error is invisible *on this machine, in this working tree*, and surfaces only when the durable state is what gets consulted — a new contributor, a fresh clone, CI — which is exactly when it is most expensive to discover.
+
+**Real examples (0.2.0 Android-environment work).**
+- The `compileSdk 37` decision lived only in gitignored machine-local memory while the committed ADR still said `compileSdk 36`. Checked against memory it looked settled; against the committed ADR it was a contradiction that would mislead any fresh-clone session. Fix: commit the decision to the ADR so it survives a clone.
+- An SDK-provenance claim ("removed — it's not in `/Applications`") was wrong: the SDK was a Toolbox install at `~/Library/Android/sdk`. One guessed location stood in for "where the SDK authoritatively lives."
+
+**What to do instead:** Before asserting state, identify the *authoritative* form and check that one:
+- For a **decision** — the committed doc (ADR / `scope.md` / `open-questions.md`), not a handoff, recap, or machine-local memory. If a decision matters and lives only in a machine-local note, *that's the bug*: commit it.
+- For **what's tracked** — `git ls-files` / `git show HEAD:path`, not the working tree of the moment.
+- For **what a tool reads** — the actual config it consumes (the SDK's default location, the `local.properties` the build reads), not a path you assumed.
+
+State confidence with its source: "committed in the ADR" beats "I recall deciding it." This complements the "Pre-commitment alignment check" in `.claude/working-patterns.md` (verify primary docs before foundational decisions): that pattern is about *which document* is authoritative; this pitfall is about *which version of the state* — durable, not transient.
+
+---
+
 ## Reading a Whole Credential-Bearing File
 
 Some files hold secrets even though you need only one non-secret line — notably `~/.gradle/gradle.properties`, which carries the PGP signing key + passphrase and the Sonatype token alongside ordinary Gradle settings. Reading the whole file pulls those secrets into the session transcript (an unintended, persistent exposure surface) when a single `grep` would have answered the question. This happened during the 0.2.0 work — reading the file to check one `installations.paths` line exposed the signing key.
