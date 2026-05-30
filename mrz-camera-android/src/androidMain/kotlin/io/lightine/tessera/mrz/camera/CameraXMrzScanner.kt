@@ -162,6 +162,11 @@ public class CameraXMrzScanner(
             // flow would never emit and never close, and the consumer would get silence instead of a
             // typed CaptureError. Observing the camera state and closing the flow with the error code
             // routes it through scan()'s catch -> cameraErrorFor, exactly like a bind-time failure.
+            // NB: this closes on ANY state error. That is correct for CameraX's *critical* codes (no
+            // auto-recovery — the device-verified permission/fatal path), but coarse for its
+            // *recoverable* codes (in-use / max), where CameraX would otherwise keep retrying; whether to
+            // surface those non-terminally is deferred (docs/open-questions.md, "CameraInUse live
+            // verification on Android").
             val stateObserver =
                 Observer<CameraState> { state ->
                     val stateError = state.error
