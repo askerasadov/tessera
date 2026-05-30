@@ -20,6 +20,10 @@ This document is living. Terms are added as they appear in documentation and rem
 
 A document capturing a significant project decision in a stable, reviewable format. ADRs include the context, the decision, the consequences, and the alternatives considered. See `conventions.md` for the format and `decisions/` for the records themselves.
 
+### Apple Vision
+
+Apple's on-device image-analysis framework (the `Vision` framework). The `mrz-camera-ios` module's `VisionMrzTextRecognizer` uses Vision's `VNRecognizeTextRequest` (recognition level *accurate*, language correction *off* — the MRZ is not natural language, so correcting it would change characters) to OCR each camera frame's pixel buffer — the iOS counterpart to Android's ML Kit recognizer. Vision runs on the iOS Simulator on a supplied image (the Simulator has no camera). See `mrz-camera-reading.md`.
+
 ### Available Since
 
 A version marker on public APIs and types indicating the release in which the item first appeared. See `versioning.md` for the convention.
