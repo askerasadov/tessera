@@ -8,6 +8,13 @@ import io.lightine.tessera.mrz.parsing.ParseResult
  * — observed signals exposed as metadata, never used to gate a result
  * ([ADR-020](https://github.com/lightine-io/tessera/blob/main/docs/decisions/0020-camera-reading-architecture.md),
  * Principle 5).
+ *
+ * **Contains document PII — do not log verbatim.** A [Decoded] result holds the parsed [`ParseResult`][ParseResult]
+ * (document fields) and the raw [RecognizedText]; a [NoMrzFound] result holds whatever text the engine
+ * read. Their auto-generated `toString()` therefore surfaces personal data, so logging a whole
+ * `MrzScanResult` in production leaks it. Branch on the variant and log only non-PII fields (e.g.
+ * [quality], the [CameraError.code][CameraError]), or redact first (see the `telemetry` module's
+ * redaction helpers). The SDK itself never logs these values.
  */
 public sealed interface MrzScanResult {
     /** Observed quality signals for this frame. Always present; informational only. */
