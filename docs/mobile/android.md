@@ -2,7 +2,7 @@
 
 Entry point for Android work in this repo, written for a reader with **no prior context** — a future session, a new machine, a new contributor. It answers four things: what the tooling *is*, what it *gives you*, what it *isn't*, and *how to work with it*.
 
-This is **general Android knowledge**, not Tessera's — the Tessera-specifics are fenced in one section near the end, so the rest is portable to any Android project. When iOS work starts, an `ios.md` sibling mirrors this shape.
+This is **general Android knowledge**, not Tessera's — the Tessera-specifics are fenced in one section near the end, so the rest is portable to any Android project. When iOS work starts, a sibling `docs/mobile/ios.md` mirrors this shape.
 
 It describes **capabilities and method, never one machine's state.** Where the SDK happens to live, which AVD exists — that is per-machine and lives elsewhere (a local note), not here. For exact install commands it points at [`development-setup.md`](../development-setup.md) rather than duplicating them.
 
@@ -88,7 +88,7 @@ Everything above is general. For this project specifically:
 
 ## iOS
 
-To be added when iOS work begins, as `ios.md` in this folder, mirroring sections 1–5 for the Apple toolchain (Xcode, the Xcode MCP, the Simulator).
+To be added when iOS work begins, as `docs/mobile/ios.md`, mirroring sections 1–5 for the Apple toolchain (Xcode, the Xcode MCP, the Simulator).
 
 ---
 
