@@ -94,7 +94,8 @@ On Android, a failed camera *open* surfaces **asynchronously through CameraX's c
 | `Camera…` error family | Implemented (0.2.0) — `OcrFailed` (analyse-frame) + `CameraUnavailable` / `PermissionDenied` / `CameraInUse` (owns-session); async camera-state surfacing device-verified, `CameraInUse` live scenario pending |
 | Streaming engine (`scan`) + `MrzCameraScanner` contract | Implemented (0.2.0) — host-tested; the frame-source-agnostic contract iOS mirrors |
 | Owns-camera-session convenience (Android, `CameraXMrzScanner`) | Implemented (0.2.0) — **device-verified** (live-device slice): back-camera open, frame streaming, `ImageProxy` lifecycle, and async camera-state error surfacing |
-| Analyse-frame core + convenience (iOS) | Planned (0.2.0, after Android) |
+| iOS Apple Vision recognizer (`VisionMrzTextRecognizer`) | Implemented (0.2.0, `mrz-camera-ios`) — compiled on CI; the Vision pipeline is smoke-tested on the iOS simulator (`VNRecognizeTextRequest`, language-correction off); on-device / real-MRZ OCR accuracy verified in a later slice |
+| Owns-camera-session convenience (iOS, `AVCaptureMrzScanner`) | Planned (0.2.0, after the iOS recognizer) |
 | Tolerant mode; richer quality scorer | Deferred (0.3.0) |
 | Scanner UI | Deferred (0.5.0) |
 
