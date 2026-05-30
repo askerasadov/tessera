@@ -30,7 +30,7 @@ This validated the contract against AVFoundation/Vision with **no change to its 
 
 **Negative:**
 - One more module in the graph than the Android-first layout had.
-- At the SPM packaging slice, the XCFramework built from `mrz-camera-ios` must **export** `mrz-camera-core` (Kotlin/Native `export(...)`) so the contract types are visible to Swift consumers.
+- At the SPM packaging slice, the XCFramework built from `mrz-camera-ios` must **export** `mrz-camera-core` (Kotlin/Native `export(...)`) so the contract types are visible to Swift consumers. *(Done — the `Tessera` XCFramework explicitly exports `mrz-camera-core` plus `mrz-core` / `types` / `telemetry`; see [ADR-019 execution notes](0019-ios-distribution-via-spm.md#execution-notes-020-ios-slice).)*
 
 **Neutral:**
 - No public API change — the types and packages are identical, only relocated. Nothing is newly published; `mrz-camera-core` is unpublished this slice, exactly as `mrz-camera-android` is (coordinates/BOM are a `0.2.0`-release-slice concern).

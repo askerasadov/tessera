@@ -102,6 +102,8 @@ Adds the Apple toolchain. Needed only to build/run `mrz-camera-ios` and the iOS 
 
 **Verify:** `xcodebuild -version` shows your Xcode; the MCP tools are visible to your agent; common code compiles for the iOS targets.
 
+**iOS distribution build (SPM).** `mrz-camera-ios` is the umbrella that produces the `Tessera` XCFramework for Swift Package Manager ([ADR-019](decisions/0019-ios-distribution-via-spm.md)). Two Gradle tasks: `:mrz-camera-ios:assembleTesseraDebugXCFramework` (or `…ReleaseXCFramework`) builds `Tessera.xcframework` under `build/XCFrameworks/`; `:mrz-camera-ios:packTesseraXCFramework` assembles the release framework and zips it to `build/distributions/Tessera.xcframework.zip` (the SPM `binaryTarget` artifact). Both require the Tier 2 Apple toolchain. The release-time publication steps are in [`publishing-setup.md`](publishing-setup.md) / the ADR-019 execution notes.
+
 ---
 
 ## How we work — CLI-driven, text-first

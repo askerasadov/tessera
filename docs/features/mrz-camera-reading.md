@@ -128,5 +128,6 @@ On iOS, `AVCaptureMrzScanner` reads the authorization status (`AVCaptureDevice.a
 
 - [ADR-020](../decisions/0020-camera-reading-architecture.md) — camera reading architecture.
 - [ADR-017](../decisions/0017-mobile-targets-and-build-stack.md) — the mobile targets this runs on.
+- [ADR-019](../decisions/0019-ios-distribution-via-spm.md) — iOS distribution: the `Tessera` XCFramework via Swift Package Manager.
 - [scope.md](../scope.md) — reading methods.
 - [development-setup.md](../development-setup.md) — building/running the camera modules.
