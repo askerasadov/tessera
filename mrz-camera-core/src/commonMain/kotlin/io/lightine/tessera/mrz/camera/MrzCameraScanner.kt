@@ -36,6 +36,12 @@ public interface MrzCameraScanner {
      * Starts the camera session and begins emitting on [results]. Idempotent: calling [start] on an
      * already-running scanner does nothing. The consumer must hold the camera permission first
      * (the scanner reports, it does not request).
+     *
+     * **Threading.** The lifecycle methods ([start], [stop], and a platform `close`) are not
+     * thread-safe; call them from a single thread — typically the UI thread / Swift main actor, the
+     * idiomatic place for camera lifecycle. Concurrent calls from multiple threads are not supported and
+     * may race (e.g. two `start`s both passing the idempotence check). Collecting [results], by contrast,
+     * is safe from any coroutine.
      */
     public fun start()
 

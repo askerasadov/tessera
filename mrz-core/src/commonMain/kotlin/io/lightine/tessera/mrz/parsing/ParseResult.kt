@@ -21,6 +21,12 @@ import io.lightine.tessera.types.errors.MrzParseError
  * [`MrzValidationError`][io.lightine.tessera.types.errors.MrzValidationError]s, and the
  * transliteration audit trail (which is `null` for parser-produced results since the
  * parser does not transliterate).
+ *
+ * **Contains document PII — do not log verbatim.** [Success]/[PartialSuccess] carry the parsed
+ * [`MrzDocument`][MrzDocument] (name, document number, nationality, dates), and [Failure] carries the
+ * raw [`rawInput`][Failure.rawInput] MRZ string. Their auto-generated `toString()` surfaces that
+ * personal data, so logging a whole `ParseResult` in production leaks it. Log only non-PII fields, or
+ * redact first. The SDK never logs these values itself.
  */
 public sealed class ParseResult {
     public abstract val metadata: ResultMetadata

@@ -184,6 +184,11 @@ public class CameraXMrzScanner(
                 // device in the live-device slice.
                 provider.unbind(analysis)
             }
+            // RENDEZVOUS (zero-capacity): a send completes only when the collector actually receives the
+            // frame, so a successfully-sent ImageProxy is, by that same instant, in scan()'s map{} where the
+            // finally{ releaseFrame } owns its close(). There is no buffered-but-unreceived state, so no
+            // onUndeliveredElement safety net is needed here — the analogue the iOS scanner's capacity-1
+            // DROP_OLDEST channel does need, since that channel can hold/evict a frame the collector never took.
         }.buffer(Channel.RENDEZVOUS)
 
     // Maps a camera-open failure to a typed CameraError. A CameraStateException carries the androidx
