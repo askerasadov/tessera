@@ -512,6 +512,8 @@ Non-blocking hardening items surfaced by the security reviews of the 0.2.0 build
 
 **Update (2026-05-30, `mrz-camera-android` analyse-frame slice):** the **Android side of item 1 and item 2 are done.** `settings.gradle.kts` now content-filters both `google()` declarations to `com.android.*` / `com.google.*` / `androidx.*` (item 2 closed). A new `android-compile` CI job (`.github/workflows/check.yml`, `ubuntu-latest` + the runner's Android SDK) runs `./gradlew compileAndroidMain` across every module — so the camera module's ML Kit `androidMain`, and the core modules' Android targets, are now type-checked on CI (item 1, Android side, closed). **Still open:** the **macOS iOS-compile job** (item 1, iOS side), which lands with the first real `iosMain` code (`mrz-camera-ios`).
 
+3. **GitHub Actions pinned by floating tag, not commit SHA** (repo-wide, all workflows — surfaced in the camera slice's CI review). `actions/checkout`, `actions/setup-java`, and `gradle/actions/setup-gradle` are referenced by major-version tag (`@v6` etc.), which is mutable. All three are first-party (GitHub / Gradle Foundation) so the risk is low, but pinning to a commit SHA with a version comment is best-practice supply-chain hardening. Deferred as a separate, non-mobile chore (would touch every workflow at once; Dependabot `actions` updates can automate the SHA bumps if enabled).
+
 **Trigger:** The `mrz-camera-ios` slice — stand up the `macos-latest` iOS-compile job (Konan compile, and ideally the `iosSimulatorArm64` tests) alongside the first real `iosMain` camera code. Could trigger earlier if a `commonMain` change silently breaks iOS compilation.
 
 ### CONTRIBUTING.md at project root

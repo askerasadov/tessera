@@ -14,7 +14,9 @@ package io.lightine.tessera.mrz.camera
  * Implementations perform OCR only: they neither locate the MRZ region nor parse it (the analyzer's
  * job), and they make no trust decision about what they read (Principle 1). Signal a failure to run
  * OCR by throwing — [MrzFrameAnalyzer] catches it and surfaces a typed
- * [`CameraError.OcrFailed`][CameraError.OcrFailed] rather than letting the exception propagate.
+ * [`CameraError.OcrFailed`][CameraError.OcrFailed] rather than letting the exception propagate. Keep
+ * recognized text **out of** the exception message: it becomes `CameraError.OcrFailed.message`, which
+ * a consumer may log, and recognized MRZ text is PII.
  *
  * @param F the platform frame type (e.g. `androidx.camera.core.ImageProxy` on Android).
  */

@@ -29,6 +29,7 @@ The low-level entry point: hand it a platform frame, get a result. It owns no ca
 fun interface MrzTextRecognizer<in F> {
     suspend fun recognize(frame: F): RecognizedText   // OCR only; throwing surfaces CameraError.OcrFailed
 }
+// RecognizedText(lines = List<RecognizedLine(text, confidence)>) — the raw OCR, exposed verbatim.
 
 class MrzFrameAnalyzer<F>(
     recognizer: MrzTextRecognizer<F>,

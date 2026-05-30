@@ -259,6 +259,35 @@ class MrzFrameAnalyzerTest {
             assertEquals(CameraFrameOutcome.OCR_FAILED, failureEvent.outcome)
         }
 
+    @Test
+    fun an_empty_ocr_result_yields_no_mrz_found() =
+        runTest {
+            val result = analyzer(recognizerReturning(RecognizedText(emptyList()))).analyse(FakeFrame())
+
+            val noMrz = assertIs<MrzScanResult.NoMrzFound>(result)
+            assertFalse(noMrz.quality.mrzRegionFound)
+            assertEquals(0, noMrz.quality.recognizedLineCount)
+            assertNull(noMrz.quality.ocrConfidence)
+        }
+
+    @Test
+    fun many_uniform_non_mrz_lines_yield_no_mrz_found() =
+        runTest {
+            // A long run of equal-length lines that is not a valid MRZ length exercises the run-walk
+            // fully without matching any shape.
+            val recognized = RecognizedText(List(12) { RecognizedLine("ABCDE", null) })
+
+            assertIs<MrzScanResult.NoMrzFound>(analyzer(recognizerReturning(recognized)).analyse(FakeFrame()))
+        }
+
+    @Test
+    fun a_single_mrz_length_line_is_not_a_candidate() =
+        runTest {
+            // One 44-char line is not a TD3/MRV-A candidate (those need two), so the run (size 1) matches
+            // no shape — proves line count matters, not just line length.
+            assertIs<MrzScanResult.NoMrzFound>(analyzer(recognizerReturning(textOf(td3Line1))).analyse(FakeFrame()))
+        }
+
     // Inserts a stray space after the 5th character — benign OCR whitespace noise that STRICT rejects
     // (wrong length) and LENIENT forgives.
     private fun withSpace(line: String): String = line.substring(0, 5) + " " + line.substring(5)

@@ -8,6 +8,11 @@ package io.lightine.tessera.mrz.camera
  * [MrzScanResult] alongside any parsed value, so a consumer can always see exactly what the engine
  * read. It is OCR output, not an MRZ — lines may be in any case, contain non-MRZ characters, carry
  * stray whitespace, or be absent entirely.
+ *
+ * Because it carries the raw read (which, for a successful scan, is MRZ text = PII), its generated
+ * `toString()` includes that text. The SDK never logs it itself — `CameraFrameEvent` deliberately
+ * excludes it — but a consumer who logs a whole [RecognizedText] or [MrzScanResult] will surface PII;
+ * redact before logging in production.
  */
 public data class RecognizedText(
     /** Every line the engine recognized, in reading order. Empty when the engine found no text. */
