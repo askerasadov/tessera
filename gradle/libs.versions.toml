@@ -9,8 +9,10 @@ kotlinx-coroutines = "1.11.0"
 maven-publish = "0.36.0"
 dokka = "2.2.0"
 # Android camera I/O stack (mrz-camera-android, 0.2.0). camera-core supplies the ImageProxy
-# frame type; ML Kit text-recognition is the bundled-model variant (no Play Services / no
-# network), per the 0.2.0 plan. Both are latest stable.
+# frame type; ML Kit text-recognition is the bundled-model variant — the recognition model
+# ships in the app (no runtime model download / no network for OCR), though it still pulls
+# Play Services ML Kit libs + Google's datatransport stack transitively (see reading-risks.md).
+# Both are latest stable.
 camerax = "1.6.1"
 mlkit-text-recognition = "16.0.1"
 
@@ -18,8 +20,15 @@ mlkit-text-recognition = "16.0.1"
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+# The Android `Dispatchers.Main` service — the owns-session scanner binds CameraX on the main thread.
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+# camera-lifecycle supplies ProcessCameraProvider + bindToLifecycle (the owns-session machinery);
+# camera-camera2 is the runtime Camera2 backend CameraX needs on a device (runtimeOnly — no compile
+# surface), kept out of the compile classpath so the analyse-frame core stays backend-agnostic.
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
 mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkit-text-recognition" }
 
 [plugins]
