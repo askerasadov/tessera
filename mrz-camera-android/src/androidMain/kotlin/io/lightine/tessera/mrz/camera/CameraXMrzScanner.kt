@@ -1,11 +1,15 @@
 package io.lightine.tessera.mrz.camera
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraState
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Observer
 import com.google.common.util.concurrent.ListenableFuture
 import io.lightine.tessera.telemetry.NoOpTelemetrySink
 import io.lightine.tessera.telemetry.TelemetrySink
@@ -45,11 +49,14 @@ import kotlin.coroutines.resumeWithException
  * on [results], it never requests permission (`scope.md` "permission boundary").
  *
  * **Verification status.** The contract this implements (the [MrzCameraScanner] interface and the
- * [scan][MrzFrameAnalyzer.scan] engine) is host-tested; this CameraX wiring is compiled on CI and
- * verified end-to-end on a physical device in the live-device slice. The exact mapping from a CameraX
- * failure to a [CameraError] member — especially permission and camera-in-use, which CameraX can surface
- * asynchronously through camera state rather than as a bind-time exception — is refined against a real
- * device there.
+ * [scan][MrzFrameAnalyzer.scan] engine) is host-tested. The CameraX wiring is compiled on CI and was
+ * verified end-to-end on a physical device (the live-device slice): the back camera opens, frames
+ * stream, each [ImageProxy] is closed, and results flow. That slice established that CameraX surfaces a
+ * failed open **asynchronously through camera state**, not as a bind-time exception — so this scanner
+ * observes [CameraState] and routes a state error through [scan]'s catch path (see [cameraErrorFor]).
+ * Permission denial was confirmed to surface a [CameraError.PermissionDenied]; the [CameraError.CameraInUse]
+ * code-mapping is in place but the live in-use scenario (another client holding the camera) is not yet
+ * device-exercised.
  *
  * @param appContext an application [Context] (held for the camera-provider lookup; pass
  *   `context.applicationContext` to avoid leaking an Activity).
@@ -141,15 +148,34 @@ public class CameraXMrzScanner(
                 if (trySendBlocking(proxy).isFailure) proxy.close()
             }
 
-            try {
-                provider.bindToLifecycle(lifecycleOwner, cameraSelector, analysis)
-            } catch (failure: Exception) {
-                analysis.clearAnalyzer()
-                close(failure)
-                return@callbackFlow
-            }
+            val camera =
+                try {
+                    provider.bindToLifecycle(lifecycleOwner, cameraSelector, analysis)
+                } catch (failure: Exception) {
+                    analysis.clearAnalyzer()
+                    close(failure)
+                    return@callbackFlow
+                }
+
+            // CameraX surfaces a failed camera open (permission denied, camera in use, hardware fault)
+            // asynchronously through camera STATE, not as a bind-time exception — so without this the
+            // flow would never emit and never close, and the consumer would get silence instead of a
+            // typed CaptureError. Observing the camera state and closing the flow with the error code
+            // routes it through scan()'s catch -> cameraErrorFor, exactly like a bind-time failure.
+            // NB: this closes on ANY state error. That is correct for CameraX's *critical* codes (no
+            // auto-recovery — the device-verified permission/fatal path), but coarse for its
+            // *recoverable* codes (in-use / max), where CameraX would otherwise keep retrying; whether to
+            // surface those non-terminally is deferred (docs/open-questions.md, "CameraInUse live
+            // verification on Android").
+            val stateObserver =
+                Observer<CameraState> { state ->
+                    val stateError = state.error
+                    if (stateError != null) close(CameraStateException(stateError.code))
+                }
+            camera.cameraInfo.cameraState.observe(lifecycleOwner, stateObserver)
 
             awaitClose {
+                camera.cameraInfo.cameraState.removeObserver(stateObserver)
                 analysis.clearAnalyzer()
                 // Unbind only THIS session's use case, not the whole provider — so a stop()-then-start()
                 // restart (whose old teardown may run after the new bind, since cancellation is
@@ -160,14 +186,49 @@ public class CameraXMrzScanner(
             }
         }.buffer(Channel.RENDEZVOUS)
 
-    // Maps a CameraX/camera-open failure to a typed CameraError. Conservative for this slice; the precise
-    // mapping is shaken out on a device in the live-device slice (see the class KDoc).
+    // Maps a camera-open failure to a typed CameraError. A CameraStateException carries the androidx
+    // CameraState error code observed asynchronously (the path CameraX actually uses — see
+    // cameraFrames); a SecurityException would be a synchronous bind-time throw (kept for completeness,
+    // though on the devices tested CameraX does not throw it — it collapses to a CameraState error).
     private fun cameraErrorFor(cause: Throwable): CameraError? =
         when (cause) {
-            is SecurityException -> CameraError.PermissionDenied(cause.message ?: "camera permission not granted")
+            is CameraStateException -> cameraStateError(cause.code)
+            is SecurityException -> CameraError.PermissionDenied(cause.message ?: "CAMERA permission not granted")
             else -> CameraError.CameraUnavailable(cause.message ?: cause.toString())
         }
+
+    // Classifies an androidx CameraState error code. In-use codes map cleanly. Everything else is some
+    // flavour of "could not open": critically, CameraX collapses a PERMISSION denial into a generic
+    // ERROR_CAMERA_FATAL_ERROR with a null cause — its public state API does not distinguish "no
+    // permission" from a hardware fault. So for a non-in-use failure we read the observable CAMERA
+    // permission state: if it is not held, PermissionDenied is the consumer's actionable cause;
+    // otherwise the cause is genuinely unknown to us, so CameraUnavailable. This only *reads* the
+    // permission — it never requests it or gates on it (scope.md permission boundary; reader-not-oracle:
+    // we report the observable fact, we do not infer a cause we cannot see).
+    private fun cameraStateError(code: Int): CameraError =
+        when (code) {
+            CameraState.ERROR_CAMERA_IN_USE, CameraState.ERROR_MAX_CAMERAS_IN_USE -> {
+                CameraError.CameraInUse("camera is in use by another client (camera state error $code)")
+            }
+
+            else -> {
+                if (!hasCameraPermission()) {
+                    CameraError.PermissionDenied("CAMERA permission not granted (camera state error $code)")
+                } else {
+                    CameraError.CameraUnavailable("camera could not be opened (camera state error $code)")
+                }
+            }
+        }
+
+    private fun hasCameraPermission(): Boolean =
+        appContext.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
 }
+
+// Carries the androidx [CameraState] error code from an asynchronous camera-open failure so
+// [CameraXMrzScanner.cameraErrorFor] can map it to a [CameraError] through scan()'s catch path.
+private class CameraStateException(
+    val code: Int,
+) : Exception("camera state error: $code")
 
 // Bridges a Guava ListenableFuture (CameraX's provider lookup) to a suspend call without the
 // kotlinx-coroutines-guava artifact — the same suspendCancellableCoroutine pattern the ML Kit Task
