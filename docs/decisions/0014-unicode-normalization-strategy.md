@@ -35,7 +35,7 @@ Concretely:
   - **Android:** identical to JVM (Android ships `java.text.Normalizer`)
   - **iOS (Konan):** `(input as NSString).precomposedStringWithCanonicalMapping`
   - **JS / Wasm:** `input.normalize("NFC")`
-- For `0.1.0` only the JVM `actual` is implemented, because JVM is the only target enabled in this release (per [`docs/scope.md`](../scope.md) Supported Platforms). Other actuals are written when their targets activate (Android in `0.2.0` alongside camera reading; iOS when Xcode is available on a development machine; JS/Wasm on demand).
+- For `0.1.0` only the JVM `actual` is implemented, because JVM is the only target enabled in this release (per [`docs/scope.md`](../scope.md) Supported Platforms). Other actuals are written when their targets activate (Android in `0.2.0` alongside camera reading; iOS when Xcode is available on a development machine; JS/Wasm on demand). **Status update (2026-05-30):** the **Android** and **iOS** `actual`s both landed in the `0.2.0` build-foundation slices — Android mirrors the JVM `java.text.Normalizer`; iOS uses the `NSString.precomposedStringWithCanonicalMapping` form shown above, verified on the iOS simulator across the full `mrz-core` test suite. JS/Wasm remain on demand.
 - The choice of **NFC** (composition) rather than NFD (decomposition) follows the W3C Character Model recommendation and the IETF guidance for text on the wire. NFC is also the more common form in stored text data, minimizing the work the normalizer has to do on typical input.
 - Normalization is **locale-independent**. The SDK does not pass a locale to the normalizer; locale-specific transformations (e.g., Turkish dotted/dotless `i`) are the responsibility of country-specific profiles, not the normalization step.
 
@@ -56,8 +56,8 @@ Per [Principle 5](../principles.md) (Transparency over Magic), the post-normaliz
 
 **Negative:**
 
-- One `expect` declaration plus one `actual` per target. Today only the JVM actual exists; the scaffolding is ~10 lines total. Not free, but minimal.
-- The iOS `actual` cannot be written until Xcode is available on a development machine. This is tracked separately in [`open-questions.md`](../open-questions.md) under "iOS target configuration on core modules"; it is not a `0.1.0` blocker because iOS is not a `0.1.0` target.
+- One `expect` declaration plus one `actual` per target. As of `0.1.0` only the JVM actual existed; the Android and iOS actuals landed in `0.2.0` (see the Decision status update above). The scaffolding is a handful of lines per target. Not free, but minimal.
+- The iOS `actual` could not be written until Xcode was available on a development machine — not a `0.1.0` blocker because iOS was not a `0.1.0` target. **Resolved in `0.2.0`:** Xcode 26.5 is present and the iOS `actual` is implemented; the [`open-questions.md`](../open-questions.md) entry "iOS target configuration on core modules" is marked executed.
 - Consumers cannot trivially opt out of normalization. The design choice is intentional — bypassing normalization is the silent-failure mode this ADR is designed to eliminate — but consumers with unusual requirements (e.g., binary-exact pass-through for testing) will need to construct their input in NFC form before passing it to the generator.
 
 **Neutral:**

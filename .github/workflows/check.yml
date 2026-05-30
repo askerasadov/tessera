@@ -4,12 +4,14 @@
 # wait on.
 #
 # Scope:
-# - Runs the JVM `check` only. As of 0.2.0's build-foundation slice the core
-#   modules also declare an Android target (ADR-017), but `gradle check` does
-#   NOT compile it — the Android target compiles via `assemble`/`build`, not
-#   `check`, and CI has no Android SDK provisioned. Compiling the Android
-#   target on CI is tracked in docs/open-questions.md ("CI compile coverage
-#   for the mobile targets"). iOS / JS / Wasm remain per-release-activated per
+# - Runs the JVM `check` only. As of 0.2.0's build-foundation slices the core
+#   modules declare both an Android target and the three iOS targets (ADR-017),
+#   but `gradle check` on this ubuntu runner compiles neither: the Android
+#   target compiles via `assemble`/`build` (not `check`) and CI has no Android
+#   SDK provisioned, and the iOS targets need a macOS runner with Xcode (a Linux
+#   runner cannot build Apple targets at all). Compiling the mobile targets on
+#   CI is tracked in docs/open-questions.md ("CI and repository hardening for
+#   the mobile build"). JS / Wasm remain per-release-activated per
 #   docs/scope.md "Supported Platforms".
 # - JDK 21 to match each module's jvmToolchain(21)
 # - Gradle 9.5.1 via the project's wrapper
