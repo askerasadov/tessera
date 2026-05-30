@@ -39,10 +39,10 @@ Adds the Android platform toolchain. Needed only to build/run `mrz-camera-androi
 
 ### Install (macOS — project-verified)
 
-The project drives Android work through **Google's Android CLI** — the agent-optimized tool that consolidates `sdkmanager` / `avdmanager` / `adb` and gives agents access to the Android **Skills** and **Knowledge Base** (see *How we work*). On first run it **pre-provisions a baseline SDK** at `~/Library/Android/sdk` (platform-tools, build-tools, a recent platform + system image, and the emulator), so installing the CLI is usually all you need.
+The project drives Android work through **Google's Android CLI** — the agent-optimized tool that consolidates `sdkmanager` / `avdmanager` / `adb` and gives agents access to the Android **Skills** and **Knowledge Base** (see *How we work*). It bundles its own command-line tools and **auto-detects an existing SDK** at the default location `~/Library/Android/sdk` (for example one left by an Android Studio install). If you don't already have an SDK there, install the packages you need with `android sdk install` (step 3).
 
 ```sh
-# 1. The Android CLI (also pulls down a baseline SDK on first run)
+# 1. The Android CLI (bundles its own command-line tools)
 brew tap android/tap
 brew install android-cli            # -> /opt/homebrew/bin/android
 android update                      # keep it current
@@ -51,9 +51,14 @@ android update                      # keep it current
 android init                        # installs the android-cli skill for detected agents
 android skills add --all            # all Skills (or pass specific skill names)
 
-# 3. An emulator AVD for instrumented tests (any API >= 26; the bundled image is recent)
+# 3. SDK packages — SKIP if you already have an SDK (the CLI auto-detects it).
+#    On a fresh machine, `android sdk list` shows exact path-style IDs; install
+#    what you need, plus a `system-images/...` image for the emulator, e.g.:
+android sdk install platform-tools emulator platforms/android-37.0 build-tools/37.0.0
+
+# 4. An emulator AVD for instrumented tests (any API >= 26)
 android emulator create medium_phone   # Google's reference-phone profile
-android emulator list                  # shows the created name, e.g. Medium_Phone_API_36.1
+android emulator list                  # shows the created name, e.g. Medium_Phone_API_<n>
 android emulator start <name>          # boots and waits until ready
 android emulator stop  <name>
 ```
