@@ -69,7 +69,18 @@ Skills install **user-global** (e.g. `~/.claude/skills/`), so they apply across 
 
 Using the Android CLI, there is **almost nothing to set up here** — the CLI auto-detects the SDK (`android info sdk` returns the path with no `ANDROID_HOME` set) and runs the emulator via `android emulator …`.
 
-The one setup item is **making `adb` reachable**. Reading device logs and shell state is done with `adb logcat` / `adb shell` — the standard Android command-line tools (per [Google's own logcat docs](https://developer.android.com/tools/logcat)), which the CLI doesn't re-wrap. adb ships in the SDK's `platform-tools`; put that directory on your `PATH` (the SDK path is whatever `android info sdk` reports) so `adb` resolves, or call it by full path, `"$(android info sdk)/platform-tools/adb"`. Watch for a stray `adb` shadowing the SDK's.
+The one setup item is **making `adb` reachable**. Reading device logs and shell state is done with `adb logcat` / `adb shell` — the standard Android command-line tools (per [Google's logcat docs](https://developer.android.com/tools/logcat)), which the CLI doesn't re-wrap. adb ships in the SDK's `platform-tools`, but installing the SDK does **not** put it on your `PATH` — do that once:
+
+```sh
+android info sdk          # find the SDK path (default macOS: ~/Library/Android/sdk)
+# macOS / zsh — append platform-tools to PATH (adjust the path if `android info sdk` differs):
+echo 'export PATH="$PATH:$HOME/Library/Android/sdk/platform-tools"' >> ~/.zprofile
+source ~/.zprofile        # or open a new terminal
+command -v adb            # should print a path UNDER the SDK (not a stray adb)
+adb version              # should run
+```
+
+Other shells/OSes: add that same `platform-tools` directory to `PATH` in your shell profile. Or skip `PATH` entirely and call adb by full path: `"$(android info sdk)/platform-tools/adb" logcat`.
 
 Pointing the **Gradle build** at the SDK (`local.properties` `sdk.dir`, or `ANDROID_HOME`) only becomes relevant once the Android targets are enabled in the build — that is part of the `0.2.0` Android build work and is set up and verified there, not now. Platform minimums (`compileSdk`, `minSdk`) live in [`mobile/android.md`](mobile/android.md) and [ADR-017](decisions/0017-mobile-targets-and-build-stack.md) / [ADR-018](decisions/0018-platform-minimums-and-managed-raise.md).
 
