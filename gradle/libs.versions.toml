@@ -5,12 +5,22 @@ spotless = "8.6.0"
 ktlint = "1.8.0"
 kotest = "6.1.11"
 kotlinx-datetime = "0.8.0"
+kotlinx-coroutines = "1.11.0"
 maven-publish = "0.36.0"
 dokka = "2.2.0"
+# Android camera I/O stack (mrz-camera-android, 0.2.0). camera-core supplies the ImageProxy
+# frame type; ML Kit text-recognition is the bundled-model variant (no Play Services / no
+# network), per the 0.2.0 plan. Both are latest stable.
+camerax = "1.6.1"
+mlkit-text-recognition = "16.0.1"
 
 [libraries]
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkit-text-recognition" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

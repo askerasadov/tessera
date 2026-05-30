@@ -40,6 +40,10 @@ A usage pattern where the SDK is invoked on a string in a server environment, wi
 
 ## C
 
+### CameraX
+
+Google's Jetpack camera library for Android. The `mrz-camera-android` module depends on CameraX `camera-core` for the `ImageProxy` frame type its analyse-frame core reads; the owns-the-camera-session convenience (a later 0.2.0 slice) runs a CameraX capture session internally. See `mrz-camera-reading.md`.
+
 ### Check Digit
 
 A digit appended to a field in the MRZ, computed from the field's contents using the algorithm defined in ICAO Doc 9303 Part 3 Appendix A (weights 7-3-1, modulus 10). Check digits enable detection of transcription and OCR errors. The MRZ contains per-field check digits and, in some formats, a composite check digit that covers multiple fields jointly.
@@ -151,6 +155,10 @@ A reference dataset shipped with the SDK that maps codes to display names and me
 ### Manual Entry
 
 A reading method where the user types MRZ data (or chip access keys) directly. Manual entry is a first-class reading method, not just a fallback. See `scope.md`.
+
+### ML Kit
+
+Google's on-device machine-learning library for Android. The SDK uses ML Kit Text Recognition — the **bundled** Latin model, which carries the model in the app with no Google Play Services dependency and no network — as the Android OCR engine in `mrz-camera-android`. See `mrz-camera-reading.md`.
 
 ### MRTD (Machine Readable Travel Document)
 

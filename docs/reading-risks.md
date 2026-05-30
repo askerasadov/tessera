@@ -232,9 +232,15 @@ BAC and PACE involve specific cryptographic protocols. Implementation errors (we
 
 Sensitive data (MRZ contents, chip data, cryptographic keys) lives briefly in memory. The SDK commits to clearing this data promptly, but a sufficiently capable attacker (kernel-level access, debugger attached) could observe it during the brief window. Hardware-backed key storage (where available) reduces but does not eliminate this concern.
 
+The camera analyse-frame core (`mrz-camera-android`, 0.2.0) is built to minimize this window: it does no persistence and no network, holds **no reference to the camera frame** after a frame is analysed (the producer that owns the frame — CameraX, via the owns-the-camera-session layer — closes the buffer), and its telemetry carries diagnostics only, never recognized text or field values. The frame-buffer clearing of the live capture pipeline itself is analyzed further when the owns-the-camera-session layer lands.
+
 ### Optical attacks against camera reading
 
 Specialized lighting, reflective overlays, or carefully crafted document features could potentially cause OCR to misread in predictable ways. The SDK uses platform OCR engines, which have their own robustness characteristics; we do not currently analyze whether specific optical attacks against those engines are practical.
+
+### Third-party OCR dependency surface
+
+The Android OCR engine is Google's ML Kit Text Recognition (bundled model — the model ships in the app, with no Play Services dependency for model delivery and no network needed to recognize text). Its artifact does, however, transitively pull in Google's data-transport stack (`com.google.android.datatransport:transport-backend-cct` / `transport-runtime`) and Firebase encoder components — infrastructure capable of reporting usage telemetry to Google. The SDK initializes none of it (no `FirebaseApp`, no transport registration) and the model recognizes text on-device; whether that infrastructure ever transmits depends on the host application's own Google/Firebase initialization, and in the common case (no Firebase configured) it is inert. We have confirmed the dependency is present in the transitive graph but have not runtime-traced its behavior. A consumer with a strict zero-network-egress requirement should treat this as a dependency-audit item, not a settled "no egress" guarantee. The iOS OCR engine (Apple Vision) is a first-party system framework with no comparable transitive surface.
 
 ### Supply chain and dependency integrity
 

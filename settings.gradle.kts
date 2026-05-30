@@ -5,7 +5,18 @@ pluginManagement {
         // The Android Gradle Plugin — including the com.android.kotlin.multiplatform.library plugin
         // that adds the Android target to the core modules (ADR-017) — is published only to Google's
         // Maven repository, not to mavenCentral or the Gradle Plugin Portal.
-        google()
+        //
+        // Content-filtered to the Android/Google coordinate groups only, so Google's Maven cannot
+        // shadow any other group's artifacts (supply-chain hygiene — mavenCentral stays the default
+        // for everything else). The patterns cover AGP (com.android.*), androidx, and Google
+        // libraries including ML Kit (com.google.*).
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
     }
 }
 
@@ -17,9 +28,17 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenCentral()
-        // Android target dependencies (AGP's own runtime artifacts, and androidx libraries pulled in
-        // by later camera slices) resolve from Google's Maven repository.
-        google()
+        // Android target dependencies (AGP's own runtime artifacts, androidx — including CameraX's
+        // camera-core — and Google's ML Kit) resolve from Google's Maven repository. Content-filtered
+        // to the Android/Google coordinate groups (same rationale as pluginManagement above) so it
+        // cannot shadow mavenCentral for any other group.
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
     }
 }
 
@@ -30,4 +49,5 @@ include(":mrz-core")
 include(":emrtd-core")
 include(":telemetry")
 include(":logging")
+include(":mrz-camera-android")
 include(":bom")
