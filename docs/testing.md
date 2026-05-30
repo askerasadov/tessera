@@ -222,6 +222,8 @@ Unit tests and property-based tests run on every save in the developer's IDE. Th
 
 All tests for affected modules run on commit. Tests for unaffected modules may be skipped if the build system supports it; otherwise they run too. The full suite must pass before merging.
 
+**Target scope (as of the `0.2.0` build-foundation slices):** CI runs `./gradlew check` on a Linux runner, which compiles and tests the **JVM target only**. The common test suite is target-portable — it also passes on the `iosSimulatorArm64` target when run locally via `./gradlew build` on macOS, and the Android target compiles locally — but CI does not yet exercise the mobile targets: Android needs its SDK provisioned on the runner, and iOS needs a macOS runner with Xcode (a Linux runner cannot build Apple targets at all). Until that lands, the JVM target is the CI source of truth and the mobile targets are verified on a developer machine. Closing the gap is tracked in [`open-questions.md`](open-questions.md) under "CI and repository hardening for the mobile build."
+
 ### On release candidate
 
 The full suite, including platform-specific tests on real or virtual devices, runs before any release candidate is tagged.

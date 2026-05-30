@@ -86,6 +86,10 @@ logs/
 # terms themselves are the private context being protected, so the file is gitignored by design.
 /.claude/private-content-terms.local
 
+# Per-machine runtime lock written by the scheduled-tasks tooling. Transient local state, never
+# tracked — analogous to any .lock file.
+/.claude/scheduled_tasks.lock
+
 # Coverage reports
 coverage/
 *.lcov
