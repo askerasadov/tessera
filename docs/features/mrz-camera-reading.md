@@ -59,9 +59,12 @@ interface MrzCameraScanner {
 
 // Android binds F = ImageProxy and runs CameraX internally:
 val scanner = CameraXMrzScanner(context.applicationContext, lifecycleOwner)
+
+// iOS binds F = CMSampleBufferRef and runs an AVCaptureSession internally:
+val scanner = AVCaptureMrzScanner()
 ```
 
-Both platform scanners are built on one frame-source-agnostic streaming engine — `MrzFrameAnalyzer<F>.scan(frames: Flow<F>): Flow<MrzScanResult>` — which runs each frame of a live stream through the analyse-frame core and releases it afterward. Android feeds it a CameraX `ImageProxy` stream; iOS an AVFoundation sample-buffer stream; a USB/desktop/web source feeds its own frame `Flow`. The engine is the host-tested part of the contract (no device needed); the platform camera *session* wiring sits in the platform scanner (`CameraXMrzScanner` on Android), compiled on CI and verified on a device. Capture-availability failures (the camera could not start) are surfaced on the same `results` stream as a `MrzScanResult.CaptureError`, never thrown.
+Both platform scanners are built on one frame-source-agnostic streaming engine — `MrzFrameAnalyzer<F>.scan(frames: Flow<F>): Flow<MrzScanResult>` — which runs each frame of a live stream through the analyse-frame core and releases it afterward. Android feeds it a CameraX `ImageProxy` stream; iOS an AVFoundation `CMSampleBuffer` stream; a USB/desktop/web source feeds its own frame `Flow`. The engine is the host-tested part of the contract (no device needed); the platform camera *session* wiring sits in the platform scanner (`CameraXMrzScanner` on Android, `AVCaptureMrzScanner` on iOS), compiled on CI — the Android scanner is device-verified, and the iOS scanner's live behaviour is device-verified separately because the iOS Simulator has no camera. Capture-availability failures (the camera could not start) are surfaced on the same `results` stream as a `MrzScanResult.CaptureError`, never thrown.
 
 Still headless: if the consumer wants a live preview, they attach their own preview surface (a "preview hook"); the SDK draws nothing.
 
@@ -83,6 +86,8 @@ Capture-layer failures are a **separate `Camera…` typed family**, distinct fro
 
 On Android, a failed camera *open* surfaces **asynchronously through CameraX's camera state**, not as a bind-time exception — the owns-session scanner observes that state and emits the matching `CaptureError` on `results` rather than going silent. One reader-not-oracle nuance verified on a device: CameraX collapses a *permission* denial into a generic fatal state error with no cause, so the scanner reads the (observable) `CAMERA` permission state — read-only, never requesting it — to report `PermissionDenied` rather than a vague unavailability when permission is the actionable cause.
 
+On iOS, `AVCaptureMrzScanner` reads the authorization status (`AVCaptureDevice.authorizationStatus(for:)`, which only reads, never prompts) and reports `PermissionDenied` when it is not authorized; no camera for the requested position is `CameraUnavailable`. Asynchronous failures arrive as `AVCaptureSession` notifications: an interruption whose reason is *video device in use by another client* maps to `CameraInUse`, and a session runtime error to `CameraUnavailable` — both surfaced on `results` like the Android camera-state path. Other interruption reasons (the app backgrounded, system pressure) are transient and left for AVFoundation to recover, not surfaced as a terminal capture error.
+
 ## Status of Implementation
 
 | Capability | Status |
@@ -95,7 +100,7 @@ On Android, a failed camera *open* surfaces **asynchronously through CameraX's c
 | Streaming engine (`scan`) + `MrzCameraScanner` contract | Implemented (0.2.0) — host-tested; the frame-source-agnostic contract iOS mirrors |
 | Owns-camera-session convenience (Android, `CameraXMrzScanner`) | Implemented (0.2.0) — **device-verified** (live-device slice): back-camera open, frame streaming, `ImageProxy` lifecycle, and async camera-state error surfacing |
 | iOS Apple Vision recognizer (`VisionMrzTextRecognizer`) | Implemented (0.2.0, `mrz-camera-ios`) — compiled on CI; the Vision pipeline is smoke-tested on the iOS simulator (`VNRecognizeTextRequest`, language-correction off); on-device / real-MRZ OCR accuracy verified in a later slice |
-| Owns-camera-session convenience (iOS, `AVCaptureMrzScanner`) | Planned (0.2.0, after the iOS recognizer) |
+| Owns-camera-session convenience (iOS, `AVCaptureMrzScanner`) | Implemented (0.2.0, `mrz-camera-ios`) — compiled on all three iOS targets on CI; runs `AVCaptureSession` + `AVCaptureVideoDataOutput` internally (`alwaysDiscardsLateVideoFrames` = the KEEP_ONLY_LATEST analogue). Live streaming, the `CMSampleBuffer` retain/release accounting, and the async in-use / runtime-error surfacing are device-verified separately (the Simulator has no camera); `CameraInUse` live scenario pending, as on Android |
 | Tolerant mode; richer quality scorer | Deferred (0.3.0) |
 | Scanner UI | Deferred (0.5.0) |
 
