@@ -37,16 +37,34 @@ Universal across platforms; all you need for the parsing/validation/generation c
 
 Adds the Android platform toolchain. Needed only to build/run `mrz-camera-android` and the Android targets.
 
-### Install
-- **The Android SDK** — installed by Android Studio, or standalone via the command-line tools. Default macOS location: `~/Library/Android/sdk`.
-- **Google's Android CLI** — the agent-optimized command-line tool that consolidates `sdkmanager` / `avdmanager` / `adb`, plus its **Skills** and **Knowledge Base**. Install from [d.android.com/tools/agents](https://developer.android.com/tools/agents/android-cli). This is the primary way the project drives Android work (see *How we work*).
-- **An emulator AVD** (API 26+ image) for instrumented tests, created via `avdmanager` / the Android CLI.
+### Install (macOS — project-verified)
+
+The project drives Android work through **Google's Android CLI** — the agent-optimized tool that consolidates `sdkmanager` / `avdmanager` / `adb` and gives agents access to the Android **Skills** and **Knowledge Base** (see *How we work*). On first run it **pre-provisions a baseline SDK** at `~/Library/Android/sdk` (platform-tools, build-tools, a recent platform + system image, and the emulator), so installing the CLI is usually all you need.
+
+```sh
+# 1. The Android CLI (also pulls down a baseline SDK on first run)
+brew tap android/tap
+brew install android-cli            # -> /opt/homebrew/bin/android
+android update                      # keep it current
+
+# 2. Wire it to your agent and add the Android Skills + Knowledge Base
+android init                        # installs the android-cli skill for detected agents
+android skills add --all            # all Skills (or pass specific skill names)
+
+# 3. An emulator AVD for instrumented tests (any API >= 26; the bundled image is recent)
+android emulator create medium_phone   # Google's reference-phone profile
+android emulator list                  # shows the created name, e.g. Medium_Phone_API_36.1
+android emulator start <name>          # boots and waits until ready
+android emulator stop  <name>
+```
+
+Skills install **user-global** (e.g. `~/.claude/skills/`), so they apply across all your projects rather than landing in this repo. Other operating systems and install methods (curl, winget, apt) are on the [official download page](https://developer.android.com/tools/agents/android-cli/download); the SDK can alternatively come from a full Android Studio install, which the CLI then just drives.
 
 ### Environment
-- Point the build at the SDK with **either** `ANDROID_HOME` (and `$ANDROID_HOME/platform-tools`, `$ANDROID_HOME/emulator` on `PATH`) **or** a gitignored `local.properties` at the repo root containing `sdk.dir=/path/to/Android/sdk`. AGP auto-detects the default macOS location, but pinning it is more explicit.
+- Point the build at the SDK with **either** `ANDROID_HOME` (and `$ANDROID_HOME/platform-tools`, `$ANDROID_HOME/emulator` on `PATH`) **or** a gitignored `local.properties` at the repo root containing `sdk.dir=/path/to/Android/sdk`. AGP auto-detects the default macOS location, but pinning it is more explicit. The CLI finds the default SDK location on its own; to point it at a non-default path, add `--sdk=/path/to/Android/sdk` to `~/.androidrc`.
 - `compileSdk` tracks the latest stable Android API; `minSdk` is 23 — see [ADR-017](decisions/0017-mobile-targets-and-build-stack.md) / [ADR-018](decisions/0018-platform-minimums-and-managed-raise.md).
 
-**Verify:** `sdkmanager --list` runs; `adb version` works; the emulator boots.
+**Verify:** `android info` reports the SDK location; `android emulator start <name>` boots; while it runs, `adb devices` lists it as `device` and `adb version` works.
 
 ---
 
