@@ -107,7 +107,7 @@ Telemetry is also **not analytics**, **not crash reporting**, and **not licensin
 
 In 0.1.0: never. No SDK module calls `TelemetrySinkRegistry.current.record(...)`.
 
-In 0.2.0+: the camera reading module will emit events for camera-frame lifecycle, OCR outcomes, MRZ candidate quality, and parse outcomes. The exact event taxonomy is designed alongside that release; 0.1.0 makes no commitment to specific event types.
+In 0.2.0+: the camera reading module is the first real emitter. Its analyse-frame core (the `mrz-camera-android` slice) emits one `CameraFrameEvent` per analysed frame — the outcome (decoded / no-MRZ / OCR-failed), recognized-line count, MRZ-region-found flag, a coarse OCR confidence, and the detected MRZ format. The event carries **diagnostics only and no document data** (no recognized text, no parsed field values), so a sink routes to any backend without leaking PII. Finer-grained events (frame lifecycle, OCR timing) may follow with the owns-the-camera-session layer; the taxonomy grows with the release.
 
 In 0.6.0+: the NFC chip reading module will emit events for tag detection, authentication attempts, data group reads, and parse outcomes. The exact event taxonomy is designed alongside that release.
 
@@ -124,7 +124,7 @@ The empty 0.1.0 emission set is a property of the dependency graph, not an overs
 | `NoOpTelemetrySink` default | Shipped (0.1.0) |
 | `TelemetrySinkRegistry` singleton | Shipped (0.1.0) |
 | `Redaction.redactMrzLine` | Shipped (0.1.0) |
-| Concrete `TelemetryEvent` types | Deferred to first emitting module (camera 0.2.0; NFC 0.6.0) |
+| Concrete `TelemetryEvent` types | First one shipped: `CameraFrameEvent` (camera 0.2.0, analyse-frame slice). NFC events deferred to 0.6.0 |
 | Additional redaction helpers | Shipped alongside the events that need them |
 | Thread-safety enforcement | Documented as consumer responsibility; not enforced in 0.1.0 |
 

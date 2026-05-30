@@ -4,16 +4,20 @@
 # wait on.
 #
 # Scope:
-# - Runs the JVM `check` only. As of 0.2.0's build-foundation slices the core
-#   modules declare both an Android target and the three iOS targets (ADR-017),
-#   but `gradle check` on this ubuntu runner compiles neither: the Android
-#   target compiles via `assemble`/`build` (not `check`) and CI has no Android
-#   SDK provisioned, and the iOS targets need a macOS runner with Xcode (a Linux
-#   runner cannot build Apple targets at all). Compiling the mobile targets on
-#   CI is tracked in docs/open-questions.md ("CI and repository hardening for
-#   the mobile build"). JS / Wasm remain per-release-activated per
-#   docs/scope.md "Supported Platforms".
-# - JDK 21 to match each module's jvmToolchain(21)
+# - The `check` job runs the JVM `check` only — it does not compile the mobile
+#   targets. `gradle check` excludes the Android target (which compiles via
+#   `assemble`/`compileAndroidMain`, not `check`) and the iOS targets (which need
+#   a macOS runner with Xcode — a Linux runner cannot build Apple targets at all).
+# - The `android-compile` job (added at 0.2.0's mrz-camera-android slice) compiles
+#   every module's Android target on a Linux runner with the Android SDK, so the
+#   ML Kit / CameraX code in androidMain is type-checked on CI. It is compile-only:
+#   no emulator, no instrumented tests (those run locally / on a device).
+# - The iOS targets still have no CI job; a macOS iOS-compile job is tracked in
+#   docs/open-questions.md ("CI and repository hardening for the mobile build") and
+#   lands with the first real iosMain code (the mrz-camera-ios slice).
+# - JS / Wasm remain per-release-activated per docs/scope.md "Supported Platforms".
+# - JDK 21 to match each module's jvmToolchain(21); the Gradle daemon is pinned to
+#   JDK 17 (gradle/gradle-daemon-jvm.properties, foojay-provisioned).
 # - Gradle 9.5.1 via the project's wrapper
 
 name: check
@@ -58,3 +62,35 @@ jobs:
 
       - name: Run markdown link validator
         run: bash scripts/check-markdown-links.sh
+
+  android-compile:
+    name: android compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # ubuntu-latest ships the Android SDK (ANDROID_SDK_ROOT set). Accept licenses and ensure the
+      # compileSdk platform is present; AGP resolves build-tools itself once licenses are accepted.
+      # Using the preinstalled sdkmanager keeps CI on first-party actions only (no third-party
+      # setup-android action on the supply chain).
+      - name: Ensure Android platform 37
+        run: |
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      # Compiles every module's androidMain (the core modules and mrz-camera-android's ML Kit
+      # recognizer). Compile-only — the host tests run in the `check` job via each module's jvm target.
+      - name: Compile Android targets
+        run: ./gradlew compileAndroidMain

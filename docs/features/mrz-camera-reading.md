@@ -22,15 +22,27 @@ The public API ships in two layers; the convenience is built on the core (see [A
 
 ### 1. Analyse a frame — the core
 
-The low-level entry point: hand it a platform frame, get a result. It owns no camera, so it is unit-testable with injected frames + mock OCR, and it is the seam any frame source feeds.
+The low-level entry point: hand it a platform frame, get a result. It owns no camera, so it is unit-testable with injected frames + mock OCR, and it is the seam any frame source feeds. The OCR engine is itself injected through a generic seam, `MrzTextRecognizer<F>`, whose frame type `F` is the extension point — Android binds `F = ImageProxy`; a future USB/desktop/web source binds its own.
 
 ```kotlin
-// Illustrative — not authoritative.
-class MrzFrameAnalyzer(/* options: mode, region hint, ... */) {
-    // Android: frame is an androidx.camera ImageProxy; iOS: a CMSampleBuffer.
-    suspend fun analyse(frame: PlatformFrame): MrzScanResult
+// Illustrative — not authoritative. Shapes as of the analyse-frame slice; locked at the 0.2.0 tag.
+fun interface MrzTextRecognizer<in F> {
+    suspend fun recognize(frame: F): RecognizedText   // OCR only; throwing surfaces CameraError.OcrFailed
 }
+
+class MrzFrameAnalyzer<F>(
+    recognizer: MrzTextRecognizer<F>,
+    mode: ParsingMode = ParsingMode.STRICT,            // STRICT | LENIENT
+    telemetry: TelemetrySink = NoOpTelemetrySink,      // emits one non-PII CameraFrameEvent per frame
+) {
+    suspend fun analyse(frame: F): MrzScanResult
+}
+
+// Android binds F = ImageProxy via the bundled ML Kit recognizer:
+val analyzer = MrzFrameAnalyzer(MlKitMrzTextRecognizer())
 ```
+
+`MrzScanResult` is a sealed result — `Decoded` (carrying the parser's `ParseResult` verdict and the raw `RecognizedText`), `NoMrzFound`, or `CaptureError` — and every variant exposes `ScanQuality` metadata (MRZ-region found?, OCR confidence, recognized-line count).
 
 ### 2. Own the camera session — the convenience
 
@@ -67,11 +79,12 @@ Capture-layer failures are a **separate `Camera…` typed family**, distinct fro
 
 | Capability | Status |
 |---|---|
-| Analyse-frame core (Android) | Planned (0.2.0) |
+| Analyse-frame core (Android) | Implemented (0.2.0, `mrz-camera-android`) — host-tested with mock OCR |
+| Android ML Kit recognizer (bundled model) | Implemented (0.2.0) — compiled on CI; device/emulator OCR verified in a later slice |
+| Strict + lenient modes | Implemented (0.2.0) |
+| Quality signals as metadata | Implemented (0.2.0) |
+| `Camera…` error family | Seeded (0.2.0) — `CameraError.OcrFailed`; grows with the owns-session layer |
 | Owns-camera-session convenience (Android) | Planned (0.2.0) |
-| Strict + lenient modes | Planned (0.2.0) |
-| Quality signals as metadata | Planned (0.2.0) |
-| `Camera…` error family | Planned (0.2.0) |
 | Analyse-frame core + convenience (iOS) | Planned (0.2.0, after Android) |
 | Tolerant mode; richer quality scorer | Deferred (0.3.0) |
 | Scanner UI | Deferred (0.5.0) |
