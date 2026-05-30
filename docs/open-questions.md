@@ -208,6 +208,16 @@ The pre-implementation checklist names `mrz-camera-{platform}`, `emrtd-nfc-{plat
 
 **Resolution:** Partially resolved (2026-05-29) — the **camera I/O modules (`mrz-camera-android`, `mrz-camera-ios`) are scaffolded in 0.2.0** with their first implementation, per [ADR-017](decisions/0017-mobile-targets-and-build-stack.md) and [ADR-020](decisions/0020-camera-reading-architecture.md). The remaining named modules stay on their roadmap schedule (NFC I/O `emrtd-nfc-{platform}` at 0.6.0; UI `mrz-camera-ui-{platform}` at 0.5.0). Keep this entry until those land.
 
+### Shared camera-contract module vs keeping the contract in `mrz-camera-android`
+
+The platform-agnostic camera-reading contract — the `MrzCameraScanner` interface, the `scan(Flow)` streaming engine, the analyse-frame core (`MrzFrameAnalyzer`), and the shared types (`MrzScanResult`, `CameraError`, `ScanQuality`, `RecognizedText`) — currently lives in **`mrz-camera-android`'s `commonMain`**, host-tested via that module's `jvm()` target. Nothing in it is Android-specific (ADR-020). The open question is whether to **extract it into a shared module** (e.g. `mrz-camera-core`) that both `mrz-camera-android` and the future `mrz-camera-ios` depend on, or to keep it where it is.
+
+**Source:** Surfaced at the 0.2.0 headless-contract slice (slice 4), which the prior slice flagged as the point to decide module structure.
+
+**Status:** Deferred to the `mrz-camera-ios` slice (Principle 11 — internal-package-first; promote to a standalone module only when a second consumer justifies it). Keeping the contract in `mrz-camera-android` for now costs nothing — the `jvm()` target already host-tests it with no device — and avoids standing up a module before there is a second consumer. The forcing function is the iOS scanner: when `mrz-camera-ios` is written, either it depends on `mrz-camera-android` (awkward — an iOS module depending on an Android-named one) or the contract is extracted first. The latter is the likely outcome, decided then with the contract shape validated against AVFoundation (the validation ADR-020 already calls for before the 0.2.0 tag).
+
+**Trigger:** Start of the `mrz-camera-ios` slice.
+
 ---
 
 ## Deferred to a Future Document

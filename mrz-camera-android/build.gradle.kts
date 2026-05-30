@@ -38,16 +38,27 @@ kotlin {
                 api(project(":types"))
                 api(project(":mrz-core"))
                 api(project(":telemetry"))
+                // The owns-session contract exposes Flow<MrzScanResult> (MrzCameraScanner.results) and
+                // the scan() streaming engine, so coroutines is part of the public API, not internal.
+                api(libs.kotlinx.coroutines.core)
             }
         }
         androidMain {
             dependencies {
                 // CameraX camera-core supplies the ImageProxy frame type the Android recognizer reads;
-                // ML Kit text-recognition is the bundled-model variant (no Play Services, no network);
-                // coroutines-core bridges ML Kit's Task<Text> to the suspend OCR seam.
+                // ML Kit text-recognition is the bundled-model variant — the Latin recognition model
+                // ships in the app, so OCR needs no runtime model download or network. (It still pulls
+                // the Play Services ML Kit libraries and Google's datatransport stack transitively; the
+                // SDK initializes none of it — see docs/reading-risks.md for that dependency surface.)
                 implementation(libs.androidx.camera.core)
                 implementation(libs.mlkit.text.recognition)
-                implementation(libs.kotlinx.coroutines.core)
+                // camera-lifecycle supplies ProcessCameraProvider + bindToLifecycle for the owns-session
+                // scanner; coroutines-android supplies Dispatchers.Main (CameraX binds on the main thread).
+                implementation(libs.androidx.camera.lifecycle)
+                implementation(libs.kotlinx.coroutines.android)
+                // The Camera2 backend CameraX selects at runtime on a device — needed to actually open a
+                // camera, but it has no compile surface here, so it stays off the compile classpath.
+                runtimeOnly(libs.androidx.camera.camera2)
             }
         }
         commonTest {

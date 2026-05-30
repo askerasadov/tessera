@@ -50,13 +50,18 @@ val analyzer = MrzFrameAnalyzer(MlKitMrzTextRecognizer())
 The common path: the SDK runs the platform camera internally and streams results. The consumer never touches `bindToLifecycle` / `ImageAnalysis` / `AVCaptureSession`.
 
 ```kotlin
-// Illustrative — not authoritative.
+// Illustrative — not authoritative. Shapes as of the headless-contract slice; locked at the 0.2.0 tag.
 interface MrzCameraScanner {
-    val results: Flow<MrzScanResult>   // Compose-friendly; bridges cleanly to Swift
-    fun start()
-    fun stop()
+    val results: Flow<MrzScanResult>   // hot stream: emits between start() and stop(); Compose-friendly, bridges to Swift
+    fun start()                        // idempotent; the consumer holds the CAMERA permission first
+    fun stop()                         // idempotent; the scanner may be started again
 }
+
+// Android binds F = ImageProxy and runs CameraX internally:
+val scanner = CameraXMrzScanner(context.applicationContext, lifecycleOwner)
 ```
+
+Both platform scanners are built on one frame-source-agnostic streaming engine — `MrzFrameAnalyzer<F>.scan(frames: Flow<F>): Flow<MrzScanResult>` — which runs each frame of a live stream through the analyse-frame core and releases it afterward. Android feeds it a CameraX `ImageProxy` stream; iOS an AVFoundation sample-buffer stream; a USB/desktop/web source feeds its own frame `Flow`. The engine is the host-tested part of the contract (no device needed); the platform camera *session* wiring sits in the platform scanner (`CameraXMrzScanner` on Android), compiled on CI and verified on a device. Capture-availability failures (the camera could not start) are surfaced on the same `results` stream as a `MrzScanResult.CaptureError`, never thrown.
 
 Still headless: if the consumer wants a live preview, they attach their own preview surface (a "preview hook"); the SDK draws nothing.
 
@@ -84,8 +89,9 @@ Capture-layer failures are a **separate `Camera…` typed family**, distinct fro
 | Android ML Kit recognizer (bundled model) | Implemented (0.2.0) — compiled on CI; device/emulator OCR verified in a later slice |
 | Strict + lenient modes | Implemented (0.2.0) |
 | Quality signals as metadata | Implemented (0.2.0) |
-| `Camera…` error family | Seeded (0.2.0) — `CameraError.OcrFailed`; grows with the owns-session layer |
-| Owns-camera-session convenience (Android) | Planned (0.2.0) |
+| `Camera…` error family | Implemented (0.2.0) — `OcrFailed` (analyse-frame) + `CameraUnavailable` / `PermissionDenied` / `CameraInUse` (owns-session) |
+| Streaming engine (`scan`) + `MrzCameraScanner` contract | Implemented (0.2.0) — host-tested; the frame-source-agnostic contract iOS mirrors |
+| Owns-camera-session convenience (Android, `CameraXMrzScanner`) | Implemented (0.2.0) — CameraX wiring compiled on CI; device-verified in a later slice |
 | Analyse-frame core + convenience (iOS) | Planned (0.2.0, after Android) |
 | Tolerant mode; richer quality scorer | Deferred (0.3.0) |
 | Scanner UI | Deferred (0.5.0) |
