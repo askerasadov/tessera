@@ -268,6 +268,14 @@ Some files hold secrets even though you need only one non-secret line — notabl
 
 ---
 
+## Cocoa Delegates Held Weakly + Kotlin/Native GC = Vanishing Callbacks
+
+A Cocoa API that takes a *delegate* almost always holds it **weakly** (the framework assumes the caller keeps it alive). In Swift that's automatic — ARC retains your strong reference deterministically. In **Kotlin/Native it is not**: bridged Objective-C objects are reclaimed by the **GC**, not ARC, so a delegate with no strong Kotlin reference is alive only until the next GC pass — after which the framework's weak pointer goes `nil` and the callbacks silently stop. This cost most of two sessions on `AVCaptureMrzScanner`: `AVCaptureVideoDataOutput.setSampleBufferDelegate` was handed a delegate created **inline** (no field, no `val` kept alive), so after a few seconds the GC collected it and the camera stopped delivering frames — with no error, no interruption, and **zero dropped-frame callbacks** (there was no delegate to deliver to). The stall *looked* like a buffer-pool / memory-pressure problem because it struck sooner under heavier per-frame allocation (more allocation → GC fires sooner → delegate dies sooner), which sent the investigation chasing the wrong layer (copying buffers, IOSurface backing, OCR-rate throttling) for two sessions.
+
+**Fix:** Hold a **strong reference for the whole lifetime of the thing using it** — a class field (`private var captureDelegate: …`), set when wiring up, cleared on teardown. The decisive diagnostic was forcing `GC.collect()` every frame: it reproduced the stall after a *single* frame, pinpointing the GC as the trigger and the weakly-held delegate as the only GC-reclaimable, callback-critical object. **General rule:** when bridging to any Cocoa API that stores a weak delegate/observer/target (capture delegates, `NSNotificationCenter` block tokens, `CADisplayLink`/timer targets, KVO observers), assume nothing retains it for you and keep an explicit strong reference on the Kotlin side. Verify on a *device over time* — a GC may not fire on the simulator or in a short run, hiding the bug. (Root cause + the JetBrains [ARC-integration](https://kotlinlang.org/docs/native-arc-integration.html) reasoning are in the resolved `open-questions.md` camera-stall entry.)
+
+---
+
 ## Maintaining This Document
 
 This document grows when new pitfalls are observed during ongoing work. The bar for adding an entry: *has this mistake actually been made on this project, or is it close enough that it could be?* If yes, document it concretely with the specific pattern. If no, do not add speculative pitfalls — `reading-risks.md` and the principles already cover those.
