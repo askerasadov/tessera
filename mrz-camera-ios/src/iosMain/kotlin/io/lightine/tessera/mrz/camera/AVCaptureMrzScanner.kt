@@ -89,14 +89,16 @@ import kotlin.time.TimeSource
  * intent, reached without blocking the capture queue.
  *
  * **Verification status.** The contract this implements (the [MrzCameraScanner] interface and the
- * [scan][MrzFrameAnalyzer.scan] engine) is host-tested in `mrz-camera-core`. The AVFoundation wiring is
- * compiled on the `ios-compile` CI job. The live-camera behaviour — frame streaming, the
- * `CMSampleBuffer` retain/release accounting under load, and the asynchronous capture-failure mapping
- * ([CameraError.CameraInUse] from an interruption, [CameraError.CameraUnavailable] from a runtime error)
- * — is device-verified separately (the iOS Simulator has no camera), exactly as the Android scanner's
- * CameraX wiring was device-verified after it shipped. The [CameraError.CameraInUse] interruption mapping
- * is in place but its live scenario (another client holding the camera) is not yet device-exercised, the
- * same gap the Android scanner records.
+ * [scan][MrzFrameAnalyzer.scan] engine) is host-tested in `mrz-camera-core`, and the in-use interruption
+ * reason check ([isVideoDeviceInUseReason]) is host-tested in `iosTest`. The AVFoundation wiring is compiled
+ * on the `ios-compile` CI job. The live-camera behaviour — frame streaming and the `CMSampleBuffer`
+ * retain/release accounting under load — is device-verified separately (the iOS Simulator has no camera),
+ * exactly as the Android scanner's CameraX wiring was. Capture failures split the same way as Android's
+ * recoverable-vs-critical CameraState contract: a *runtime error* is terminal ([CameraError.CameraUnavailable]);
+ * an *interruption* is recoverable — the `videoDeviceInUseByAnotherClient` reason is surfaced as a
+ * **non-terminal** [CameraError.CameraInUse] while the session stays bound and AVFoundation resumes capture
+ * when the interruption ends (the other reasons recover silently). The live in-use scenario — a second client
+ * taking then releasing the camera — is device-verified (see `docs/open-questions.md`).
  *
  * @param recognizer the OCR seam. Defaults to the Apple Vision recognizer; a consumer-supplied
  *   recognizer that is [AutoCloseable] is released on [close], since the scanner owns the OCR resource
@@ -265,18 +267,27 @@ public class AVCaptureMrzScanner(
             captureDelegate = delegate
             output.setSampleBufferDelegate(delegate, captureQueue)
 
-            // CameraX surfaces a failed open through camera STATE; AVFoundation surfaces the analogous
-            // run-time failures through notifications. An interruption whose reason is
-            // "video device in use by another client" maps to CameraInUse; a run-time error maps to
-            // CameraUnavailable. Both close the frame channel with a cause, routing through the same
-            // catch -> cameraErrorFor path as a setup failure. Other interruption reasons (backgrounded,
-            // system pressure) are transient and left for AVFoundation to recover — not surfaced as a
-            // terminal capture error, mirroring the Android "recoverable vs critical" nuance.
+            // AVFoundation surfaces asynchronous failures through notifications, and they split exactly like
+            // CameraX's recoverable-vs-critical CameraState codes. A *runtime error* is a genuine
+            // media-services / hardware fault with no auto-recovery — it closes the frame channel with a
+            // cause, routing through the same catch -> cameraErrorFor path as a setup failure (terminal). An
+            // *interruption* is recoverable: AVFoundation posts AVCaptureSessionInterruptionEnded and resumes
+            // capture when it ends. The "video device in use by another client" reason is surfaced as a
+            // NON-TERMINAL CameraInUse observation — emitted onto results while the session stays bound, so
+            // capture resumes when the other client releases the camera (the same auto-recovery the
+            // backgrounded reason already relies on; the other reasons recover silently). This mirrors the
+            // Android scanner: in-use is recoverable on both platforms (reader-not-oracle: report the in-use
+            // observation; do not decide a transient interruption ends the session).
             val center = NSNotificationCenter.defaultCenter
             val interruptionObserver =
                 center.addObserverForName(AVCaptureSessionWasInterruptedNotification, session, null) { notification ->
                     if (isVideoDeviceInUse(notification)) {
-                        frames.close(CameraInUseException("camera is in use by another client (session interrupted)"))
+                        mutableResults.tryEmit(
+                            MrzScanResult.CaptureError(
+                                error = CameraError.CameraInUse("camera is in use by another client (session interrupted)"),
+                                quality = ScanQuality(mrzRegionFound = false, ocrConfidence = null, recognizedLineCount = 0),
+                            ),
+                        )
                     }
                 }
             val runtimeErrorObserver =
@@ -305,15 +316,15 @@ public class AVCaptureMrzScanner(
         CFRelease(frame)
     }
 
-    // Maps a capture-availability failure to a typed CameraError. The custom exceptions are the ones
-    // cameraFrames() throws or closes the channel with; anything else is an unknown open failure.
-    // Coroutine cancellation is never seen here — Flow.catch (in scan) propagates it rather than passing
-    // it to this mapper. `internal` (not private) only so the unit test can exercise the mapping directly,
-    // since the live camera failures that feed it cannot be triggered on the Simulator.
+    // Maps a TERMINAL capture-availability failure to a typed CameraError. The custom exceptions are the
+    // ones cameraFrames() throws at setup or closes the channel with (permission / no-camera / runtime
+    // error); a recoverable in-use interruption is surfaced non-terminally in cameraFrames and never
+    // reaches here. Coroutine cancellation is never seen here — Flow.catch (in scan) propagates it rather
+    // than passing it to this mapper. `internal` (not private) only so the unit test can exercise the
+    // mapping directly, since the live camera failures that feed it cannot be triggered on the Simulator.
     internal fun cameraErrorFor(cause: Throwable): CameraError? =
         when (cause) {
             is CameraPermissionException -> CameraError.PermissionDenied(cause.message ?: "CAMERA permission not granted")
-            is CameraInUseException -> CameraError.CameraInUse(cause.message ?: "camera is in use by another client")
             is CameraUnavailableException -> CameraError.CameraUnavailable(cause.message ?: "camera unavailable")
             else -> CameraError.CameraUnavailable(cause.message ?: cause.toString())
         }
@@ -322,8 +333,17 @@ public class AVCaptureMrzScanner(
         // AVCaptureSessionInterruptionReason is a typealias to NSInteger here (not a Kotlin enum), so the
         // reason constant and the userInfo NSNumber's integerValue are both Long — compared directly.
         val reason = (notification?.userInfo?.get(AVCaptureSessionInterruptionReasonKey) as? NSNumber)?.integerValue
-        return reason == AVCaptureSessionInterruptionReasonVideoDeviceInUseByAnotherClient
+        return isVideoDeviceInUseReason(reason)
     }
+
+    // The recoverable in-use interruption reason, factored out of the NSNotification read so it is a pure
+    // function the iosTest exercises against AVFoundation's own reason constant (the Simulator cannot post a
+    // real interruption). Only `videoDeviceInUseByAnotherClient` is the "another client took the camera"
+    // reason the scanner surfaces as a non-terminal CameraInUse; every other reason (backgrounded, system
+    // pressure) is left to recover silently. The Android counterpart host-tested this way is classifyCameraState.
+    // `internal` (not private) only so the unit test can reach it.
+    internal fun isVideoDeviceInUseReason(reason: Long?): Boolean =
+        reason == AVCaptureSessionInterruptionReasonVideoDeviceInUseByAnotherClient
 }
 
 // AVCaptureVideoDataOutput's delegate, bridging each delivered sample buffer to the frame channel. The
@@ -352,9 +372,5 @@ internal class CameraPermissionException(
 ) : Exception(message)
 
 internal class CameraUnavailableException(
-    message: String,
-) : Exception(message)
-
-internal class CameraInUseException(
     message: String,
 ) : Exception(message)
