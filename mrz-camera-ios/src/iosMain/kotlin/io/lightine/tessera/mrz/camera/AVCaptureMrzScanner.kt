@@ -51,6 +51,9 @@ import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSNumber
 import platform.darwin.NSObject
 import platform.darwin.dispatch_queue_create
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 
 /**
  * The iOS owns-the-camera-session scanner: runs an `AVCaptureSession` internally and streams a
@@ -113,6 +116,16 @@ public class AVCaptureMrzScanner(
     private val analyzer = MrzFrameAnalyzer(recognizer, mode, telemetry)
     private val ownedRecognizer = recognizer as? AutoCloseable
 
+    // Don't OCR every camera frame. The camera delivers ~30 fps, but Apple Vision (accurate, on-device) is
+    // far heavier than that is useful for MRZ — a document is held still for a second or more, so a few
+    // analyses per second already catch it. Capping the analysis rate bounds the amplitude of the memory
+    // sawtooth (fewer Vision calls between GC passes → lower native-allocation peak; device-verified
+    // 2026-05-31: ~96–253 MB at this interval) and avoids burning CPU on redundant frames. It is NOT what
+    // prevents the capture stall — that is the strong [captureDelegate] reference below. Frames arriving
+    // inside the interval are dropped at the capture delegate, never retained, so the buffer pool is
+    // untouched.
+    private val analysisInterval: Duration = 200.milliseconds
+
     // Vision recognition is CPU-bound and runs on the collecting coroutine; Dispatchers.Default keeps it
     // (and AVCaptureSession.startRunning, which can block) off the main thread. The capture delegate runs
     // on its own serial dispatch queue, created per session below.
@@ -129,6 +142,14 @@ public class AVCaptureMrzScanner(
     override val results: Flow<MrzScanResult> = mutableResults.asSharedFlow()
 
     private var sessionJob: Job? = null
+
+    // STRONG reference to the capture delegate, held for the whole session. AVCaptureVideoDataOutput holds
+    // its sample-buffer delegate WEAKLY (Cocoa convention). Kotlin/Native objects are reclaimed by the GC,
+    // not by ARC, so if nothing on the Kotlin side retains the delegate the next GC pass collects it, the
+    // output's weak pointer goes nil, and the camera silently stops calling it — capture stalls with no
+    // interruption and no dropped-frame events (device-verified: forcing a GC each frame stalled capture
+    // after a single frame). Keeping this reference for the session's lifetime is the fix.
+    private var captureDelegate: SampleBufferDelegate? = null
 
     override fun start() {
         if (sessionJob != null) return
@@ -221,15 +242,28 @@ public class AVCaptureMrzScanner(
                     onUndeliveredElement = ::releaseFrame,
                 )
             val captureQueue = dispatch_queue_create("io.lightine.tessera.mrz.camera.avcapture", null)
-            output.setSampleBufferDelegate(
+            // Throttle gate (see [analysisInterval]). The delegate runs serially on captureQueue, so this
+            // single mark is read/written from one thread — no synchronization needed.
+            var lastAnalysisAt: TimeSource.Monotonic.ValueTimeMark? = null
+            // Held in the class field [captureDelegate] (NOT just passed inline) so a strong Kotlin
+            // reference keeps it alive for the session — the output retains it only weakly.
+            val delegate =
                 SampleBufferDelegate { buffer ->
+                    val now = TimeSource.Monotonic.markNow()
+                    val last = lastAnalysisAt
+                    if (last != null && (now - last) < analysisInterval) {
+                        // Within the throttle window: drop this frame. It was never CFRetain'd, so
+                        // AVFoundation reclaims it as usual — the capture pool is never touched.
+                        return@SampleBufferDelegate
+                    }
+                    lastAnalysisAt = now
                     // Take ownership for the trip across the coroutine boundary; release immediately if the
                     // channel is already closed (teardown raced this callback), else the channel owns it.
                     CFRetain(buffer)
                     if (!frames.trySend(buffer).isSuccess) releaseFrame(buffer)
-                },
-                captureQueue,
-            )
+                }
+            captureDelegate = delegate
+            output.setSampleBufferDelegate(delegate, captureQueue)
 
             // CameraX surfaces a failed open through camera STATE; AVFoundation surfaces the analogous
             // run-time failures through notifications. An interruption whose reason is
@@ -257,6 +291,7 @@ public class AVCaptureMrzScanner(
                 center.removeObserver(interruptionObserver)
                 center.removeObserver(runtimeErrorObserver)
                 output.setSampleBufferDelegate(null, null)
+                captureDelegate = null
                 session.stopRunning()
                 // Releases a frame still buffered at teardown (via onUndeliveredElement); a no-op if empty.
                 frames.close()
