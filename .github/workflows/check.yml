@@ -10,8 +10,10 @@
 #   a macOS runner with Xcode — a Linux runner cannot build Apple targets at all).
 # - The `android-compile` job (added at 0.2.0's mrz-camera-android slice) compiles
 #   every module's Android target on a Linux runner with the Android SDK, so the
-#   ML Kit / CameraX code in androidMain is type-checked on CI. It is compile-only:
-#   no emulator, no instrumented tests (those run locally / on a device).
+#   ML Kit / CameraX code in androidMain is type-checked on CI. It also runs
+#   mrz-camera-android's androidHostTest unit tests (that module is Android-only, with
+#   no jvm target to carry them in the `check` job). Still no emulator, no instrumented
+#   tests, no live camera (those run locally / on a device).
 # - The `ios-compile` job (added at 0.2.0's mrz-camera-ios slice) compiles every
 #   module's iOS targets on a macOS runner — the only runner that can build Apple
 #   targets — and runs the iosSimulatorArm64 host tests. It type-checks the
@@ -100,10 +102,13 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
-      # Compiles every module's androidMain (the core modules and mrz-camera-android's ML Kit
-      # recognizer). Compile-only — the host tests run in the `check` job via each module's jvm target.
-      - name: Compile Android targets
-        run: ./gradlew compileAndroidMain
+      # Compiles every module's androidMain (the core modules and mrz-camera-android's ML Kit recognizer
+      # + CameraX scanner). Most host tests run in the `check` job via each module's jvm target;
+      # mrz-camera-android is Android-only (no jvm target), so its androidHostTest unit tests — the
+      # CameraState recoverable/critical classification — run here, where the Android SDK is present.
+      # Still no emulator / instrumented / live-camera tests (those run locally on a device).
+      - name: Compile Android targets and run Android host tests
+        run: ./gradlew compileAndroidMain :mrz-camera-android:testAndroidHostTest
 
   ios-compile:
     name: ios compile

@@ -49,14 +49,21 @@ import kotlin.coroutines.resumeWithException
  * on [results], it never requests permission (`scope.md` "permission boundary").
  *
  * **Verification status.** The contract this implements (the [MrzCameraScanner] interface and the
- * [scan][MrzFrameAnalyzer.scan] engine) is host-tested. The CameraX wiring is compiled on CI and was
- * verified end-to-end on a physical device (the live-device slice): the back camera opens, frames
- * stream, each [ImageProxy] is closed, and results flow. That slice established that CameraX surfaces a
- * failed open **asynchronously through camera state**, not as a bind-time exception — so this scanner
- * observes [CameraState] and routes a state error through [scan]'s catch path (see [cameraErrorFor]).
- * Permission denial was confirmed to surface a [CameraError.PermissionDenied]; the [CameraError.CameraInUse]
- * code-mapping is in place but the live in-use scenario (another client holding the camera) is not yet
- * device-exercised.
+ * [scan][MrzFrameAnalyzer.scan] engine) is host-tested in `mrz-camera-core`, and the
+ * recoverable-vs-critical state classification ([classifyCameraState]) is host-tested here in
+ * `androidHostTest`. The CameraX wiring is compiled on CI and was verified end-to-end on a physical
+ * device (the live-device slice): the back camera opens, frames stream, each [ImageProxy] is closed, and
+ * results flow. That slice established that CameraX surfaces a failed open **asynchronously through camera
+ * state**, not as a bind-time exception. CameraX classifies those state errors as *critical* (no
+ * auto-recovery — permission / fatal hardware / camera removed) or *recoverable* (the camera is in use, or
+ * the open can be retried — CameraX keeps retrying, parking the camera in `PENDING_OPEN`). This scanner
+ * ends the session only on a **critical** error (close the flow → terminal [CaptureError][MrzScanResult.CaptureError]);
+ * a **recoverable** one it surfaces as a *non-terminal* [CameraError.CameraInUse] /
+ * [CameraError.CameraUnavailable] while staying bound, so CameraX recovers and the stream resumes when the
+ * blocker clears. The permission/fatal (critical) path was device-verified to surface
+ * [CameraError.PermissionDenied]; the live in-use (recoverable) scenario — a second client taking then
+ * releasing the camera — is device-verified separately (the Simulator/emulator cannot stage camera
+ * contention; see `docs/open-questions.md`).
  *
  * @param appContext an application [Context] (held for the camera-provider lookup; pass
  *   `context.applicationContext` to avoid leaking an Activity).
@@ -158,19 +165,44 @@ public class CameraXMrzScanner(
                 }
 
             // CameraX surfaces a failed camera open (permission denied, camera in use, hardware fault)
-            // asynchronously through camera STATE, not as a bind-time exception — so without this the
-            // flow would never emit and never close, and the consumer would get silence instead of a
-            // typed CaptureError. Observing the camera state and closing the flow with the error code
-            // routes it through scan()'s catch -> cameraErrorFor, exactly like a bind-time failure.
-            // NB: this closes on ANY state error. That is correct for CameraX's *critical* codes (no
-            // auto-recovery — the device-verified permission/fatal path), but coarse for its
-            // *recoverable* codes (in-use / max), where CameraX would otherwise keep retrying; whether to
-            // surface those non-terminally is deferred (docs/open-questions.md, "CameraInUse live
-            // verification on Android").
+            // asynchronously through camera STATE, not as a bind-time exception. How we surface it follows
+            // CameraX's own recoverable/critical split (see classifyCameraState):
+            //   • CRITICAL (permission, fatal hardware, camera removed): no auto-recovery, so close the
+            //     flow with the code — scan()'s catch -> cameraErrorFor maps it to a TERMINAL CaptureError
+            //     and the session tears down (awaitClose unbinds). The device-verified permission/fatal path.
+            //   • RECOVERABLE (in-use / max-in-use / other-recoverable): CameraX retries the open itself,
+            //     parking the camera in PENDING_OPEN until the blocker clears. Closing here would defeat that
+            //     recovery, so instead emit a NON-TERMINAL CaptureError as an observation, keep the session
+            //     bound, and let CameraX resume streaming when the camera reopens (reader-not-oracle: report
+            //     the in-use observation; do not decide a transient condition ends the session).
+            // A recoverable code can be re-reported on successive state ticks while parked, so emit it once
+            // per occurrence (lastRecoverableCode) and clear that latch when the camera recovers (a state
+            // with no error) so a later contention re-emits.
+            var lastRecoverableCode: Int? = null
             val stateObserver =
                 Observer<CameraState> { state ->
                     val stateError = state.error
-                    if (stateError != null) close(CameraStateException(stateError.code))
+                    if (stateError == null) {
+                        lastRecoverableCode = null
+                        return@Observer
+                    }
+                    when (val decision = classifyCameraState(stateError.code, hasCameraPermission())) {
+                        is CameraStateDecision.Terminal -> {
+                            close(CameraStateException(stateError.code))
+                        }
+
+                        is CameraStateDecision.Recoverable -> {
+                            if (stateError.code != lastRecoverableCode) {
+                                lastRecoverableCode = stateError.code
+                                mutableResults.tryEmit(
+                                    MrzScanResult.CaptureError(
+                                        error = decision.error,
+                                        quality = ScanQuality(mrzRegionFound = false, ocrConfidence = null, recognizedLineCount = 0),
+                                    ),
+                                )
+                            }
+                        }
+                    }
                 }
             camera.cameraInfo.cameraState.observe(lifecycleOwner, stateObserver)
 
@@ -191,45 +223,89 @@ public class CameraXMrzScanner(
             // DROP_OLDEST channel does need, since that channel can hold/evict a frame the collector never took.
         }.buffer(Channel.RENDEZVOUS)
 
-    // Maps a camera-open failure to a typed CameraError. A CameraStateException carries the androidx
-    // CameraState error code observed asynchronously (the path CameraX actually uses — see
-    // cameraFrames); a SecurityException would be a synchronous bind-time throw (kept for completeness,
-    // though on the devices tested CameraX does not throw it — it collapses to a CameraState error).
+    // Maps a camera-open failure that CLOSED the flow to a typed CameraError. Only terminal failures reach
+    // here: a CameraStateException carries the androidx CameraState code of a *critical* state error (the
+    // recoverable codes are surfaced non-terminally in cameraFrames and never close the flow), so its
+    // classifyCameraState decision is a Terminal whose .error is the right CameraError; a SecurityException
+    // would be a synchronous bind-time throw (kept for completeness, though on the devices tested CameraX
+    // does not throw it — it collapses to a CameraState error).
     private fun cameraErrorFor(cause: Throwable): CameraError? =
         when (cause) {
-            is CameraStateException -> cameraStateError(cause.code)
+            is CameraStateException -> classifyCameraState(cause.code, hasCameraPermission()).error
             is SecurityException -> CameraError.PermissionDenied(cause.message ?: "CAMERA permission not granted")
             else -> CameraError.CameraUnavailable(cause.message ?: cause.toString())
-        }
-
-    // Classifies an androidx CameraState error code. In-use codes map cleanly. Everything else is some
-    // flavour of "could not open": critically, CameraX collapses a PERMISSION denial into a generic
-    // ERROR_CAMERA_FATAL_ERROR with a null cause — its public state API does not distinguish "no
-    // permission" from a hardware fault. So for a non-in-use failure we read the observable CAMERA
-    // permission state: if it is not held, PermissionDenied is the consumer's actionable cause;
-    // otherwise the cause is genuinely unknown to us, so CameraUnavailable. This only *reads* the
-    // permission — it never requests it or gates on it (scope.md permission boundary; reader-not-oracle:
-    // we report the observable fact, we do not infer a cause we cannot see).
-    private fun cameraStateError(code: Int): CameraError =
-        when (code) {
-            CameraState.ERROR_CAMERA_IN_USE, CameraState.ERROR_MAX_CAMERAS_IN_USE -> {
-                CameraError.CameraInUse("camera is in use by another client (camera state error $code)")
-            }
-
-            else -> {
-                if (!hasCameraPermission()) {
-                    CameraError.PermissionDenied("CAMERA permission not granted (camera state error $code)")
-                } else {
-                    CameraError.CameraUnavailable("camera could not be opened (camera state error $code)")
-                }
-            }
         }
 
     private fun hasCameraPermission(): Boolean =
         appContext.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
 }
 
-// Carries the androidx [CameraState] error code from an asynchronous camera-open failure so
+// The recoverable/critical decision for an androidx [CameraState] error code, per CameraX's own
+// classification (https://developer.android.com/reference/androidx/camera/core/CameraState):
+//   • RECOVERABLE — ERROR_CAMERA_IN_USE (2), ERROR_MAX_CAMERAS_IN_USE (1), ERROR_OTHER_RECOVERABLE_ERROR
+//     (3): CameraX retries the open automatically and parks the camera in PENDING_OPEN until the blocker
+//     clears. The scanner surfaces these as a non-terminal observation and stays bound so CameraX recovers.
+//   • CRITICAL — everything else (ERROR_STREAM_CONFIG, ERROR_CAMERA_DISABLED, ERROR_CAMERA_FATAL_ERROR,
+//     ERROR_DO_NOT_DISTURB_MODE_ENABLED, ERROR_CAMERA_REMOVED): no auto-recovery; terminal.
+// CameraX collapses a PERMISSION denial into the critical ERROR_CAMERA_FATAL_ERROR with a null cause —
+// its public state API does not distinguish "no permission" from a hardware fault — so for a critical
+// code we read the observable CAMERA permission: not held ⇒ PermissionDenied is the consumer's actionable
+// cause; otherwise the cause is genuinely unknown to us ⇒ CameraUnavailable. This only *reads* permission,
+// never requests or gates on it (scope.md permission boundary; reader-not-oracle: report the observable
+// fact, never infer a cause we cannot see).
+//
+// `internal` + top-level, taking the permission state as a plain Boolean rather than reading it, so it is
+// a pure function the androidHostTest exercises across every code without a live camera — the Android
+// counterpart of the iOS AVCaptureMrzScannerErrorMappingTest.
+internal fun classifyCameraState(
+    code: Int,
+    hasCameraPermission: Boolean,
+): CameraStateDecision =
+    when (code) {
+        CameraState.ERROR_CAMERA_IN_USE, CameraState.ERROR_MAX_CAMERAS_IN_USE -> {
+            CameraStateDecision.Recoverable(
+                CameraError.CameraInUse("camera is in use by another client (camera state error $code)"),
+            )
+        }
+
+        CameraState.ERROR_OTHER_RECOVERABLE_ERROR -> {
+            CameraStateDecision.Recoverable(
+                CameraError.CameraUnavailable("camera temporarily unavailable; the platform is retrying (camera state error $code)"),
+            )
+        }
+
+        else -> {
+            if (!hasCameraPermission) {
+                CameraStateDecision.Terminal(
+                    CameraError.PermissionDenied("CAMERA permission not granted (camera state error $code)"),
+                )
+            } else {
+                CameraStateDecision.Terminal(
+                    CameraError.CameraUnavailable("camera could not be opened (camera state error $code)"),
+                )
+            }
+        }
+    }
+
+// How [CameraXMrzScanner] surfaces a [CameraState] error, per CameraX's recoverable/critical split.
+internal sealed interface CameraStateDecision {
+    val error: CameraError
+
+    /**
+     * CameraX is auto-retrying (a recoverable code): surface [error] as a non-terminal observation and
+     * keep the session bound so it can recover.
+     */
+    data class Recoverable(
+        override val error: CameraError,
+    ) : CameraStateDecision
+
+    /** No auto-recovery (a critical code): surface [error] and end the session. */
+    data class Terminal(
+        override val error: CameraError,
+    ) : CameraStateDecision
+}
+
+// Carries the androidx [CameraState] error code from a *critical* (terminal) camera-open failure so
 // [CameraXMrzScanner.cameraErrorFor] can map it to a [CameraError] through scan()'s catch path.
 private class CameraStateException(
     val code: Int,

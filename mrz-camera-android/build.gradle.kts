@@ -24,6 +24,11 @@ kotlin {
         namespace = "io.lightine.tessera.mrz.camera"
         compileSdk = 37
         minSdk = 23
+        // Enables the androidHostTest source set — local JVM unit tests for this Android-only module
+        // (the KMP-library plugin's host-test target). classifyCameraState is a pure function over the
+        // androidx CameraState int codes, so its test runs on the JVM with no device — the Android
+        // counterpart of mrz-camera-ios's AVCaptureMrzScannerErrorMappingTest, run by the android CI job.
+        withHostTest {}
     }
 
     sourceSets {
@@ -49,6 +54,12 @@ kotlin {
                 // camera, but it has no compile surface here, so it stays off the compile classpath.
                 runtimeOnly(libs.androidx.camera.camera2)
             }
+        }
+        // getByName (not the typed accessor): the androidHostTest source set is registered by
+        // withHostTest {} above, but the Kotlin-DSL typed accessor is not generated on the same run that
+        // first enables it, so reference it by name.
+        getByName("androidHostTest").dependencies {
+            implementation(kotlin("test"))
         }
     }
 }
