@@ -1,22 +1,29 @@
 package io.lightine.tessera.mrz.camera
 
 import kotlinx.cinterop.ExperimentalForeignApi
+import platform.AVFoundation.AVCaptureSessionInterruptionReasonVideoDeviceInUseByAnotherClient
+import platform.AVFoundation.AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableInBackground
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 /**
- * Unit test for [AVCaptureMrzScanner]'s capture-failure → [CameraError] mapping (`cameraErrorFor`).
+ * Unit test for [AVCaptureMrzScanner]'s capture-failure contract.
  *
- * The live failures that feed this mapping cannot be exercised here: the iOS Simulator has no camera (so
- * the permission / in-use / no-device paths never run), and a session *runtime error* cannot be triggered
- * deliberately even on a real device — it is a genuine media-services / hardware fault, not something an
- * app can summon (see `docs/open-questions.md`). So this asserts the mapping *contract* directly: every
- * failure the scanner detects is surfaced to the consumer as the correct typed [CameraError] carrying the
- * original message — the iOS half of the same "report the observable failure as a sealed result, never
- * throw, never decide for the caller" contract the Android scanner follows
+ * Two host-testable seams stand in for the live camera the iOS Simulator does not have. (1) The *terminal*
+ * capture-failure → [CameraError] mapping (`cameraErrorFor`): a setup failure (permission / no camera) or a
+ * session *runtime error* — the latter a genuine media-services / hardware fault that cannot be summoned
+ * even on a device (see `docs/open-questions.md`) — is surfaced as the correct typed [CameraError] carrying
+ * the original message, never thrown. (2) The *recoverable* in-use trigger (`isVideoDeviceInUseReason`):
+ * which `AVCaptureSession` interruption reason the scanner treats as "another client took the camera" and
+ * surfaces as a **non-terminal** [CameraError.CameraInUse] (the session stays bound and AVFoundation
+ * resumes when the interruption ends) — the Android counterpart host-tested this way is `classifyCameraState`.
+ * Together they are the iOS half of the "report the observable failure as a sealed result, never throw,
+ * never decide for the caller" contract
  * ([ADR-020](https://github.com/lightine-io/tessera/blob/main/docs/decisions/0020-camera-reading-architecture.md);
- * reader-not-oracle). The exceptions and `cameraErrorFor` are `internal` purely to make this reachable.
+ * reader-not-oracle). The exceptions and the two functions are `internal` purely to make this reachable.
  */
 @OptIn(ExperimentalForeignApi::class)
 class AVCaptureMrzScannerErrorMappingTest {
@@ -38,9 +45,24 @@ class AVCaptureMrzScannerErrorMappingTest {
     }
 
     @Test
-    fun in_use_interruption_is_surfaced_as_CameraInUse() {
-        val error = assertIs<CameraError.CameraInUse>(mapping(CameraInUseException("held by another client")))
-        assertEquals("held by another client", error.message)
+    fun only_the_video_device_in_use_reason_triggers_a_recoverable_in_use() {
+        // The non-terminal in-use path keys off the interruption reason, not an exception: only
+        // videoDeviceInUseByAnotherClient is "another client took the camera"; backgrounding (and every
+        // other reason) is left to recover silently, and a missing reason is not in-use.
+        val scanner = AVCaptureMrzScanner()
+        try {
+            assertTrue(
+                scanner.isVideoDeviceInUseReason(AVCaptureSessionInterruptionReasonVideoDeviceInUseByAnotherClient),
+                "videoDeviceInUseByAnotherClient is the recoverable in-use reason",
+            )
+            assertFalse(
+                scanner.isVideoDeviceInUseReason(AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableInBackground),
+                "backgrounding is not an in-use reason — it recovers silently",
+            )
+            assertFalse(scanner.isVideoDeviceInUseReason(null), "a missing reason is not in-use")
+        } finally {
+            scanner.close()
+        }
     }
 
     @Test
