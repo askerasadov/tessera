@@ -308,8 +308,9 @@ public class AVCaptureMrzScanner(
     // Maps a capture-availability failure to a typed CameraError. The custom exceptions are the ones
     // cameraFrames() throws or closes the channel with; anything else is an unknown open failure.
     // Coroutine cancellation is never seen here — Flow.catch (in scan) propagates it rather than passing
-    // it to this mapper.
-    private fun cameraErrorFor(cause: Throwable): CameraError? =
+    // it to this mapper. `internal` (not private) only so the unit test can exercise the mapping directly,
+    // since the live camera failures that feed it cannot be triggered on the Simulator.
+    internal fun cameraErrorFor(cause: Throwable): CameraError? =
         when (cause) {
             is CameraPermissionException -> CameraError.PermissionDenied(cause.message ?: "CAMERA permission not granted")
             is CameraInUseException -> CameraError.CameraInUse(cause.message ?: "camera is in use by another client")
@@ -345,14 +346,15 @@ private class SampleBufferDelegate(
 
 // Carry the kind of capture-availability failure cameraFrames() detected, so cameraErrorFor can map each
 // to the right CameraError through scan()'s catch path. None carries recognized text (there is none).
-private class CameraPermissionException(
+// `internal` (not private) only so the unit test can construct them to exercise cameraErrorFor.
+internal class CameraPermissionException(
     message: String,
 ) : Exception(message)
 
-private class CameraUnavailableException(
+internal class CameraUnavailableException(
     message: String,
 ) : Exception(message)
 
-private class CameraInUseException(
+internal class CameraInUseException(
     message: String,
 ) : Exception(message)
